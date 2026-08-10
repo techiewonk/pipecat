@@ -134,166 +134,211 @@ cp .env.example .env    # then fill in the keys below</code></pre>
       <h2 id="fullcode">The complete <code>bot.py</code> — with personas, all in one</h2>
       <p>One long, runnable file. It contains the full <strong>system-prompt personas</strong> for every agent and wires in <em>every</em> capability from the course. Fill in your keys, a hold-music file, and a policy doc set; the shape is production-real.</p>
       <pre><code class="language-python">"""Atlas — a Gemini Live agent-to-agent voice system (local + distributed).
-Assembles the whole 0-to-Hero course into one runnable file.
+The complete, all-in-one file: every capability wired, every knob set explicitly.
 """
 import os                                                     # read secrets (API keys) from the environment
 from dotenv import load_dotenv                                # load those secrets from a local .env file
 
-from pipecat.pipeline.pipeline import Pipeline                # an ordered list of processors = the agent's data flow
-from pipecat.pipeline.worker import PipelineWorker, PipelineParams   # runs a pipeline as one agent + its config knobs
-from pipecat.processors.frame_processor import FrameProcessor, FrameDirection  # base class for our custom Guardrail
+from pipecat.pipeline.pipeline import Pipeline                # ordered list of processors = the agent's data flow
+from pipecat.pipeline.parallel_pipeline import ParallelPipeline   # run branches in parallel (e.g. two languages)
+from pipecat.pipeline.worker import PipelineWorker, PipelineParams   # runs a pipeline as one agent + its config
+from pipecat.processors.frame_processor import FrameProcessor, FrameDirection  # base class for our Guardrail
 from pipecat.processors.filters.function_filter import FunctionFilter          # keep/drop frames by a predicate
 from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor  # tap audio to disk (recording)
 from pipecat.processors.aggregators.llm_context import LLMContext              # the running conversation (memory)
 from pipecat.processors.aggregators.dtmf_aggregator import DTMFAggregator      # phone keypad presses -> text
+from pipecat.processors.aggregators.llm_context_summarizer import (            # compress long calls (L21)
+    LLMContextSummarizer, LLMAutoContextSummarizationConfig)
 from pipecat.processors.aggregators.llm_response_universal import (            # capture user/bot turns into context
-    LLMContextAggregatorPair, LLMUserAggregatorParams)                         #   and the place VAD/turns/muting attach
-from pipecat.frames.frames import TranscriptionFrame, LLMRunFrame              # frame types we react to / emit
-from pipecat.audio.vad.silero import SileroVADAnalyzer                         # voice-activity detection (for barge-in)
+    LLMContextAggregatorPair, LLMUserAggregatorParams)                         #   + where VAD/turns/muting attach
+from pipecat.frames.frames import TranscriptionFrame, LLMRunFrame, UserImageRequestFrame  # frames we react to/emit
+from pipecat.audio.vad.silero import SileroVADAnalyzer                         # voice-activity detection (barge-in)
+from pipecat.audio.vad.vad_analyzer import VADParams                           # VAD tuning knobs
 from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter                 # clean the caller's mic (free filter)
 from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer                # blend a hold-music bed under speech
 from pipecat.turns.user_mute import (FunctionCallUserMuteStrategy,             # ignore the mic while a tool runs
-                                     MuteUntilFirstBotCompleteUserMuteStrategy) # ignore the mic until the intro ends
+                                     MuteUntilFirstBotCompleteUserMuteStrategy, # ignore the mic until intro ends
+                                     FirstSpeechUserMuteStrategy,              # ignore until the first utterance
+                                     AlwaysUserMuteStrategy)                    # always muted (push-to-talk)
 from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver # measure response latency (read-only)
-from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService       # the speech-to-speech brain (STT+LLM+TTS)
+from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService       # speech-to-speech brain (STT+LLM+TTS)
 from pipecat.services.mcp_service import MCPClient                             # attach tools hosted by an MCP server
-from pipecat.workers.llm.llm_context_worker import LLMContextWorker            # an agent = its own LLM + context, on the bus
+from pipecat.workers.llm.llm_context_worker import LLMContextWorker            # an agent = its own LLM + context
 from pipecat.workers.llm.tool_decorator import tool                           # expose a method to the LLM as a tool
-from pipecat.workers.llm import LLMWorkerActivationArgs                       # data handed to an agent when it is activated
-from pipecat.workers.runner import WorkerRunner                               # owns the bus and supervises every worker
-from pipecat.runner.types import RunnerArguments                             # what the runner / Pipecat Cloud passes to bot()
+from pipecat.workers.llm import LLMWorkerActivationArgs                       # data handed to an agent when activated
+from pipecat.workers.runner import WorkerRunner                               # owns the bus; supervises every worker
+from pipecat.runner.types import RunnerArguments                             # what the runner passes to bot()
 from pipecat.runner.utils import create_transport                            # builds the right transport at launch
 from pipecat.transports.base_transport import TransportParams                # audio / video / filter / mixer config
+from pipecat.transcriptions.language import Language                          # language enums (Language.EN_US, …)
+from pipecat.flows import FlowManager, NodeConfig                            # structured, gated multi-step tasks (L19)
 from mcp import StdioServerParameters                                        # how to launch the MCP tool server
 # from pipecat.bus.network.redis import RedisBus            # uncomment for DISTRIBUTED mode (agents across machines)
 
 load_dotenv(override=True)                                    # pull GOOGLE_API_KEY etc. into os.environ
 
 # ─────────────────────────────  PERSONAS (system prompts)  ─────────────────────────────
-# A persona is the agent's system prompt — the single biggest lever on how it behaves.
 # TRIAGE — the front-desk router (greets, then hands off)
 TRIAGE_PERSONA = """
 You are Atlas, the warm front-desk voice agent for Acme Utilities.
 - Greet the caller in ONE friendly sentence.
-- Decide if they need BILLING (payments, refunds, statements) or SUPPORT
-  (outages, technical issues, appointments). Ask at most ONE clarifying question.
-- The instant the department is clear, call route(department, reason). Do NOT try to
-  resolve it yourself.
-- If the caller wants multiple viewpoints or a judgment call, call consult(question).
-- Keep every spoken reply under two sentences. Speak numbers naturally, no emojis.
+- Decide if they need BILLING or SUPPORT. Ask at most ONE clarifying question.
+- The instant it's clear, call route(department, reason). Do NOT resolve it yourself.
+- For a judgment call, call consult(question). Keep replies under two sentences.
 """
-# BILLING — the billing specialist (grounds answers in policy via RAG)
+# BILLING — grounds answers in policy (RAG); refunds are gated behind a verification Flow
 BILLING_PERSONA = """
-You are the Billing specialist for Acme Utilities. You have tools and policy documents.
-- Verify the account before any refund. Explain charges in plain language.
-- For refunds over $100, confirm the reason out loud and record it.
-- Ground every factual claim in the provided policy context (RAG). If unsure, say you
-  will follow up rather than guess. Be concise and warm.
+You are the Billing specialist for Acme Utilities. Verify the account before any refund.
+Explain charges plainly, ground facts in the policy context, and be concise and warm.
 """
-# SUPPORT — the support specialist (diagnoses outages / technical issues)
+# SUPPORT — diagnoses outages / technical issues
 SUPPORT_PERSONA = """
-You are the Support specialist for Acme Utilities.
-- Diagnose outages and technical issues; offer the smallest next step first.
-- If an on-site visit is needed, collect the address and a time window.
-- Never promise a timeline you cannot confirm. Stay calm and reassuring.
+You are the Support specialist for Acme Utilities. Diagnose issues, offer the smallest
+next step first, collect an address + time window for any visit, and stay reassuring.
 """
 
-def redact_pii(text: str) -> str:                             # scrub sensitive data out of transcripts
-    return text                                               #   (stub — plug in your real redaction)
+def redact_pii(text: str) -> str: return text                 # scrub PII from transcripts (stub)
+def save_wav(audio, rate, ch): pass                           # persist a recorded chunk (stub, L22)
+async def lookup_account(account: str) -> bool: return True   # your real account lookup (stub)
 
-def save_wav(audio, rate, ch):                                # write one recorded audio chunk to disk
-    pass                                                      #   (stub — see Lesson 22)
-
-def gemini(system: str) -> GeminiLiveLLMService:              # helper: build a configured Gemini Live "brain"
+def gemini(system: str) -> GeminiLiveLLMService:              # build a fully-configured Gemini Live brain
     return GeminiLiveLLMService(
-        api_key=os.environ["GOOGLE_API_KEY"],                 # your Google key (required for every agent)
+        api_key=os.environ["GOOGLE_API_KEY"],                 # your Google key (required)
         settings=GeminiLiveLLMService.Settings(
-            system_instruction=system, voice="Aoede"))        # the persona to follow + the voice to speak in
+            system_instruction=system,                        # the persona to follow
+            voice="Aoede",                                    # Puck / Charon / Kore / Fenrir / Aoede
+            temperature=0.7,                                  # 0-2 creativity (None = provider default)
+            max_tokens=4096,                                  # cap the reply length
+            top_p=None, top_k=None,                           # nucleus / top-k sampling (None = default)
+            language=Language.EN_US))                         # generation language (modalities default to AUDIO)
 
-# ─────────────────────────────  MIC ON / OFF (L10)  ─────────────────────────────
-async def set_mic(agent, on: bool):                           # server-side mic control (the client also has a mute button)
+async def set_mic(agent, on: bool):                           # MIC ON/OFF (L10): server-side pause of input audio
     await agent.llm.set_audio_input_paused(not on)            # on=False -> MIC OFF, on=True -> MIC ON
-    # (cascaded agents instead push an STTMuteFrame to mute the STT input)
 
 # ─────────────────────────────  CUSTOM PROCESSOR (L4)  ─────────────────────────────
 class Guardrail(FrameProcessor):                              # a node you drop into the pipeline to inspect frames
-    """Inspect every frame — here, redact PII from transcripts before they travel."""
     async def process_frame(self, frame, direction: FrameDirection):
         await super().process_frame(frame, direction)         # REQUIRED: let the base class run first
         if isinstance(frame, TranscriptionFrame):             # act only on transcribed-speech frames
             frame.text = redact_pii(frame.text)               # scrub PII before it reaches the LLM or logs
         await self.push_frame(frame, direction)               # REQUIRED: forward the frame downstream
 
+# ─────────────────────────────  FLOWS (L19): gated billing verification  ─────────────────────────────
+def verify_node() -> NodeConfig:                              # STEP 1 — must happen before any refund
+    return NodeConfig(name="verify",
+        task_messages=[{"role": "system", "content": "Ask the caller for their account number."}],
+        functions=[check_account])                            # only THIS tool is allowed in this node
+
+async def check_account(flow_manager: FlowManager, account: str):   # returns (what to say, NEXT node)
+    if await lookup_account(account):                         # verified?
+        return "Thanks, you're verified.", refund_node()      # advance to the refund step
+    return "I couldn't find that account, let's try again.", verify_node()   # stay and retry
+
+async def issue_refund(flow_manager: FlowManager, amount: float):   # the gated refund tool
+    return f"Refund of ${amount} processed.", None            # None = stay in this node
+
+def refund_node() -> NodeConfig:                              # STEP 2 — only reachable once verified
+    return NodeConfig(name="refund",
+        task_messages=[{"role": "system", "content": "Now process the refund."}],
+        functions=[issue_refund])
+
 # ─────────────────────────────  AGENTS (workers on the bus)  ─────────────────────────────
 class Specialist(LLMContextWorker):                           # a specialist agent = its own Gemini brain + memory
     def __init__(self, name: str, persona: str):
-        super().__init__(name=name, llm=gemini(persona), context=LLMContext())  # name it; give it a persona + context
+        super().__init__(name=name, llm=gemini(persona), context=LLMContext())
 
 class Triage(LLMContextWorker):                               # the front-desk agent that routes callers
     def __init__(self):
-        super().__init__(name="triage", llm=gemini(TRIAGE_PERSONA), context=LLMContext())  # its own brain + memory
+        super().__init__(name="triage", llm=gemini(TRIAGE_PERSONA), context=LLMContext())
 
-    @tool                                                     # exposes this method to the LLM as a callable tool
+    @tool                                                     # exposes this method to the LLM as a tool
     async def route(self, params, department: str, reason: str):
         """Transfer the caller to 'billing' or 'support' (L26 handoff)."""
-        await self.activate_worker(department, deactivate_self=True,   # hand control to that agent; step aside
+        await self.activate_worker(department, deactivate_self=True,          # hand off; step aside
             args=LLMWorkerActivationArgs(
-                messages=[{"role": "developer", "content": f"Caller context: {reason}"}],  # pass context along
-                run_llm=True))                                # make the newly-active agent respond right away
+                messages=[{"role": "developer", "content": f"Caller context: {reason}"}],
+                run_llm=True))                                # make the new agent respond right away
 
     @tool                                                     # a second tool: parallel "consult the committee"
     async def consult(self, params, question: str):
         """Ask billing AND support in parallel, then summarize (L27 fan-out)."""
         async with params.pipeline_worker.job_group(          # dispatch one job to several peers at once
-                Specialist("billing_c", BILLING_PERSONA),     # a throwaway billing worker for this job
-                Specialist("support_c", SUPPORT_PERSONA)) as group:   # and a support worker
+                Specialist("billing_c", BILLING_PERSONA),
+                Specialist("support_c", SUPPORT_PERSONA)) as group:
             answers = await group.run(question)               # wait for all peers to answer
         await params.result_callback({"answers": answers})    # return the combined result to the LLM
 
-# ─────────────────────────────  MAIN WORKER (owns the media)  ─────────────────────────────
+# ─────────────────────────────  TRANSPORT (all audio + video knobs)  ─────────────────────────────
 transport_params = {"webrtc": lambda: TransportParams(        # "webrtc" = the REACT web client (SmallWebRTC + RTVI)
-    audio_in_enabled=True, audio_out_enabled=True,            # enable the mic in and the speaker out
-    audio_in_filter=RNNoiseFilter(),                          # L7: clean the caller's mic before anything else
-    audio_out_mixer=SoundfileMixer(sound_files={"hold": "assets/hold.mp3"},   # L14: a hold-music bed…
-                                   default_sound="hold", volume=0.15),        #      …played quietly under speech
-)}
+    audio_in_enabled=True, audio_out_enabled=True,            # mic in / speaker out
+    audio_in_sample_rate=8000, audio_out_sample_rate=24000,   # 8 kHz phone in, 24 kHz model out (resampler bridges)
+    audio_in_channels=1, audio_out_channels=1,                # mono in / out
+    audio_in_filter=RNNoiseFilter(),                          # L7 noise cancellation on the caller's mic
+    audio_in_passthrough=True,                                # keep audio flowing downstream (for recording)
+    audio_out_bitrate=96000,                                  # output audio bitrate
+    audio_out_mixer=SoundfileMixer(                           # L14 background hold-music bed…
+        sound_files={"hold": "assets/hold.mp3"}, default_sound="hold",
+        volume=0.4, mixing=True, loop=True),                  #   …volume, mix on/off, loop the file
+    video_in_enabled=False, video_out_enabled=False,          # turn on for vision / avatars (L16)
+    video_out_width=1024, video_out_height=576,               # video size…
+    video_out_framerate=30, video_out_codec="VP8")}           #   …fps + codec (VP8 / H264 / H265)
 # TELEPHONY (L30): a phone call over EXOTEL hits the runner's /ws route; create_transport()
 #   auto-detects Exotel and wires ExotelFrameSerializer — no branching in bot code.
 
 async def run_bot(transport, runner_args):                    # build & run the whole system for one session
     context = LLMContext()                                    # the triage/main conversation memory
-    user_agg, assistant_agg = LLMContextAggregatorPair(context,   # capture user & bot turns into that context
-        user_params=LLMUserAggregatorParams(
-            vad_analyzer=SileroVADAnalyzer(),                 # L7 VAD -> BARGE-IN (caller can talk over the bot)
-            user_mute_strategies=[                            # L10 muting: ignore the mic when it would cause bugs…
-                MuteUntilFirstBotCompleteUserMuteStrategy(),  #      …until the greeting finishes
-                FunctionCallUserMuteStrategy()],              #      …and while a tool is running
-            user_idle_timeout=20.0)).pair()                   # L20: nudge, then end, after 20s of silence
+
+    vad = SileroVADAnalyzer(sample_rate=16000, params=VADParams(   # L7 VAD (barge-in), fully tuned
+        confidence=0.7,                                       # 0-1: sureness before it's "speech"
+        start_secs=0.2,                                       # speech must persist this long to START a turn
+        stop_secs=0.2,                                        # silence this long to END speech
+        min_volume=0.6))                                      # ignore audio quieter than this
+
+    user_agg, assistant_agg = LLMContextAggregatorPair(context,   # capture user & bot turns into context
+        user_params=LLMUserAggregatorParams(                  # L9/L10 — every field set explicitly:
+            vad_analyzer=vad,                                 #   the VAD above (drives barge-in)
+            user_turn_strategies=None,                        #   None = default start/stop (server-side for realtime)
+            user_mute_strategies=[                            #   L10 server-side muting
+                MuteUntilFirstBotCompleteUserMuteStrategy(),  #     ignore mic until the greeting finishes
+                FunctionCallUserMuteStrategy()],              #     ignore mic while a tool runs
+            user_turn_stop_timeout=5.0,                       #   wait this long for turn-stop confirmation
+            user_idle_timeout=20.0,                           #   fire idle handling after 20s of silence (L20)
+            audio_idle_timeout=1.0,                           #   force speech-stop if audio goes silent this long
+            add_tool_change_messages=False)).pair()           #   announce tool changes in the context
 
     guardrail = Guardrail()                                   # L4 custom processor (PII redaction)
     speech_only = FunctionFilter(lambda f: True)              # L4 frame filter (drop unwanted frame types)
     dtmf_agg = DTMFAggregator()                               # L14 turn phone keypad presses into text
     recorder = AudioBufferProcessor()                         # L22 tap the audio stream to disk for QA
+    summarizer = LLMContextSummarizer(context=context,        # L21 compress long calls…
+        config=LLMAutoContextSummarizationConfig(),           #   …when/how-much is set by the config
+        auto_trigger=True)                                    #   …automatically (vs calling summarize() yourself)
+    triage_llm = gemini(TRIAGE_PERSONA)                       # the triage brain (built once so we can reuse it)
 
     io = Pipeline([transport.input(),                         # 1. mic / network audio comes in
                    guardrail, dtmf_agg, user_agg,             # 2. guardrail -> keypad -> remember the user's turn
-                   gemini(TRIAGE_PERSONA), speech_only,       # 3. the triage brain replies -> frame filter
+                   summarizer, triage_llm, speech_only,       # 3. summarize -> triage brain -> frame filter
                    assistant_agg, transport.output(),         # 4. remember the bot's turn -> play audio out
                    recorder])                                 # 5. record the whole conversation
-    # cascaded specialists can also add BackchannelProcessor() (L31) + MarkdownTextFilter (L13)
 
     runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)   # LOCAL: owns an in-memory bus (default)
     # runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))  # DISTRIBUTED: one line changes (L28)
 
     main = PipelineWorker(io, bus=runner.bus,                 # the main agent: owns the transport, bridges to the bus
-        params=PipelineParams(
-            enable_metrics=True, enable_usage_metrics=True,   # L23 collect TTFB + token/usage metrics
-            enable_tracing=True,                              # L23 export spans to OpenTelemetry / Sentry / Langfuse
-            enable_heartbeats=True,                           # L23 emit health heartbeats
-            allow_interruptions=True,                         # L20 barge-in: stop speaking when the user talks
-            audio_in_sample_rate=8000,                        # L7 phone audio is 8 kHz…
-            audio_out_sample_rate=24000),                     #      …model audio is 24 kHz; the resampler bridges them
-        observers=[UserBotLatencyObserver()])                 # L23 watch latency read-only
+        params=PipelineParams(                               # L23 — every field:
+            audio_in_sample_rate=8000, audio_out_sample_rate=24000,   # rates (phone in / model out)
+            enable_metrics=True, enable_usage_metrics=True,   # TTFB + token/usage metrics
+            enable_heartbeats=True,                           # liveness heartbeats
+            heartbeats_period_secs=1.0,                       # how often to beat
+            heartbeats_monitor_secs=5.0,                      # warn if no beat within this window
+            report_only_initial_ttfb=False,                  # True = only the first TTFB per turn
+            send_initial_empty_metrics=True),                 # prime the metrics stream on start
+        enable_tracing=True,                                  # OpenTelemetry / Sentry / Langfuse (a WORKER arg)
+        enable_turn_tracking=True,                            # emit turn-tracking events
+        enable_rtvi=True,                                     # RTVI client protocol on (for the React app)
+        idle_timeout_secs=None,                               # auto-cancel after this idle time (None = never)
+        observers=[UserBotLatencyObserver()])                 # watch latency read-only
+    # NOTE: there is no `allow_interruptions` flag — barge-in is VAD-driven and always on.
 
     @transport.event_handler("on_client_connected")           # EVENT (Appendix G): a caller / web client joined
     async def _(t, client):
@@ -302,13 +347,42 @@ async def run_bot(transport, runner_args):                    # build & run the 
     async def _(proc, audio, sample_rate, num_channels):
         save_wav(audio, sample_rate, num_channels)            # persist it to disk (L22)
 
-    billing = Specialist("billing", BILLING_PERSONA)          # build the billing specialist agent (RAG persona)
+    billing = Specialist("billing", BILLING_PERSONA)          # build the billing specialist (RAG persona)
     await MCPClient(StdioServerParameters(command="memory-server")) \
         .register_tools(billing.llm)                          # L12: give billing an MCP memory tool
+    flow = FlowManager(llm=billing.llm,                       # L19: attach the gated verify->refund Flow…
+        context_aggregator=billing.user_aggregator, worker=billing)
+    await flow.initialize(verify_node())                      #   …start the caller at STEP 1 (verify)
 
     await runner.add_workers(Triage(), billing,               # register triage + billing…
                              Specialist("support", SUPPORT_PERSONA), main)   # …+ support + the main worker
     await runner.run()                                        # start everything; block until shutdown
+
+    # ── VISION (L16): ask the caller's camera for the current frame (needs video enabled above) ──
+    #   await main.queue_frames([UserImageRequestFrame(user_id)])   # "show me the damaged meter"
+    # ── PARALLEL OUTPUT (L5): speak two languages from one LLM stream ──
+    #   ParallelPipeline([FunctionFilter(is_en), en_tts], [FunctionFilter(is_es), es_tts])
+
+# ─────────────────────────────  OPTIONAL / CASCADED KNOBS (drop-in reference)  ─────────────────────────────
+# THINKING (L17) — a reasoning escalation agent (use a thinking-capable model):
+#   from pipecat.services.anthropic.llm import AnthropicLLMService
+#   escalation = AnthropicLLMService(api_key=os.environ["ANTHROPIC_API_KEY"],
+#       settings=AnthropicLLMService.Settings(enable_thinking=True, thinking_budget_tokens=1024))
+# SMART TURN (L10) — end-of-turn for CASCADED agents (realtime Gemini does this server-side):
+#   from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+#   from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+#   from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
+#   stop = TurnAnalyzerUserTurnStopStrategy(turn_analyzer=LocalSmartTurnAnalyzerV3(
+#       params=SmartTurnParams(stop_secs=3, pre_speech_ms=500, max_duration_secs=8)))
+# RESAMPLER (L7) — pick the sampler engine/quality (used internally by the output):
+#   from pipecat.audio.resamplers.soxr_resampler import SOXRAudioResampler
+#   resampler = SOXRAudioResampler(quality="VHQ")   # VHQ | HQ | MQ | LQ | QQ
+# STT settings (cascaded) — DeepgramSTTService.Settings(model="nova-2-general", language="multi",
+#   smart_format=True, punctuate=True, interim_results=True, endpointing=300, sample_rate=16000, encoding="linear16")
+# TTS settings (cascaded) — CartesiaTTSService.Settings(voice_id="your-voice-id", model="sonic-2",
+#   language=Language.EN, speed=1.0, emotion="neutral")   # speed 0.6-1.5
+# BACKCHANNEL (L31, cascaded) — BackchannelProcessor()  # "mm-hmm" while the user talks
+# SWITCHER (L20) — LLMSwitcher([primary_llm, cheap_llm])  # hot-swap models mid-call
 
 async def bot(runner_args: RunnerArguments):                  # the entry point the runner / Pipecat Cloud calls (L33)
     transport = await create_transport(runner_args, transport_params)   # pick WebRTC (React) or Exotel (phone)
@@ -414,10 +488,11 @@ await main.queue_frames([UserImageRequestFrame(user_id)])     # e.g. "show me th
 escalation = AnthropicLLMService(api_key=os.environ["ANTHROPIC_API_KEY"],
     settings=AnthropicLLMService.Settings(enable_thinking=True, thinking_budget_tokens=1024))</code></pre>
 
-      <h3 id="a-summary">Summarization (L21) — compress long calls</h3>
+      <h3 id="a-summary">Summarization (L21) — already wired in the main file</h3>
       <pre><code class="language-python">from pipecat.processors.aggregators.llm_context_summarizer import LLMContextSummarizer
-summarizer = LLMContextSummarizer(llm=billing.llm, token_threshold=4000)  # summarize old turns
-# add `summarizer` to a cascaded specialist's pipeline, just before its LLM</code></pre>
+summarizer = LLMContextSummarizer(context=context, auto_trigger=True)   # compress old turns automatically
+# a config (LLMAutoContextSummarizationConfig) sets the summarizing LLM + the trigger threshold.
+# In bot.py it sits in the pipeline: [... user_agg, summarizer, triage_llm, ...]</code></pre>
 
       <h3 id="a-translate">Translation (L8) — multilingual callers</h3>
       <pre><code class="language-python"># cascaded STT: language="multi" (Deepgram) or None (Whisper) auto-detects the language;
@@ -443,7 +518,7 @@ ParallelPipeline([FunctionFilter(is_english), english_tts],
         <tbody>
           <tr><td><a href="l04-frameprocessor.html">4</a></td><td>Custom processor + frame filter</td><td><code>Guardrail(FrameProcessor)</code> + <code>FunctionFilter</code> in the pipeline.</td></tr>
           <tr><td><a href="l06-transports.html">6</a></td><td>Transports</td><td><code>create_transport()</code> selects WebRTC/Daily/phone at launch.</td></tr>
-          <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Barge-in</strong> — bot stops when you speak</td><td><code>vad_analyzer=SileroVADAnalyzer()</code> + <code>allow_interruptions=True</code>: the caller can talk over the bot and it stops instantly.</td></tr>
+          <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Barge-in</strong> — bot stops when you speak</td><td><code>vad_analyzer=SileroVADAnalyzer()</code>: the user speaking triggers a VAD interruption and the bot stops instantly — built in, no flag.</td></tr>
           <tr><td><a href="l10-turn-taking.html">10</a></td><td><strong>End-of-turn</strong> — bot replies when you stop</td><td>Realtime (Gemini) detects turn-end server-side; cascaded agents use <code>TurnAnalyzerUserTurnStopStrategy</code> + smart-turn (VAD + transcript).</td></tr>
           <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Resampler ("sampler")</strong></td><td><code>audio_in_sample_rate=8000</code> / <code>audio_out_sample_rate=24000</code> — the stream resampler aligns 8 kHz phone ↔ 24 kHz.</td></tr>
           <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Filters</strong></td><td><code>audio_in_filter=RNNoiseFilter()</code> (or Krisp/Koala/AIC).</td></tr>
@@ -457,7 +532,7 @@ ParallelPipeline([FunctionFilter(is_english), english_tts],
           <tr><td><a href="l17-thinking.html">17</a></td><td>Thinking</td><td>A reasoning escalation agent (budgeted thinking) — <a href="#a-thinking">code</a>.</td></tr>
           <tr><td><a href="l18-rag-memory.html">18</a></td><td>RAG &amp; memory</td><td>Billing grounds in a policy doc set + MCP long-term memory.</td></tr>
           <tr><td><a href="l19-flows.html">19</a></td><td>Flows</td><td>The billing agent runs a <code>FlowManager</code> verify→refund flow — <a href="#flows">coded above</a>.</td></tr>
-          <tr><td><a href="l20-interruptions-switching.html">20</a></td><td><strong>Barge-in</strong> / switching</td><td><code>allow_interruptions=True</code> (VAD-driven barge-in); an <code>LLMSwitcher</code> can fall back to a cheaper model.</td></tr>
+          <tr><td><a href="l20-interruptions-switching.html">20</a></td><td>Switching</td><td>VAD-driven barge-in is built in; an <code>LLMSwitcher</code> can fall back to a cheaper model mid-call.</td></tr>
           <tr><td><a href="l20-interruptions-switching.html">20</a></td><td>Idle detection</td><td><code>user_idle_timeout=20.0</code> nudges, then ends dead calls.</td></tr>
           <tr><td><a href="l21-summarization.html">21</a></td><td>Summarization</td><td><code>LLMContextSummarizer</code> compresses long calls (<code>RESET_WITH_SUMMARY</code>) — <a href="#a-summary">code</a>.</td></tr>
           <tr><td><a href="l05-pipeline-workers.html">5</a></td><td>Parallel pipelines</td><td>Speak two languages from one LLM stream — <a href="#a-parallel">code</a>.</td></tr>
