@@ -87,6 +87,8 @@ uv init my-atlas-a2a && cd my-atlas-a2a
 # core: Gemini Live + VAD + transports + MCP  (add per-service extras as you enable features)
 uv add "pipecat-ai[google,silero,webrtc,daily,mcp,rnnoise,soundfile]"
 uv add redis            # only for the distributed (RedisBus) mode
+# React web client (a separate front-end app):
+npm i @pipecat-ai/client-js @pipecat-ai/client-react @pipecat-ai/small-webrtc-transport
 cp .env.example .env    # then fill in the keys below</code></pre>
       </div>
 
@@ -106,7 +108,7 @@ cp .env.example .env    # then fill in the keys below</code></pre>
           <tr><td><code>GOOGLE_API_KEY</code></td><td><strong>Required</strong></td><td>Gemini Live — every agent (L15).</td></tr>
           <tr><td><code>REDIS_URL</code></td><td>Distributed mode</td><td><code>RedisBus</code> across processes/machines (L28).</td></tr>
           <tr><td><code>DAILY_API_KEY</code></td><td>If <code>-t daily</code></td><td>Daily WebRTC rooms (L6).</td></tr>
-          <tr><td><code>TWILIO_ACCOUNT_SID</code> / <code>TWILIO_AUTH_TOKEN</code></td><td>Phone</td><td>Telephony (Twilio); Exotel/Telnyx/Plivo/Vonage have their own (L30).</td></tr>
+          <tr><td>Exotel account SID / token / stream URL</td><td>Phone</td><td><strong>Exotel</strong> voice streaming — the phone path for this project (L30). Other providers (Twilio/Telnyx/Plivo/Vonage) have their own creds.</td></tr>
           <tr><td><code>SENTRY_DSN</code> / OTEL exporter</td><td>Optional</td><td>Analytics &amp; tracing dashboards (L23).</td></tr>
         </tbody>
       </table></div>
@@ -116,10 +118,11 @@ cp .env.example .env    # then fill in the keys below</code></pre>
         <thead><tr><th>Dependency</th><th>Needed for</th><th>Local dev?</th></tr></thead>
         <tbody>
           <tr><td>Redis (or Postgres/PGMQ)</td><td>The distributed bus (L28).</td><td>No — local uses the in-memory bus.</td></tr>
-          <tr><td>An MCP server (e.g. a stdio <code>memory-server</code>)</td><td>The billing agent's memory tool (L12).</td><td>Optional — omit the <code>MCPClient</code> line.</td></tr>
+          <tr><td>An MCP server (e.g. a stdio <code>memory-server</code>)</td><td>The billing agent's memory tool (L12).</td><td>Only if the billing agent uses MCP memory.</td></tr>
           <tr><td><code>assets/hold.mp3</code></td><td>The mixer hold-music bed (L14).</td><td>Any short MP3.</td></tr>
           <tr><td><code>policy/</code> docs (or a vector store)</td><td>RAG grounding for billing (L18).</td><td>Optional — a plain text file works.</td></tr>
-          <tr><td>ngrok</td><td>Exposing localhost for phone testing (L30).</td><td>Only for telephony.</td></tr>
+          <tr><td>Node + a React app</td><td>The web client UI (RTVI over SmallWebRTC, L29).</td><td>Optional — <code>http://localhost:7860/client/</code> also works for quick testing.</td></tr>
+          <tr><td>ngrok</td><td>Exposing localhost so Exotel can reach <code>/ws</code> (L30).</td><td>Only for telephony.</td></tr>
         </tbody>
       </table></div>
 
@@ -131,42 +134,44 @@ cp .env.example .env    # then fill in the keys below</code></pre>
       <h2 id="fullcode">The complete <code>bot.py</code> — with personas, all in one</h2>
       <p>One long, runnable file. It contains the full <strong>system-prompt personas</strong> for every agent and wires in <em>every</em> capability from the course. Fill in your keys, a hold-music file, and a policy doc set; the shape is production-real.</p>
       <pre><code class="language-python">"""Atlas — a Gemini Live agent-to-agent voice system (local + distributed).
-Assembles the whole 0-to-Hero course into one file.
+Assembles the whole 0-to-Hero course into one runnable file.
 """
-import os
-from dotenv import load_dotenv
+import os                                                     # read secrets (API keys) from the environment
+from dotenv import load_dotenv                                # load those secrets from a local .env file
 
-from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.worker import PipelineWorker, PipelineParams
-from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
-from pipecat.processors.filters.function_filter import FunctionFilter
-from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
-from pipecat.processors.aggregators.llm_context import LLMContext
-from pipecat.processors.aggregators.dtmf_aggregator import DTMFAggregator
-from pipecat.processors.aggregators.llm_response_universal import (
-    LLMContextAggregatorPair, LLMUserAggregatorParams)
-from pipecat.frames.frames import TranscriptionFrame, LLMRunFrame
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter        # or Krisp/Koala/AIC
-from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer
-from pipecat.turns.user_mute import (FunctionCallUserMuteStrategy,
-                                     MuteUntilFirstBotCompleteUserMuteStrategy)
-from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
-from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
-from pipecat.services.mcp_service import MCPClient
-from pipecat.workers.llm.llm_context_worker import LLMContextWorker
-from pipecat.workers.llm.tool_decorator import tool
-from pipecat.workers.llm import LLMWorkerActivationArgs
-from pipecat.workers.runner import WorkerRunner
-from pipecat.runner.types import RunnerArguments
-from pipecat.runner.utils import create_transport
-from pipecat.transports.base_transport import TransportParams
-from mcp import StdioServerParameters
-# from pipecat.bus.network.redis import RedisBus          # <-- DISTRIBUTED mode
+from pipecat.pipeline.pipeline import Pipeline                # an ordered list of processors = the agent's data flow
+from pipecat.pipeline.worker import PipelineWorker, PipelineParams   # runs a pipeline as one agent + its config knobs
+from pipecat.processors.frame_processor import FrameProcessor, FrameDirection  # base class for our custom Guardrail
+from pipecat.processors.filters.function_filter import FunctionFilter          # keep/drop frames by a predicate
+from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor  # tap audio to disk (recording)
+from pipecat.processors.aggregators.llm_context import LLMContext              # the running conversation (memory)
+from pipecat.processors.aggregators.dtmf_aggregator import DTMFAggregator      # phone keypad presses -> text
+from pipecat.processors.aggregators.llm_response_universal import (            # capture user/bot turns into context
+    LLMContextAggregatorPair, LLMUserAggregatorParams)                         #   and the place VAD/turns/muting attach
+from pipecat.frames.frames import TranscriptionFrame, LLMRunFrame              # frame types we react to / emit
+from pipecat.audio.vad.silero import SileroVADAnalyzer                         # voice-activity detection (for barge-in)
+from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter                 # clean the caller's mic (free filter)
+from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer                # blend a hold-music bed under speech
+from pipecat.turns.user_mute import (FunctionCallUserMuteStrategy,             # ignore the mic while a tool runs
+                                     MuteUntilFirstBotCompleteUserMuteStrategy) # ignore the mic until the intro ends
+from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver # measure response latency (read-only)
+from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService       # the speech-to-speech brain (STT+LLM+TTS)
+from pipecat.services.mcp_service import MCPClient                             # attach tools hosted by an MCP server
+from pipecat.workers.llm.llm_context_worker import LLMContextWorker            # an agent = its own LLM + context, on the bus
+from pipecat.workers.llm.tool_decorator import tool                           # expose a method to the LLM as a tool
+from pipecat.workers.llm import LLMWorkerActivationArgs                       # data handed to an agent when it is activated
+from pipecat.workers.runner import WorkerRunner                               # owns the bus and supervises every worker
+from pipecat.runner.types import RunnerArguments                             # what the runner / Pipecat Cloud passes to bot()
+from pipecat.runner.utils import create_transport                            # builds the right transport at launch
+from pipecat.transports.base_transport import TransportParams                # audio / video / filter / mixer config
+from mcp import StdioServerParameters                                        # how to launch the MCP tool server
+# from pipecat.bus.network.redis import RedisBus            # uncomment for DISTRIBUTED mode (agents across machines)
 
-load_dotenv(override=True)
+load_dotenv(override=True)                                    # pull GOOGLE_API_KEY etc. into os.environ
 
 # ─────────────────────────────  PERSONAS (system prompts)  ─────────────────────────────
+# A persona is the agent's system prompt — the single biggest lever on how it behaves.
+# TRIAGE — the front-desk router (greets, then hands off)
 TRIAGE_PERSONA = """
 You are Atlas, the warm front-desk voice agent for Acme Utilities.
 - Greet the caller in ONE friendly sentence.
@@ -177,7 +182,7 @@ You are Atlas, the warm front-desk voice agent for Acme Utilities.
 - If the caller wants multiple viewpoints or a judgment call, call consult(question).
 - Keep every spoken reply under two sentences. Speak numbers naturally, no emojis.
 """
-
+# BILLING — the billing specialist (grounds answers in policy via RAG)
 BILLING_PERSONA = """
 You are the Billing specialist for Acme Utilities. You have tools and policy documents.
 - Verify the account before any refund. Explain charges in plain language.
@@ -185,7 +190,7 @@ You are the Billing specialist for Acme Utilities. You have tools and policy doc
 - Ground every factual claim in the provided policy context (RAG). If unsure, say you
   will follow up rather than guess. Be concise and warm.
 """
-
+# SUPPORT — the support specialist (diagnoses outages / technical issues)
 SUPPORT_PERSONA = """
 You are the Support specialist for Acme Utilities.
 - Diagnose outages and technical issues; offer the smallest next step first.
@@ -193,138 +198,243 @@ You are the Support specialist for Acme Utilities.
 - Never promise a timeline you cannot confirm. Stay calm and reassuring.
 """
 
-def redact_pii(text: str) -> str:
-    return text     # plug in your PII redaction
+def redact_pii(text: str) -> str:                             # scrub sensitive data out of transcripts
+    return text                                               #   (stub — plug in your real redaction)
 
-def save_wav(audio, rate, ch):
-    pass            # persist a recorded chunk to disk (L22)
+def save_wav(audio, rate, ch):                                # write one recorded audio chunk to disk
+    pass                                                      #   (stub — see Lesson 22)
 
-def gemini(system: str) -> GeminiLiveLLMService:
+def gemini(system: str) -> GeminiLiveLLMService:              # helper: build a configured Gemini Live "brain"
     return GeminiLiveLLMService(
-        api_key=os.environ["GOOGLE_API_KEY"],
-        settings=GeminiLiveLLMService.Settings(system_instruction=system, voice="Aoede"))
+        api_key=os.environ["GOOGLE_API_KEY"],                 # your Google key (required for every agent)
+        settings=GeminiLiveLLMService.Settings(
+            system_instruction=system, voice="Aoede"))        # the persona to follow + the voice to speak in
 
 # ─────────────────────────────  MIC ON / OFF (L10)  ─────────────────────────────
-# The web client has a mute button (RTVI simply stops sending audio). Server-side you can
-# also pause the realtime agent's audio input directly — bind this to the RTVI "mute" event:
-async def set_mic(agent, on: bool):
-    await agent.llm.set_audio_input_paused(not on)   # on=False → MIC OFF, on=True → MIC ON
+async def set_mic(agent, on: bool):                           # server-side mic control (the client also has a mute button)
+    await agent.llm.set_audio_input_paused(not on)            # on=False -> MIC OFF, on=True -> MIC ON
     # (cascaded agents instead push an STTMuteFrame to mute the STT input)
 
 # ─────────────────────────────  CUSTOM PROCESSOR (L4)  ─────────────────────────────
-class Guardrail(FrameProcessor):
+class Guardrail(FrameProcessor):                              # a node you drop into the pipeline to inspect frames
     """Inspect every frame — here, redact PII from transcripts before they travel."""
     async def process_frame(self, frame, direction: FrameDirection):
-        await super().process_frame(frame, direction)
-        if isinstance(frame, TranscriptionFrame):
-            frame.text = redact_pii(frame.text)
-        await self.push_frame(frame, direction)
+        await super().process_frame(frame, direction)         # REQUIRED: let the base class run first
+        if isinstance(frame, TranscriptionFrame):             # act only on transcribed-speech frames
+            frame.text = redact_pii(frame.text)               # scrub PII before it reaches the LLM or logs
+        await self.push_frame(frame, direction)               # REQUIRED: forward the frame downstream
 
 # ─────────────────────────────  AGENTS (workers on the bus)  ─────────────────────────────
-class Specialist(LLMContextWorker):
+class Specialist(LLMContextWorker):                           # a specialist agent = its own Gemini brain + memory
     def __init__(self, name: str, persona: str):
-        super().__init__(name=name, llm=gemini(persona), context=LLMContext())
+        super().__init__(name=name, llm=gemini(persona), context=LLMContext())  # name it; give it a persona + context
 
-class Triage(LLMContextWorker):
+class Triage(LLMContextWorker):                               # the front-desk agent that routes callers
     def __init__(self):
-        super().__init__(name="triage", llm=gemini(TRIAGE_PERSONA), context=LLMContext())
+        super().__init__(name="triage", llm=gemini(TRIAGE_PERSONA), context=LLMContext())  # its own brain + memory
 
-    @tool
+    @tool                                                     # exposes this method to the LLM as a callable tool
     async def route(self, params, department: str, reason: str):
         """Transfer the caller to 'billing' or 'support' (L26 handoff)."""
-        await self.activate_worker(department, deactivate_self=True,
+        await self.activate_worker(department, deactivate_self=True,   # hand control to that agent; step aside
             args=LLMWorkerActivationArgs(
-                messages=[{"role": "developer", "content": f"Caller context: {reason}"}],
-                run_llm=True))
+                messages=[{"role": "developer", "content": f"Caller context: {reason}"}],  # pass context along
+                run_llm=True))                                # make the newly-active agent respond right away
 
-    @tool
+    @tool                                                     # a second tool: parallel "consult the committee"
     async def consult(self, params, question: str):
         """Ask billing AND support in parallel, then summarize (L27 fan-out)."""
-        async with params.pipeline_worker.job_group(
-                Specialist("billing_c", BILLING_PERSONA),
-                Specialist("support_c", SUPPORT_PERSONA)) as group:
-            answers = await group.run(question)
-        await params.result_callback({"answers": answers})
+        async with params.pipeline_worker.job_group(          # dispatch one job to several peers at once
+                Specialist("billing_c", BILLING_PERSONA),     # a throwaway billing worker for this job
+                Specialist("support_c", SUPPORT_PERSONA)) as group:   # and a support worker
+            answers = await group.run(question)               # wait for all peers to answer
+        await params.result_callback({"answers": answers})    # return the combined result to the LLM
 
 # ─────────────────────────────  MAIN WORKER (owns the media)  ─────────────────────────────
-# Filters (L7) + mixer/DTMF (L14) live on the transport the MAIN worker owns.
-transport_params = {"webrtc": lambda: TransportParams(
-    audio_in_enabled=True, audio_out_enabled=True,
-    audio_in_filter=RNNoiseFilter(),                                    # L7 noise filter
-    audio_out_mixer=SoundfileMixer(sound_files={"hold": "assets/hold.mp3"},
-                                   default_sound="hold", volume=0.15),   # L14 mixer
+transport_params = {"webrtc": lambda: TransportParams(        # "webrtc" = the REACT web client (SmallWebRTC + RTVI)
+    audio_in_enabled=True, audio_out_enabled=True,            # enable the mic in and the speaker out
+    audio_in_filter=RNNoiseFilter(),                          # L7: clean the caller's mic before anything else
+    audio_out_mixer=SoundfileMixer(sound_files={"hold": "assets/hold.mp3"},   # L14: a hold-music bed…
+                                   default_sound="hold", volume=0.15),        #      …played quietly under speech
 )}
-# TELEPHONY (L30): create_transport() auto-wires the serializer for
-#   Twilio / Telnyx / Plivo / EXOTEL / Vonage / Genesys — no code change.
+# TELEPHONY (L30): a phone call over EXOTEL hits the runner's /ws route; create_transport()
+#   auto-detects Exotel and wires ExotelFrameSerializer — no branching in bot code.
 
-async def run_bot(transport, runner_args):
-    context = LLMContext()
-    user_agg, assistant_agg = LLMContextAggregatorPair(context,
+async def run_bot(transport, runner_args):                    # build & run the whole system for one session
+    context = LLMContext()                                    # the triage/main conversation memory
+    user_agg, assistant_agg = LLMContextAggregatorPair(context,   # capture user & bot turns into that context
         user_params=LLMUserAggregatorParams(
-            vad_analyzer=SileroVADAnalyzer(),                  # L7 VAD → BARGE-IN (talk over the bot)
-            user_mute_strategies=[                             # L10 muting
-                MuteUntilFirstBotCompleteUserMuteStrategy(),
-                FunctionCallUserMuteStrategy()],
-            user_idle_timeout=20.0)).pair()                    # L20 idle nudge → end dead calls
+            vad_analyzer=SileroVADAnalyzer(),                 # L7 VAD -> BARGE-IN (caller can talk over the bot)
+            user_mute_strategies=[                            # L10 muting: ignore the mic when it would cause bugs…
+                MuteUntilFirstBotCompleteUserMuteStrategy(),  #      …until the greeting finishes
+                FunctionCallUserMuteStrategy()],              #      …and while a tool is running
+            user_idle_timeout=20.0)).pair()                   # L20: nudge, then end, after 20s of silence
 
-    guardrail = Guardrail()                                    # L4 custom processor
-    speech_only = FunctionFilter(lambda f: True)               # L4 frame filter
-    dtmf_agg = DTMFAggregator()                                # L14 phone keypad presses → text
-    recorder = AudioBufferProcessor()                          # L22 recording
+    guardrail = Guardrail()                                   # L4 custom processor (PII redaction)
+    speech_only = FunctionFilter(lambda f: True)              # L4 frame filter (drop unwanted frame types)
+    dtmf_agg = DTMFAggregator()                               # L14 turn phone keypad presses into text
+    recorder = AudioBufferProcessor()                         # L22 tap the audio stream to disk for QA
 
-    io = Pipeline([transport.input(), guardrail, dtmf_agg, user_agg,
-                   gemini(TRIAGE_PERSONA), speech_only,
-                   assistant_agg, transport.output(), recorder])
+    io = Pipeline([transport.input(),                         # 1. mic / network audio comes in
+                   guardrail, dtmf_agg, user_agg,             # 2. guardrail -> keypad -> remember the user's turn
+                   gemini(TRIAGE_PERSONA), speech_only,       # 3. the triage brain replies -> frame filter
+                   assistant_agg, transport.output(),         # 4. remember the bot's turn -> play audio out
+                   recorder])                                 # 5. record the whole conversation
     # cascaded specialists can also add BackchannelProcessor() (L31) + MarkdownTextFilter (L13)
 
-    # LOCAL: in-memory AsyncQueueBus (default). DISTRIBUTED: swap the one line below.
-    runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
-    # runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))   # L28 distributed
+    runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)   # LOCAL: owns an in-memory bus (default)
+    # runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))  # DISTRIBUTED: one line changes (L28)
 
-    main = PipelineWorker(io, bus=runner.bus,
+    main = PipelineWorker(io, bus=runner.bus,                 # the main agent: owns the transport, bridges to the bus
         params=PipelineParams(
-            enable_metrics=True, enable_usage_metrics=True,    # L23 metrics
-            enable_tracing=True,                               # L23 OpenTelemetry / Sentry / Langfuse
-            enable_heartbeats=True,                            # L23 health heartbeats
-            allow_interruptions=True,                          # L20 barge-in enabled
-            audio_in_sample_rate=8000,                         # L7 RESAMPLER ("sampler")
-            audio_out_sample_rate=24000),                      #     aligns 8 kHz phone ↔ 24 kHz audio
-        observers=[UserBotLatencyObserver()])                  # L23 observer
+            enable_metrics=True, enable_usage_metrics=True,   # L23 collect TTFB + token/usage metrics
+            enable_tracing=True,                              # L23 export spans to OpenTelemetry / Sentry / Langfuse
+            enable_heartbeats=True,                           # L23 emit health heartbeats
+            allow_interruptions=True,                         # L20 barge-in: stop speaking when the user talks
+            audio_in_sample_rate=8000,                        # L7 phone audio is 8 kHz…
+            audio_out_sample_rate=24000),                     #      …model audio is 24 kHz; the resampler bridges them
+        observers=[UserBotLatencyObserver()])                 # L23 watch latency read-only
 
-    # EVENTS (Appendix G): react to lifecycle hooks
-    @transport.event_handler("on_client_connected")
+    @transport.event_handler("on_client_connected")           # EVENT (Appendix G): a caller / web client joined
     async def _(t, client):
-        await main.queue_frames([LLMRunFrame()])               # greet the caller on connect
-    @recorder.event_handler("on_audio_data")
+        await main.queue_frames([LLMRunFrame()])              # make the bot greet first
+    @recorder.event_handler("on_audio_data")                  # EVENT: the recorder produced an audio buffer
     async def _(proc, audio, sample_rate, num_channels):
-        save_wav(audio, sample_rate, num_channels)             # persist the recording (L22)
+        save_wav(audio, sample_rate, num_channels)            # persist it to disk (L22)
 
-    # Billing gets RAG grounding + an MCP memory server (L18, L12)
-    billing = Specialist("billing", BILLING_PERSONA)
-    await MCPClient(StdioServerParameters(command="memory-server")).register_tools(billing.llm)
+    billing = Specialist("billing", BILLING_PERSONA)          # build the billing specialist agent (RAG persona)
+    await MCPClient(StdioServerParameters(command="memory-server")) \
+        .register_tools(billing.llm)                          # L12: give billing an MCP memory tool
 
-    await runner.add_workers(Triage(), billing, Specialist("support", SUPPORT_PERSONA), main)
-    await runner.run()
+    await runner.add_workers(Triage(), billing,               # register triage + billing…
+                             Specialist("support", SUPPORT_PERSONA), main)   # …+ support + the main worker
+    await runner.run()                                        # start everything; block until shutdown
 
-# (attach recorder.on_audio_data to persist WAVs — see L22)
+async def bot(runner_args: RunnerArguments):                  # the entry point the runner / Pipecat Cloud calls (L33)
+    transport = await create_transport(runner_args, transport_params)   # pick WebRTC (React) or Exotel (phone)
+    await run_bot(transport, runner_args)                     # run the system for this session
 
-async def bot(runner_args: RunnerArguments):                   # entry point (also Pipecat Cloud, L33)
-    transport = await create_transport(runner_args, transport_params)
-    await run_bot(transport, runner_args)
-
-if __name__ == "__main__":
-    from pipecat.runner.run import main
+if __name__ == "__main__":                                    # when you run `python bot.py` directly…
+    from pipecat.runner.run import main                       # …import the dev server
     main()</code></pre>
       <div class="box start">
         <p class="title">▶️ Run it</p>
-        <pre><code class="language-bash">uv run python bot.py                       # LOCAL — one process, in-memory bus
-uv run python bot.py -t twilio -x &lt;host&gt;    # on a phone (Twilio/Telnyx/Plivo/Exotel/Vonage)
+        <pre><code class="language-bash">uv run python bot.py            # serves the React web client at http://localhost:7860/client/
+ngrok http 7860                 # expose it, then point Exotel's Voice Streaming URL at wss://&lt;host&gt;/ws
 # DISTRIBUTED: uncomment the RedisBus line, start Redis, run bot.py in each process</code></pre>
       </div>
       <div class="box py">
         <p class="title">🐍 The whole point, in one line</p>
         <p>Local vs. distributed is <em>only</em> the <code>bus=</code> argument. Agents, personas, tools, handoff, and fan-out are byte-for-byte identical — develop locally, scale out without a rewrite.</p>
       </div>
+
+      <h2 id="clients">Two clients, one bot: React web + Exotel phone</h2>
+      <p>You'll use both a <strong>React web app</strong> and an <strong>Exotel phone line</strong> — and the same <code>bot(runner_args)</code> serves both. <code>create_transport()</code> builds the right transport from how the caller arrived, so there's no branching in your bot.</p>
+      <div class="pcflow" data-dur="7"
+           data-stages="React app:WebRTC|POST /api/offer|create_transport|bot(runner_args)|Exotel:/ws stream|ExotelFrameSerializer"
+           data-caption="Your React app connects over WebRTC (RTVI)|hitting the runner's /api/offer endpoint|create_transport builds a SmallWebRTC transport|and calls your bot|meanwhile a phone call streams to /ws|which the runner wires with ExotelFrameSerializer — same bot">
+      </div>
+
+      <h3 id="react">React web client</h3>
+      <pre><code class="language-bash">npm i @pipecat-ai/client-js @pipecat-ai/client-react @pipecat-ai/small-webrtc-transport</code></pre>
+      <pre><code class="language-javascript">import { RTVIClient } from "@pipecat-ai/client-js";
+import { RTVIClientProvider, RTVIClientAudio, useRTVIClient } from "@pipecat-ai/client-react";
+import { SmallWebRTCTransport } from "@pipecat-ai/small-webrtc-transport";
+
+const client = new RTVIClient({
+  transport: new SmallWebRTCTransport(),
+  params: { baseUrl: "http://localhost:7860", endpoints: { connect: "/api/offer" } },
+  enableMic: true, enableCam: false,          // mic on/off maps to L10
+});
+
+function App() {
+  return (
+    &lt;RTVIClientProvider client={client}&gt;
+      &lt;RTVIClientAudio /&gt;                      {/* plays the bot's audio */}
+      &lt;MicButton /&gt;                            {/* toggles the mic — barge-in still works */}
+    &lt;/RTVIClientProvider&gt;
+  );
+}
+
+function MicButton() {
+  const client = useRTVIClient();
+  return &lt;button onClick={() =&gt; client.enableMic(!client.isMicEnabled)}&gt;Mute&lt;/button&gt;;
+}</code></pre>
+      <p>The client speaks <strong>RTVI</strong> (Lesson 29): it receives the bot's audio, transcripts, and metrics events, and its mute button is the client side of "mic on/off".</p>
+
+      <h3 id="exotel">Exotel phone line</h3>
+      <p>Exotel streams call audio over a websocket to your public URL. The dev runner exposes <code>/ws</code>; <code>parse_telephony_websocket()</code> detects Exotel and wires <code>ExotelFrameSerializer</code> automatically — no code change.</p>
+      <pre><code class="language-bash">ngrok http 7860
+# In Exotel: set your App's Voice Streaming (Bidirectional) URL to  wss://&lt;ngrok-host&gt;/ws</code></pre>
+      <div class="box py"><p class="title">🐍 Same bot, both paths</p>
+        <p>Because both clients hit the one dev server and the one <code>bot()</code>, your agents, personas, tools, and A2A logic are identical whether the user is on the web or the phone. Only the transport differs — and the runner picks it.</p></div>
+
+      <h2 id="flows">Where Flows fits — and why it wasn't in the base build</h2>
+      <div class="box concept">
+        <p class="title">🧠 Why the base build used personas, not Flows</p>
+        <p>Triage, handoff, and <code>consult</code> are <strong>free-form</strong> conversations — the LLM decides what to say next — so a persona prompt is enough and simpler. <strong>Flows</strong> (Lesson 19) earns its keep when a task has <em>strict, ordered, gated steps</em>: verify identity before anything else, collect every field of a form, follow a compliance script. The billing refund is exactly that — you must verify the account <em>before</em> a refund is even possible — so we wire a Flow onto the billing agent.</p>
+      </div>
+      <div class="pcflow" data-dur="8"
+           data-stages="verify node:ask account #|check_account|verified?|refund node|issue_refund|done"
+           data-caption="The billing agent starts in the 'verify' node|it asks for the account number and calls check_account|if it matches, the flow advances; if not, it stays and retries|only now is the 'refund' node reachable|the refund tool runs — gated behind verification|the task completes reliably, every time">
+      </div>
+      <pre><code class="language-python">from pipecat.flows import FlowManager, NodeConfig   # structured, step-by-step conversations (L19)
+
+def verify_node() -> NodeConfig:                              # STEP 1 — must happen before any refund
+    return NodeConfig(
+        name="verify",
+        task_messages=[{"role": "system", "content": "Ask the caller for their account number."}],
+        functions=[check_account])                            # only THIS tool is allowed in this node
+
+async def check_account(flow_manager: FlowManager, account: str):   # returns (what to say, NEXT node)
+    if await lookup_account(account):                         # your real verification lookup
+        return "Thanks, you're verified.", refund_node()      # advance to the refund step
+    return "I couldn't find that account, let's try again.", verify_node()   # stay and retry
+
+def refund_node() -> NodeConfig:                              # STEP 2 — only reachable once verified
+    return NodeConfig(name="refund",
+        task_messages=[{"role": "system", "content": "Now process the refund."}],
+        functions=[issue_refund])                             # the refund tool is gated behind verification
+
+# wire the flow onto the billing agent (inside run_bot, right after you build `billing`):
+flow = FlowManager(llm=billing.llm, context_aggregator=billing.user_aggregator, worker=billing)
+await flow.initialize(verify_node())                          # start the caller at STEP 1</code></pre>
+
+      <h2 id="addons">Optional add-ons — drop-in real code</h2>
+      <p>These features from the course don't fit the phone-support scenario by default, so they're shown here as ready-to-paste snippets rather than cluttering the main file. Each is one small addition.</p>
+
+      <h3 id="a-vision">Vision (L16) — "show me the problem"</h3>
+      <pre><code class="language-python">from pipecat.frames.frames import UserImageRequestFrame
+# ask the caller's camera for the current frame; a vision-capable Gemini agent then describes it:
+await main.queue_frames([UserImageRequestFrame(user_id)])     # e.g. "show me the damaged meter"</code></pre>
+
+      <h3 id="a-thinking">Thinking (L17) — a reasoning escalation agent</h3>
+      <pre><code class="language-python">from pipecat.services.anthropic.llm import AnthropicLLMService
+# a specialist that reasons before answering hard cases (hidden thinking, budgeted):
+escalation = AnthropicLLMService(api_key=os.environ["ANTHROPIC_API_KEY"],
+    settings=AnthropicLLMService.Settings(enable_thinking=True, thinking_budget_tokens=1024))</code></pre>
+
+      <h3 id="a-summary">Summarization (L21) — compress long calls</h3>
+      <pre><code class="language-python">from pipecat.processors.aggregators.llm_context_summarizer import LLMContextSummarizer
+summarizer = LLMContextSummarizer(llm=billing.llm, token_threshold=4000)  # summarize old turns
+# add `summarizer` to a cascaded specialist's pipeline, just before its LLM</code></pre>
+
+      <h3 id="a-translate">Translation (L8) — multilingual callers</h3>
+      <pre><code class="language-python"># cascaded STT: language="multi" (Deepgram) or None (Whisper) auto-detects the language;
+# or use a Gladia translation STT so the agent understands and replies in the caller's language.</code></pre>
+
+      <h3 id="a-skip">Skip reading code aloud (L13)</h3>
+      <pre><code class="language-python">from pipecat.processors.aggregators.llm_text_processor import LLMTextProcessor, PatternPairAggregator
+agg = PatternPairAggregator()
+agg.add_pattern(type="code", start_pattern="&lt;code&gt;", end_pattern="&lt;/code&gt;")   # mark code spans
+# put LLMTextProcessor(text_aggregator=agg) before TTS, and pass skip_aggregator_types=["code"]
+# to the TTS service so code blocks flow to the UI but are NOT spoken.</code></pre>
+
+      <h3 id="a-parallel">Parallel output (L5) — speak two languages at once</h3>
+      <pre><code class="language-python">from pipecat.pipeline.parallel_pipeline import ParallelPipeline
+# one LLM stream, two TTS branches — each branch filters the frames it should speak:
+ParallelPipeline([FunctionFilter(is_english), english_tts],
+                 [FunctionFilter(is_spanish), spanish_tts])</code></pre>
 
       <h2 id="applied">Everything, applied — every chapter in this one file</h2>
       <p>This is a <strong>voice-to-voice</strong> system, so STT + TTS + LLM (L8, 11, 13) collapse into <strong>Gemini Live</strong> (L15). Here is where <em>every other</em> capability appears above — the few inherently N/A for a realtime agent are marked.</p>
@@ -343,13 +453,16 @@ uv run python bot.py -t twilio -x &lt;host&gt;    # on a phone (Twilio/Telnyx/Pl
           <tr><td><a href="l12-function-calling.html">12</a></td><td>Tools &amp; MCP</td><td><code>@tool route/consult</code>; billing registers an <strong>MCP</strong> memory server.</td></tr>
           <tr><td><a href="l14-output-playback.html">14</a></td><td>Output / mixer / DTMF</td><td><code>audio_out_mixer=SoundfileMixer(...)</code> hold bed; <code>DTMFAggregator()</code> turns keypad presses into text.</td></tr>
           <tr><td><a href="l15-realtime.html">15</a></td><td>Realtime engine</td><td><code>GeminiLiveLLMService</code> for every agent.</td></tr>
-          <tr><td><a href="l16-vision-video.html">16</a></td><td>Vision</td><td>A Gemini agent accepts camera frames on request.</td></tr>
-          <tr><td><a href="l17-thinking.html">17</a></td><td>Thinking</td><td>A specialist can use a reasoning model for escalations.</td></tr>
+          <tr><td><a href="l16-vision-video.html">16</a></td><td>Vision</td><td>A Gemini agent accepts camera frames on request — <a href="#a-vision">code</a>.</td></tr>
+          <tr><td><a href="l17-thinking.html">17</a></td><td>Thinking</td><td>A reasoning escalation agent (budgeted thinking) — <a href="#a-thinking">code</a>.</td></tr>
           <tr><td><a href="l18-rag-memory.html">18</a></td><td>RAG &amp; memory</td><td>Billing grounds in a policy doc set + MCP long-term memory.</td></tr>
-          <tr><td><a href="l19-flows.html">19</a></td><td>Flows</td><td>An intake specialist can run a structured verification Flow.</td></tr>
+          <tr><td><a href="l19-flows.html">19</a></td><td>Flows</td><td>The billing agent runs a <code>FlowManager</code> verify→refund flow — <a href="#flows">coded above</a>.</td></tr>
           <tr><td><a href="l20-interruptions-switching.html">20</a></td><td><strong>Barge-in</strong> / switching</td><td><code>allow_interruptions=True</code> (VAD-driven barge-in); an <code>LLMSwitcher</code> can fall back to a cheaper model.</td></tr>
           <tr><td><a href="l20-interruptions-switching.html">20</a></td><td>Idle detection</td><td><code>user_idle_timeout=20.0</code> nudges, then ends dead calls.</td></tr>
-          <tr><td><a href="l21-summarization.html">21</a></td><td>Summarization</td><td>Summarize long calls before handoff (<code>RESET_WITH_SUMMARY</code>).</td></tr>
+          <tr><td><a href="l21-summarization.html">21</a></td><td>Summarization</td><td><code>LLMContextSummarizer</code> compresses long calls (<code>RESET_WITH_SUMMARY</code>) — <a href="#a-summary">code</a>.</td></tr>
+          <tr><td><a href="l05-pipeline-workers.html">5</a></td><td>Parallel pipelines</td><td>Speak two languages from one LLM stream — <a href="#a-parallel">code</a>.</td></tr>
+          <tr><td><a href="l13-tts.html">13</a></td><td>Skip-TTS / text filters</td><td>Don't read code blocks aloud (<code>PatternPairAggregator</code>) — <a href="#a-skip">code</a>.</td></tr>
+          <tr><td><a href="l08-stt.html">8</a></td><td>Translation</td><td>Multilingual callers (Deepgram <code>multi</code> / Gladia) — <a href="#a-translate">code</a>.</td></tr>
           <tr><td><a href="l22-transcripts-recording.html">22</a></td><td>Recording / transcripts</td><td><code>AudioBufferProcessor()</code> records the call.</td></tr>
           <tr><td><a href="l23-observability.html">23</a></td><td>Metrics</td><td><code>enable_metrics=True</code> + <code>UserBotLatencyObserver()</code>.</td></tr>
           <tr><td><a href="l23-observability.html">23</a></td><td>Tracing / analytics / heartbeats</td><td><code>enable_tracing=True</code> (OpenTelemetry/Sentry/Langfuse) + <code>enable_heartbeats=True</code>.</td></tr>
@@ -359,7 +472,8 @@ uv run python bot.py -t twilio -x &lt;host&gt;    # on a phone (Twilio/Telnyx/Pl
           <tr><td><a href="l27-job-coordination.html">27</a></td><td>Job coordination</td><td><code>consult()</code> → <code>job_group(...)</code> fan-out + synthesize.</td></tr>
           <tr><td><a href="l28-distributed-proxy.html">28</a></td><td>Distributed / proxy</td><td>Swap <code>bus=</code> to <code>RedisBus</code>/<code>PgmqBus</code>; proxy for remote agents.</td></tr>
           <tr><td><a href="l29-uiworker-rtvi.html">29</a></td><td>UIWorker / RTVI</td><td>Add a <code>UIWorker</code> to stream call state + job cards to a web client.</td></tr>
-          <tr><td><a href="l30-runner-telephony.html">30</a></td><td>Telephony (incl. <strong>Exotel</strong>)</td><td><code>bot()</code> + auto-wired serializer: Twilio/Telnyx/Plivo/<strong>Exotel</strong>/Vonage.</td></tr>
+          <tr><td><a href="l30-runner-telephony.html">30</a></td><td>Telephony (<strong>Exotel</strong>)</td><td>Phone call → runner <code>/ws</code> → auto-wired <code>ExotelFrameSerializer</code>. Same <code>bot()</code>.</td></tr>
+          <tr><td><a href="l29-uiworker-rtvi.html">29</a></td><td><strong>React web client</strong></td><td>The RTVI client SDK (<code>@pipecat-ai/client-react</code> + SmallWebRTC) connects to the same <code>bot()</code> — mic button, audio, transcripts.</td></tr>
           <tr><td><a href="l31-ivr-voicemail.html">31</a></td><td>IVR / voicemail</td><td>An outbound variant adds <code>IvrNavigator</code> + <code>VoicemailDetector</code>.</td></tr>
           <tr><td><a href="l31-ivr-voicemail.html">31</a></td><td>Backchannel</td><td>Cascaded specialists add <code>BackchannelProcessor()</code> for "mm-hmm" active listening.</td></tr>
           <tr><td><a href="l32-integrations.html">32</a></td><td>Integrations</td><td>A specialist can wrap a LangChain / Strands agent.</td></tr>
