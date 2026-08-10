@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTVI (Real-Time Voice Interaction) · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>RTVI (Real-Time Voice Interaction)</h1>
+<blockquote>Build real-time voice and multimodal applications with Pipecat’s RTVI protocol</blockquote>
+<p>Pipecat's RTVI (Real-Time Voice Interaction) protocol provides a standardized communication layer between clients and servers for building real-time voice and multimodal applications. It handles the synchronization of user and bot interactions, transcriptions, LLM processing, and text-to-speech delivery.</p>
+<p>This page provides an overview of RTVI from the server's perspective and how to use it in your bot applications.</p>
+<p>&lt;Card title="RTVI Protocol" icon="left-right" href="/client/rtvi-standard"&gt;   A complete specification of the RTVI protocol for client-server communication. &lt;/Card&gt;</p>
+<h2>Architecture</h2>
+<p>RTVI operates with two primary components:</p>
+<ol><li><a href="./rtvi-processor"><strong>RTVIProcessor</strong></a> - A frame processor residing in the pipeline that serves as the entry point for sending and receiving messages to/from the client.</li></ol>
+<ol><li><a href="./rtvi-observer"><strong>RTVIObserver</strong></a> - An observer that monitors pipeline events and translates them into client-compatible messages, handling:</li><li>Speaking state changes</li><li>Transcription updates</li><li>LLM responses</li><li>TTS events</li><li>Performance metrics</li></ol>
+<p>&lt;Note&gt;   RTVI is enabled by default. When you create a <code>PipelineWorker</code>, it   automatically adds <code>RTVIProcessor</code> to the start of your pipeline and registers   an <code>RTVIObserver</code>. The default <code>on_client_ready</code> handler calls   <code>set_bot_ready()</code> automatically. &lt;/Note&gt;</p>
+<h2>Basic Example</h2>
+<p>With automatic RTVI setup, your pipeline code can focus on core functionality:</p>
+<pre><code>pipeline = Pipeline(
+    [
+        transport.input(),
+        stt,
+        context_aggregator.user(),
+        llm,
+        tts,
+        transport.output(),
+        context_aggregator.assistant(),
+    ]
+)
+
+# Add the RTVIObserver to your pipeline worker
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        enable_metrics=True,
+        enable_usage_metrics=True,
+    ),
+)
+
+# Access the RTVI processor via worker.rtvi
+@worker.rtvi.event_handler("on_client_ready")
+async def on_client_ready(rtvi):
+    # set_bot_ready() is called automatically, add custom logic here
+    await worker.queue_frames([LLMRunFrame()])
+
+# Handle participant disconnection
+@transport.event_handler("on_participant_left")
+async def on_participant_left(transport, participant, reason):
+    await worker.cancel()
+
+# Run the pipeline
+runner = WorkerRunner()
+await runner.run(worker)</code></pre>
+<h2>Customizing RTVI</h2>
+<p>You can customize RTVI behavior through <code>PipelineWorker</code> parameters:</p>
+<pre><code>from pipecat.processors.frameworks.rtvi import RTVIProcessor, RTVIObserverParams
+
+worker = PipelineWorker(
+    pipeline,
+    rtvi_processor=RTVIProcessor(),  # Provide your own processor
+    rtvi_observer_params=RTVIObserverParams(...),  # Customize observer
+)</code></pre>
+<p>To disable RTVI entirely:</p>
+<pre><code>worker = PipelineWorker(pipeline, enable_rtvi=False)</code></pre>
+<h2>Protocol Flow</h2>
+<ol><li>Client connects and sends a <code>client-ready</code> message</li><li>Server responds with <code>bot-ready</code> and initial configuration</li><li>Client and server exchange real-time events:</li><li>Speaking state changes (<code>user/bot-started/stopped-speaking</code>)</li><li>Transcriptions (<code>user-transcription/bot-output</code>)</li><li>LLM processing (<code>bot-llm-started/stopped</code>, <code>bot-llm-text</code>, <code>llm-function-call</code>)</li><li>TTS events (<code>bot-tts-started/stopped</code>, <code>bot-tts-text</code>, <code>bot-tts-audio</code>)</li></ol>
+<h2>Key Components</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="RTVIProcessor" icon="gear" href="/api-reference/server/rtvi/rtvi-processor"&gt;     Configure and manage RTVI services, actions, and client communication   &lt;/Card&gt;</p>
+<p>  &lt;Card title="RTVIObserver" icon="magnifying-glass" href="/api-reference/server/rtvi/rtvi-observer"&gt;     Translate internal pipeline events to standardized client messages   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Client Integration</h2>
+<p>RTVI is implemented in Pipecat client SDKs, providing a high-level API to interact with the protocol. Visit the Pipecat Client SDKs documentation:</p>
+<p>&lt;Card title="Client SDKs" icon="mobile-screen" href="/client/introduction"&gt;   Learn how to implement RTVI on the client-side with our JavaScript, React, and   mobile SDKs &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/rtvi/introduction">https://docs.pipecat.ai/api-reference/server/rtvi/introduction</a></p>
+</div></main></div></body></html>

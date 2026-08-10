@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Build Logs · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Get Build Logs</h1>
+<blockquote>GET /builds/{buildId}/logs returns the build logs for a specific Pipecat Cloud build.</blockquote>
+<h2>Streaming Logs During Build</h2>
+<p>You can poll this endpoint during a build to stream logs in real-time. The endpoint returns the latest logs each time you call it:</p>
+<pre><code>BUILD_ID="123e4567-e89b-12d3-a456-426614174000"
+
+while true; do
+  RESPONSE=$(curl -s "https://api.pipecat.daily.co/v1/builds/$BUILD_ID/logs?limit=100" \
+    -H "Authorization: Bearer $PIPECAT_API_KEY")
+
+  echo "$RESPONSE" | jq -r '.logs[]'
+
+  # Check if build is still in progress
+  BUILD_STATUS=$(curl -s "https://api.pipecat.daily.co/v1/builds/$BUILD_ID" \
+    -H "Authorization: Bearer $PIPECAT_API_KEY" | jq -r '.build.status')
+
+  if [[ "$BUILD_STATUS" == "success" || "$BUILD_STATUS" == "failed" || "$BUILD_STATUS" == "timeout" ]]; then
+    echo "Build finished with status: $BUILD_STATUS"
+    break
+  fi
+
+  sleep 5
+done</code></pre>
+<h2>Pagination</h2>
+<p>Use the <code>limit</code> query parameter to control how many log lines are returned:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Min</th><th>Max</th><th>Description</th></tr></thead><tbody><tr><td><code>limit</code></td><td>500</td><td>1</td><td>10,000</td><td>Number of log events to return</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Logs may be empty if the build was just created and hasn't started executing   yet. Continue polling until logs appear or the build completes. &lt;/Note&gt;</p>
+<h2>Debugging Failed Builds</h2>
+<p>When a build fails, use this endpoint to diagnose the issue:</p>
+<pre><code>BUILD_ID="123e4567-e89b-12d3-a456-426614174000"
+
+# Get the full build logs
+curl -s "https://api.pipecat.daily.co/v1/builds/$BUILD_ID/logs?limit=10000" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY" | jq -r '.logs[]'</code></pre>
+<p>Common issues visible in build logs include:</p>
+<ul><li>Missing dependencies in <code>requirements.txt</code></li><li>Dockerfile syntax errors</li><li>Failed <code>pip install</code> commands</li><li>Missing files referenced in <code>COPY</code> instructions</li></ul>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /builds/{buildId}/logs:
+    get:
+      summary: Get build logs
+      description: &gt;-
+        Retrieve the logs for a specific build. Returns log lines from the build
+        process, useful for monitoring progress or debugging failures.
+      operationId: getBuildLogs
+      parameters:
+        - name: buildId
+          in: path
+          required: true
+          description: Unique identifier of the build.
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of log events to return.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 500
+          example: 500
+      responses:
+        '200':
+          description: Build logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBuildLogsResponse'
+        '400':
+          description: Invalid build ID format or invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Build not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    GetBuildLogsResponse:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            type: string
+          description: &gt;-
+            Array of log lines from the build process. May be empty if the build
+            hasn't started generating logs yet.
+          example:
+            - '[Container] 2026/03/04 10:00:00 Entering phase: INSTALL'
+            - &gt;-
+              [Container] 2026/03/04 10:00:01 Running command pip install -r
+              requirements.txt
+            - &gt;-
+              [Container] 2026/03/04 10:00:05 Successfully installed
+              pipecat-ai-0.1.0
+        nextToken:
+          type: string
+          description: &gt;-
+            Pagination token for retrieving additional logs. Present when more
+            logs are available.
+          example: eyJuZXh0VG9rZW4iOiAiYWJjMTIzIn0=
+      required:
+        - logs
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Authentication using a Pipecat Cloud API token.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get-logs">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get-logs</a></p>
+</div></main></div></body></html>

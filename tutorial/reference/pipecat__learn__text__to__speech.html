@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text to Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Text to Speech</h1>
+<blockquote>Learn how to configure speech synthesis to convert text into natural-sounding audio in your voice AI pipeline</blockquote>
+<p><strong>Text to Speech (TTS)</strong> services are responsible for converting text into natural-sounding speech audio. They receive text input from LLMs and other sources, then generate audio output that users can hear through their connected devices.</p>
+<h2>Pipeline Placement</h2>
+<p>TTS processors must be positioned correctly in your pipeline to receive text and generate audio frames:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    stt,
+    context_aggregator.user(),
+    llm,                           # Generates LLMTextFrames
+    tts,                           # Processes text → creates TTSAudioRawFrames
+    transport.output(),            # Sends audio to user
+    context_aggregator.assistant(), # Processes TTSTextFrames for context
+])</code></pre>
+<p><strong>Placement requirements:</strong></p>
+<ul><li><strong>After LLM processing</strong>: TTS needs <code>LLMTextFrame</code>s from language model responses</li><li><strong>Before transport output</strong>: Audio must be generated before sending to user</li><li><strong>Before assistant context aggregator</strong>: Ensures spoken text is captured in conversation history</li></ul>
+<h3>Frame Processing Flow</h3>
+<p><strong>TTS generates speech through two primary mechanisms:</strong></p>
+<ol><li><strong>Streamed LLM tokens</strong> via <code>LLMTextFrame</code>s:</li></ol>
+<ul><li>By default, TTS aggregates streaming tokens into complete sentences before synthesis (<code>TextAggregationMode.SENTENCE</code>)</li><li>Set <code>text_aggregation_mode=TextAggregationMode.TOKEN</code> to stream tokens directly for lower latency</li><li>Audio bytes stream back and play immediately</li><li>End-to-end latency often under 200ms</li></ul>
+<ol><li><strong>Direct speech requests</strong> via <code>TTSSpeakFrame</code>s:</li><li>Bypasses LLM for immediate audio generation</li><li>Optionally appends text to conversation context via <code>append_to_context</code> parameter</li><li>Useful for developer messages, greetings, or injected speech</li></ol>
+<p><strong>Frame output:</strong></p>
+<ul><li><code>TTSAudioRawFrame</code>s: Raw audio data for playback</li><li><code>TTSTextFrame</code>s: Text that was actually spoken (for context updates)</li><li><code>TTSStartedFrame</code>/<code>TTSStoppedFrame</code>: Speech boundary markers</li></ul>
+<h2>Supported TTS Services</h2>
+<p>Pipecat supports a wide range of TTS providers with different capabilities and performance characteristics:</p>
+<p>&lt;Card title="Supported TTS Services" icon="list" href="/api-reference/server/services/supported-services#text-to-speech"&gt;   View the complete list of supported text-to-speech providers &lt;/Card&gt;</p>
+<h3>Service Categories</h3>
+<p><strong>WebSocket-Based Services (Recommended):</strong></p>
+<ul><li><strong>Cartesia</strong>: Ultra-low latency with word timestamps</li><li><strong>ElevenLabs</strong>: High-quality voices with emotion control</li><li><strong>Rime</strong>: Ultra-realistic voices with advanced features</li></ul>
+<p><strong>HTTP-Based Services:</strong></p>
+<ul><li><strong>OpenAI TTS</strong>: High-quality synthesis with multiple voices</li><li><strong>Azure Speech</strong>: Enterprise-grade with extensive language support</li><li><strong>Google Text-to-Speech</strong>: Reliable with WaveNet voices</li></ul>
+<p><strong>Advanced Features:</strong></p>
+<ul><li><strong>Word timestamps</strong>: Enable word-level accuracy for context and subtitles</li><li><strong>Voice cloning</strong>: Custom voice creation from samples</li><li><strong>Emotion control</strong>: Dynamic emotional expression</li><li><strong>SSML support</strong>: Fine-grained pronunciation control</li></ul>
+<p>&lt;Note&gt;   WebSocket services typically provide the lowest latency, while HTTP services   may have intermittent higher latency due to their request/response nature. &lt;/Note&gt;</p>
+<h2>TTS Configuration</h2>
+<h3>Service-Specific Configuration</h3>
+<p>Each TTS service has its own configuration options. Here's an example with Cartesia:</p>
+<pre><code>from pipecat.services.cartesia.tts import CartesiaTTSService
+from pipecat.transcriptions.language import Language
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaTTSService.Settings(
+        model="sonic-3.5",
+        voice="voice-id-here",
+        language=Language.EN,     # Speech language
+    ),
+    # Word timestamps automatically enabled for precise context updates
+)</code></pre>
+<p><strong>Word timestamps:</strong> Services like Cartesia, ElevenLabs, and Rime provide word-level timestamps that enable precise context updates during interruptions and better synchronization with other pipeline components. For example, if an interruption occurs while the bot is speaking, the word timestamps allow you to accurately capture which words were spoken up to that point, enabling better context management and user experience. Additionally, transcription events streamed from server to client can be done in sync with the audio output, allowing for real-time subtitles or captions.</p>
+<p>&lt;Card title="Individual TTS Services" icon="settings" href="/api-reference/server/services/supported-services#text-to-speech"&gt;   Explore configuration options for each supported TTS provider &lt;/Card&gt;</p>
+<h3>Pipeline-Level Audio Configuration</h3>
+<p>Set consistent audio settings across your entire pipeline:</p>
+<pre><code>worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        audio_in_sample_rate=16000,   # Input audio quality
+        audio_out_sample_rate=24000,  # Output audio quality (TTS)
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   Set the <code>audio_out_sample_rate</code> to match your TTS service's requirements for   optimal quality. This is preferred to setting the sample\_rate directly in the   TTS service as the PipelineParam ensures that all output sample\_rates match. &lt;/Tip&gt;</p>
+<h2>Text Processing and Filtering</h2>
+<h3>Custom Text Aggregation</h3>
+<p>By default, TTS services have a built-in text aggregator that collects streaming text into sentences before passing them to the underlying service. However, you can customize this behavior by inserting an <a href="/api-reference/server/utilities/frame/llm-text-processor"><code>LLMTextProcessor</code></a> with a different text aggregator before the TTS in your pipeline. This allows the ability to categorize and structure text into logical units beyond simple sentences, such as code blocks, URLs, or custom tags. You can then configure the TTS to handle these different text types appropriately, such as skipping code blocks or transforming them in a just-in-time manner before speaking.</p>
+<h3>Skipping Text Aggregations</h3>
+<p>To skip certain text aggregations (e.g., code snippets or URLs) and keep them from being spoken, use a custom text aggregator like <a href="/api-reference/server/utilities/text/pattern-pair-aggregator"><code>PatternPairAggregator</code></a> within an <a href="/api-reference/server/utilities/frame/llm-text-processor"><code>LLMTextProcessor</code></a>, and configure it to identify and handle specific patterns in the text stream. With this, you can then pass any aggregated types you want to skip (like "code") to the TTS service's <code>skip_aggregator_types</code> parameter.</p>
+<pre><code># Create pattern aggregator
+pattern_aggregator = PatternPairAggregator()
+
+# Add pattern for JSON data
+pattern_aggregator.add_pattern(
+    type="code",
+    start_pattern="&lt;code&gt;",
+    end_pattern="&lt;/code&gt;",
+    action=MatchAction.AGGREGATE
+)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# Initialize TTS service, and don't speak JSON data
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    skip_aggregator_types=["code"], # The strings here should match the types defined in the PatternPairAggregator
+)
+
+# add the llm_text_processor to your pipeline after the llm and before the tts
+# llm -&gt; llm_text_processor -&gt; tts</code></pre>
+<h3>Text Transforms</h3>
+<p>For TTS-specific text preprocessing, you can provide custom text transforms that modify text in a just-in-time manner before sending the text off to the TTS service. This is useful for handling special text segments that need to be altered for better pronunciation or clarity, such as spelling out phone numbers, removing URLs, or expanding abbreviations. These text transforms can be mapped to a specific text aggregation type, like with <code>skip_aggregator_types</code>, or applied globally to all text using <code>'*'</code> as the type.</p>
+<p>Text transforms are registered directly on the TTS service instance via the <code>add_text_transformer()</code> method or during initialization using the <code>text_transforms</code> parameter.</p>
+<p>&lt;Note&gt;   The intentions of text transforms are meant to be TTS-specific modifications   that do not affect the underlying LLM text or context. That said, since the   context aggregator attempts to base its context on what was actually spoken,   for services that support word timestamps, like Cartesia, ElevenLabs, and   Rime,these transforms will modify the context as they modify what is spoken. &lt;/Note&gt;</p>
+<pre><code># Create pattern aggregator
+pattern_aggregator = PatternPairAggregator()
+
+# Add patterns for different parts of an explanation
+pattern_aggregator.add_pattern(
+    type="phone_number",
+    start_pattern="&lt;pnum&gt;",
+    end_pattern="&lt;/pnum&gt;",
+    action=MatchAction.AGGREGATE
+)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# Text-to-Speech service
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+)
+
+# Text transformers for TTS
+# This will insert Cartesia's spell tags around the provided text.
+async def spell_out_text(text: str, type: str) -&gt; str:
+    # CartesiaTTSService provides a helper for this along with other common transforms
+    return CartesiaTTSService.SPELL(text)
+
+async def replace_acronyms(text: str, type: str) -&gt; str:
+    # Replace "SEC" with "Southeastern Conference"
+    return text.replace(" SEC ", " Southeastern Conference ")
+
+# Setup the text transformers in TTS to spell out phone numbers and replace
+# acronyms. The string below matches the type defined in the PatternPairAggregator
+# above so that whenever those segments are encountered, this transform
+# is applied
+tts.add_text_transformer(spell_out_text, "phone_number")
+tts.add_text_transformer(replace_acronyms, "*")  # Apply to all text
+
+# add the llm_text_processor to your pipeline after the llm and before the tts
+#   llm -&gt; llm_text_processor -&gt; tts</code></pre>
+<h3>Text Filters</h3>
+<p>&lt;Warning&gt;   Text filters are no longer the preferred method for text preprocessing and   will be deprecated in future releases. Instead, you should use one of the   methods described above. &lt;/Warning&gt;</p>
+<p>Apply preprocessing to text before synthesis:</p>
+<pre><code>from pipecat.utils.text.markdown_text_filter import MarkdownTextFilter
+
+tts = YourTTSService(
+    # ... other options
+    text_filters=[
+        MarkdownTextFilter(),     # Remove markdown formatting
+        CustomTextFilter(),       # Your custom processing
+    ],
+)</code></pre>
+<p><strong>Common filters:</strong></p>
+<ul><li><strong>MarkdownTextFilter</strong>: Strips markdown formatting from LLM responses</li><li><strong>Custom filters</strong>: Implement your own text preprocessing logic</li></ul>
+<h2>Skipping TTS Output</h2>
+<p>Sometimes you want text from the LLM to flow through the pipeline—updating the conversation context, reaching observers, or being processed by custom frame processors—without being spoken by the TTS service. Pipecat provides a <code>skip_tts</code> attribute on text and response frames for this purpose.</p>
+<p>When <code>skip_tts</code> is <code>True</code> on a frame, the TTS service passes it through without generating audio, but the text still reaches downstream processors like the assistant context aggregator.</p>
+<h3>Configuring All LLM Output</h3>
+<p>Use <code>LLMConfigureOutputFrame</code> to tell the LLM service to mark <strong>all</strong> subsequent output frames (<code>LLMTextFrame</code>, <code>LLMFullResponseStartFrame</code>, <code>LLMFullResponseEndFrame</code>) with <code>skip_tts</code>:</p>
+<pre><code>from pipecat.frames.frames import LLMConfigureOutputFrame
+
+# Tell the LLM to skip TTS for all output
+await worker.queue_frame(LLMConfigureOutputFrame(skip_tts=True))
+
+# ... LLM responses will not be spoken ...
+
+# Re-enable TTS
+await worker.queue_frame(LLMConfigureOutputFrame(skip_tts=False))</code></pre>
+<p>This is useful when you want to toggle TTS on or off for an entire stretch of conversation, such as switching between voice and text input modes.</p>
+<h3>Setting skip\_tts on Individual Frames</h3>
+<p>For more granular control, set <code>skip_tts=True</code> directly on individual text frames. This is useful when building custom frame processors that selectively silence certain parts of the LLM output:</p>
+<pre><code>from pipecat.frames.frames import LLMTextFrame
+
+# In a custom frame processor
+frame = LLMTextFrame(text)
+frame.skip_tts = True
+await self.push_frame(frame)</code></pre>
+<p>&lt;Note&gt;   The <code>skip_tts</code> attribute is available on <code>TextFrame</code> and all its subclasses   (<code>LLMTextFrame</code>, <code>AggregatedTextFrame</code>, <code>TTSTextFrame</code>, etc.), as well as   <code>LLMFullResponseStartFrame</code> and <code>LLMFullResponseEndFrame</code>. &lt;/Note&gt;</p>
+<h3>Common Use Cases</h3>
+<p><strong>Encoding structured output from the LLM.</strong> You can instruct the LLM to include markers or metadata in its response that should be processed by pipeline logic but not spoken. For example, Pipecat's <a href="/api-reference/server/utilities/turn-management/filter-incomplete-turns">turn completion detection</a> uses this approach — the LLM outputs completion markers (<code>✓</code>, <code>○</code>, <code>◐</code>) that are pushed with <code>skip_tts=True</code> so they update the context but aren't spoken.</p>
+<p><strong>Switching between voice and text input.</strong> When a client sends text input instead of speech, you may want the bot to respond with text only. The client SDKs support this via <code>sendText()</code> with <code>audio_response: false</code>, which uses <code>LLMConfigureOutputFrame</code> internally to temporarily disable TTS for that response.</p>
+<p><strong>Testing without audio.</strong> When building test pipelines, you can use <code>LLMConfigureOutputFrame(skip_tts=True)</code> to bypass audio generation entirely while still exercising the rest of the pipeline.</p>
+<h2>Advanced TTS Features</h2>
+<h3>Direct Speech Commands</h3>
+<p>Use <code>TTSSpeakFrame</code> for immediate speech synthesis:</p>
+<pre><code>from pipecat.frames.frames import TTSSpeakFrame
+
+# Make bot speak directly (added to context by default)
+await tts.queue_frame(TTSSpeakFrame("Hello, how can I help you?"))
+
+# Explicitly append spoken text to conversation context
+await tts.queue_frame(
+    TTSSpeakFrame("Welcome! Let's begin.", append_to_context=True)
+)
+
+# Speak without adding to context
+await tts.queue_frame(
+    TTSSpeakFrame("Processing...", append_to_context=False)
+)</code></pre>
+<p>The <code>append_to_context</code> parameter controls whether the spoken text is added to the conversation history. When <code>append_to_context=True</code>, the text is automatically committed to the context after being spoken, making it useful for bot greetings and injected speech that should be part of the conversation flow.</p>
+<p>&lt;Note&gt;   As of Pipecat v1.4.0, <code>append_to_context</code> defaults to <code>True</code>. A plain   <code>TTSSpeakFrame("...")</code> <strong>is</strong> added to the conversation context after it is   spoken; pass <code>append_to_context=False</code> to speak without recording it. (<code>None</code>   was the previous default and is no longer supported.) &lt;/Note&gt;</p>
+<h3>Dynamic Settings Updates</h3>
+<p>Update TTS settings during conversation using typed settings objects:</p>
+<pre><code>from pipecat.frames.frames import TTSUpdateSettingsFrame
+from pipecat.services.cartesia.tts import CartesiaTTSSettings
+
+# Change voice speed during conversation
+await worker.queue_frames([
+    TTSUpdateSettingsFrame(delta=CartesiaTTSSettings(speed="fast")),
+    TTSSpeakFrame("I'm speaking faster now!")
+])</code></pre>
+<h2>Key Takeaways</h2>
+<ul><li><strong>Pipeline placement matters</strong> - TTS must come after LLM, before transport output</li><li><strong>Service types differ</strong> - WebSocket services provide lower latency than HTTP</li><li><strong>Text processing affects quality</strong> - use aggregation and filters for better results</li><li><strong>Word timestamps enable precision</strong> - better interruption handling and context accuracy</li><li><strong>Configuration impacts performance</strong> - balance quality, latency, and bandwidth needs</li><li><strong>Services are modular</strong> - easily swap providers without changing pipeline code</li></ul>
+<h2>What's Next</h2>
+<p>You've now learned how to build a complete voice AI pipeline! Let's explore some additional topics to enhance your implementation.</p>
+<p>&lt;Card title="Pipeline Termination" icon="arrow-right" href="/pipecat/learn/pipeline-termination"&gt;   Learn how to terminate your voice AI pipeline at the end of a conversation &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/text-to-speech">https://docs.pipecat.ai/pipecat/learn/text-to-speech</a></p>
+</div></main></div></body></html>

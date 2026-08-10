@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interruptions · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Interruptions</h1>
+<blockquote>How Pipecat stops the bot when the user speaks, what happens to in-flight LLM and TTS output, and how to control it.</blockquote>
+<p>Interruptions (also called barge-in) let the user talk over the bot. When the user starts speaking while the bot is talking, the bot stops immediately, in-flight work is cancelled, and the pipeline is ready for the new user input.</p>
+<p>Interruptions are <strong>enabled by default</strong>. This page explains how they work under the hood, what ends up in the conversation context, and how to configure or trigger them yourself.</p>
+<p>&lt;Tip&gt;   Looking for how Pipecat decides *when* a user turn starts and ends? See   <a href="/pipecat/learn/speech-input">Speech Input &amp; Turn Detection</a> and <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn   Strategies</a>.   This page covers what happens *after* an interruption is triggered. &lt;/Tip&gt;</p>
+<h2>What happens when the user interrupts</h2>
+<p>When a <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#start-strategies">user turn start strategy</a> triggers with <code>enable_interruptions=True</code> (the default), the user aggregator broadcasts an <code>InterruptionFrame</code> both upstream and downstream through the pipeline. From there:</p>
+<p>&lt;Steps&gt;   &lt;Step title="Every processor cancels its current work"&gt;     <code>InterruptionFrame</code> is a     <a href="/api-reference/server/frames/system-frames">SystemFrame</a>, so each processor     handles it immediately instead of waiting behind queued frames. Each     processor cancels its processing task and discards queued <code>DataFrame</code>s and     <code>ControlFrame</code>s. Frames marked uninterruptible (like     <code>FunctionCallResultFrame</code> and <code>EndFrame</code>) are preserved and still processed.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="The LLM stops generating"&gt;     The in-flight LLM completion is cancelled mid-stream. Any registered     function calls with <code>cancel_on_interruption=True</code> are cancelled and emit a     <code>FunctionCallCancelFrame</code>. See <a href="/pipecat/learn/function-calling">Function     Calling</a> for details.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="TTS clears its buffers"&gt;     The TTS service stops synthesizing, clears its text aggregation and word     timestamps, and drops pending output.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="The transport flushes unplayed audio"&gt;     The output transport drains its audio queue, discarding audio that was     generated but not yet played. If a background audio mixer is active, the     transport drains only the bot's speech so the background audio keeps playing     without a gap.   &lt;/Step&gt; &lt;/Steps&gt;</p>
+<p>The result: the bot goes silent within roughly one audio write, and the pipeline is clean and ready for the user's new turn.</p>
+<h2>What ends up in the context</h2>
+<p>A common question: if the bot is cut off mid-sentence, what does the LLM context contain?</p>
+<p><strong>Only the words that were actually spoken.</strong> As the bot speaks, the output transport pushes <code>TTSTextFrame</code>s downstream in sync with audio playback. Text that never played never reaches the assistant context aggregator. On interruption, the aggregator commits the partial, spoken-so-far text to the context as the assistant message.</p>
+<p>This means the LLM's next completion sees an accurate transcript of the conversation: the bot's message ends where the user cut it off, not where the LLM's generation ended.</p>
+<p>You can observe this with the <code>on_assistant_turn_stopped</code> event, which reports the committed text and whether the turn was interrupted:</p>
+<pre><code>@assistant_aggregator.event_handler("on_assistant_turn_stopped")
+async def on_assistant_turn_stopped(aggregator, message):
+    if message.interrupted:
+        print(f"Bot was cut off after saying: {message.content}")</code></pre>
+<h2>Controlling interruptions</h2>
+<p><strong>Let the bot finish speaking</strong> with <a href="/pipecat/fundamentals/user-input-muting">user input muting</a>. Mute strategies block user audio, transcriptions, and interruption signals while active, so speech over the bot is discarded rather than answered later. Use <code>AlwaysUserMuteStrategy</code> to mute whenever the bot is speaking, or <code>FirstSpeechUserMuteStrategy</code> to protect just the introduction:</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_mute import AlwaysUserMuteStrategy
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[AlwaysUserMuteStrategy()],
+    ),
+)</code></pre>
+<p><strong>Require a minimum number of words</strong> so short utterances like "okay" or "yeah" don't interrupt the bot. This is configured on the <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#start-strategies">user turn start strategy</a>:</p>
+<pre><code>from pipecat.turns.user_start import MinWordsUserTurnStartStrategy
+
+start_strategy = MinWordsUserTurnStartStrategy(min_words=3)</code></pre>
+<p><strong>Filter out backchannels with a model.</strong> The <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#krispvivaipuserturnstartstrategy">Krisp VIVA Interruption Prediction strategy</a> distinguishes genuine interruptions from acknowledgments like "uh-huh".</p>
+<p><strong>Disable interruptions</strong> so in-flight work is never cancelled:</p>
+<pre><code>from pipecat.turns.user_start import VADUserTurnStartStrategy
+
+start_strategy = VADUserTurnStartStrategy(enable_interruptions=False)</code></pre>
+<p>&lt;Warning&gt;   Disabling interruptions does not ignore the user. Speech over the bot is still   transcribed and processed as a normal user turn — the bot's reply is queued   and plays as soon as the current speech finishes. If you want the bot to   finish speaking *and* discard what the user said over it, use mute strategies   instead. &lt;/Warning&gt;</p>
+<h2>Triggering an interruption yourself</h2>
+<p>Sometimes the bot should stop itself: a timeout fires, an external event arrives, or your own logic decides the current response is no longer relevant.</p>
+<p>From inside a custom <code>FrameProcessor</code>, broadcast the interruption directly:</p>
+<pre><code>await self.broadcast_interruption()</code></pre>
+<p>From code that has a reference to a processor or the worker, you can also push an <code>InterruptionWorkerFrame</code>. The pipeline worker converts it into an <code>InterruptionFrame</code> and sends it through the whole pipeline:</p>
+<pre><code>from pipecat.frames.frames import InterruptionWorkerFrame
+
+await worker.queue_frame(InterruptionWorkerFrame())</code></pre>
+<p>Both approaches run the same interruption flow described above: the bot stops speaking, in-flight work is cancelled, and the spoken-so-far text is committed to context.</p>
+<h2>Speech-to-speech services</h2>
+<p>Realtime speech-to-speech services (like Gemini Live and OpenAI Realtime) handle interruption detection on the provider side. In these pipelines, the service emits the speaking events and Pipecat's aggregators follow along using <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#externaluserturnstartstrategy">external turn strategies</a>. The provider decides when the user barged in; Pipecat still flushes local audio output so the bot goes silent right away.</p>
+<h2>Related</h2>
+<ul><li><a href="/pipecat/learn/speech-input">Speech Input &amp; Turn Detection</a> - how user turns are detected</li><li><a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn Strategies</a> - full strategy reference</li><li><a href="/pipecat/fundamentals/user-input-muting">User Input Muting</a> - suppress user input while the bot speaks</li><li><a href="/api-reference/server/frames/system-frames">System Frames</a> - <code>InterruptionFrame</code> reference</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/fundamentals/interruptions">https://docs.pipecat.ai/pipecat/fundamentals/interruptions</a></p>
+</div></main></div></body></html>

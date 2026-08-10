@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L27 · Job coordination — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 27 · Part V — Multi-agent</div>
+      <h1>Job coordination</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">Where handoff moves control to one agent, job coordination dispatches work to <em>several</em> agents in parallel and collects their results — the "consult the committee" pattern.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Fan out, then synthesize</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="agent: a question|job_group(A,B,C)|A,B,C answer in parallel|collect all|synthesize one reply"
+           data-caption="An agent needs several perspectives|it opens a job_group over peer workers|each peer runs the job concurrently|the group waits for all responses|the agent synthesizes them into one answer">
+      </div>
+
+      <h2 id="code">Dispatching a job group</h2>
+      <pre><code class="language-python">from pipecat.workers.llm.llm_context_worker import LLMContextWorker
+from pipecat.workers.llm.tool_decorator import tool
+
+class Coordinator(LLMContextWorker):
+    @tool
+    async def consult(self, params, topic: str):
+        """Ask several specialists at once and combine their views."""
+        async with params.pipeline_worker.job_group(
+            DebateWorker("advocate"), DebateWorker("critic"), DebateWorker("analyst"),
+        ) as group:
+            results = await group.run(topic)          # waits for all peers
+        await params.result_callback({"perspectives": results})
+
+# each peer handles the job:
+class DebateWorker(LLMContextWorker):
+    async def on_job_request(self, message):
+        answer = await self.run_inference(message.payload)
+        await self.send_job_response(message, answer)</code></pre>
+      <div class="box py">
+        <p class="title">🐍 <code>async with … as group</code></p>
+        <p>The job group is an async context manager: it sets up the peers, guarantees cleanup, and <code>await group.run(...)</code> gathers every peer's result before continuing. A single peer uses <code>job(worker_name)</code>; groups can also stream progress and be cancelled.</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>pipeline/job_context.py</code> — <code>JobGroup</code>, <code>JobContext</code>/<code>JobGroupContext</code>, <code>JobStatus</code>. <code>workers/base_worker.py</code> — <code>job()</code>, <code>job_group()</code>, <code>request_job()</code>, <code>send_job_response()</code>, <code>on_job_request</code>. <code>pipeline/job_decorator.py</code> — <code>@job(sequential=…)</code>. Example: <code>examples/multi-worker/parallel-debate/parallel-debate.py</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 11</p>
+        <p>Add a <code>consult</code> tool to Atlas's triage agent that fans out to N specialists and synthesizes — the second coordination shape the capstone shows.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>parallel-debate.py</code>, give it a topic, and hear three views synthesized. (2) Add a fourth <code>DebateWorker("historian")</code>. (3) Make one peer slow and confirm the group waits for it (or times out).</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Handoff vs. job coordination — the difference?</summary><p>Handoff moves control to one agent; job coordination dispatches to several in parallel and collects all results.</p></details>
+      <details><summary>2. What does <code>await group.run(...)</code> guarantee?</summary><p>It gathers every peer's result before the coordinator continues (or times out).</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l28-distributed-proxy.html">Lesson 28 — Distributed & proxy →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

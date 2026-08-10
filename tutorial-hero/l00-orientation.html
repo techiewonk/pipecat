@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L0 · How to use this course — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 0 · Part I — Principles</div>
+      <h1>How to use this course</h1>
+      <div class="meta"><span class="pill">⏱ 15 min</span><span class="pill grey">Level: everyone</span><span class="pill grey">Start here</span></div>
+      <p class="lead">This is a source-grounded, 0-to-hero path through Pipecat. Read top to bottom. Each lesson teaches a real idea, shows the exact classes that implement it, and hands you code you can run.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="cake">The one picture: a voice turn</h2>
+      <p>Everything in Pipecat is a <strong>frame</strong> (a typed packet of data) moving through a <strong>pipeline</strong> (an ordered list of <strong>processors</strong>). Watch a single spoken turn travel through the loop — the packet is a frame, and it changes form at each stage:</p>
+
+      <div class="pcflow" data-dur="7"
+           data-stages="🎤 Mic:audio in|STT:→ text|Aggregator:→ context|LLM:→ reply|TTS:→ audio|🔊 Speaker:play"
+           data-caption="A microphone <b>InputAudioRawFrame</b> enters the pipeline|STT turns audio into a <b>TranscriptionFrame</b> (text)|The user aggregator adds it to the <b>LLMContext</b>|The LLM streams back <b>LLMTextFrame</b>s (the reply)|TTS converts text into <b>TTSAudioRawFrame</b>s|The transport plays audio back to the user">
+      </div>
+      <p class="kbdhint">The glowing wave is a frame flowing left-to-right; the caption tells you what it has become. Hit <em>pause</em> to study a stage.</p>
+
+      <h2 id="template">What every lesson gives you</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Icon</th><th>Section</th></tr></thead>
+        <tbody>
+          <tr><td>🎯</td><td><strong>Objective</strong> — what you'll be able to do.</td></tr>
+          <tr><td>🧠</td><td><strong>Principle</strong> — the idea in plain language, with an animated diagram where it helps.</td></tr>
+          <tr><td>🔬</td><td><strong>Source anchors</strong> — the exact files/classes in <code>src/pipecat/</code> that implement it.</td></tr>
+          <tr><td>💻</td><td><strong>Runnable code</strong> — annotated, copy-pasteable.</td></tr>
+          <tr><td>🧩</td><td><strong>Capstone step</strong> — one move on the "Atlas" project (below).</td></tr>
+          <tr><td>🏋 / ✅</td><td><strong>Exercise & checkpoint</strong> — practice, then confirm you've got it.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Your progress is saved in this browser (the sidebar bar fills as you tick lessons complete). Use <kbd>&larr;</kbd> / <kbd>&rarr;</kbd> to move between lessons, and hover any code block to <em>Copy</em> it.</p>
+
+      <h2 id="atlas">The capstone thread: "Atlas"</h2>
+      <div class="box concept">
+        <p class="title">🧩 One project, grown lesson by lesson</p>
+        <p>Alongside the isolated mini-examples, a single project called <strong>Atlas</strong> evolves through the course. You don't start it over each time — you extend it:</p>
+      </div>
+      <div class="pcflow" data-dur="9"
+           data-stages="Say-one-thing|Voice agent|+ Tools|Gemini Live|Flows|Multi-agent|Distributed A2A"
+           data-caption="L2: Atlas says hello|L11: full cascaded voice agent|L12: real tools + MCP|L15: swap to Gemini Live realtime|L19: a structured task flow|L24–27: split onto the bus|L35: local + distributed Gemini A2A">
+      </div>
+
+      <h2 id="repo">The repo map</h2>
+      <p>You'll spend most time in two places: <code>examples/</code> (runnable programs) and <code>src/pipecat/</code> (the framework itself). The parts of the source you'll meet:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Package</th><th>What lives there</th><th>First seen</th></tr></thead>
+        <tbody>
+          <tr><td><code>frames/</code></td><td>The 125 frame types</td><td>L3</td></tr>
+          <tr><td><code>processors/</code></td><td>FrameProcessor + aggregators, filters, RTVI</td><td>L4</td></tr>
+          <tr><td><code>pipeline/</code>, <code>workers/</code></td><td>Pipeline, PipelineWorker, WorkerRunner</td><td>L5</td></tr>
+          <tr><td><code>transports/</code>, <code>audio/</code>, <code>turns/</code></td><td>I/O, VAD/filters/resamplers, turn-taking</td><td>L6–L10</td></tr>
+          <tr><td><code>services/</code>, <code>adapters/</code></td><td>STT/LLM/TTS providers + tool-format adapters</td><td>L8–L15</td></tr>
+          <tr><td><code>bus/</code>, <code>registry/</code></td><td>The multi-agent message bus</td><td>L24</td></tr>
+          <tr><td><code>flows/</code>, <code>evals/</code>, <code>extensions/</code></td><td>Structured conversations, testing, IVR/voicemail</td><td>L19, L31, L34</td></tr>
+        </tbody>
+      </table></div>
+      <p>Every package and every official Fundamentals/Evals doc is covered — see the <a href="ax-coverage.html">Coverage matrix</a>.</p>
+
+      <h2 id="run">Get ready to run things</h2>
+      <div class="box start">
+        <p class="title">▶️ One-time setup</p>
+        <pre><code class="language-bash"># from the repo root
+uv sync --all-extras          # install Pipecat + every provider extra
+cp env.example .env           # then add API keys for the providers you'll use
+uv run python getting-started/01-say-one-thing.py
+# open http://localhost:7860/client/ and click Connect</code></pre>
+      </div>
+      <p>For most of the course you only need a few keys. The capstone leans on <code>GOOGLE_API_KEY</code> (Gemini Live); early voice lessons use <code>DEEPGRAM_API_KEY</code> (STT) and <code>CARTESIA_API_KEY</code> (TTS), and any one LLM key (e.g. <code>OPENAI_API_KEY</code>).</p>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. In the animation, what actually "flows" through the pipeline?</summary><p>A <strong>frame</strong> — a typed data packet. It changes type at each stage (audio → text → context → reply text → audio).</p></details>
+      <details><summary>2. What is the difference between the mini-examples and "Atlas"?</summary><p>Mini-examples teach one idea in isolation; Atlas is a single project you keep extending until it becomes the distributed Gemini Live A2A.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l01-what-is-pipecat.html">Lesson 1 — What Pipecat is →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

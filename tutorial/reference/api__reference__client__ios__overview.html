@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iOS SDK Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>iOS SDK Overview</h1>
+<blockquote>The Pipecat iOS SDK: a Swift client library for building voice and multimodal AI applications on iOS.</blockquote>
+<p>The Pipecat iOS SDK provides a Swift implementation for building voice and multimodal AI applications on iOS. It handles:</p>
+<ul><li>Real-time audio streaming</li><li>Bot communication and state management</li><li>Media device handling</li><li>Configuration management</li><li>Event handling</li></ul>
+<h2>Installation</h2>
+<p>Add the SDK to your project using Swift Package Manager:</p>
+<pre><code>// Core SDK
+.package(url: "https://github.com/pipecat-ai/pipecat-client-ios.git", from: "1.0.0"),
+
+// Daily transport implementation
+.package(url: "https://github.com/pipecat-ai/pipecat-client-ios-daily.git", from: "1.0.0"),</code></pre>
+<p>Then add the dependencies to your target:</p>
+<pre><code>.target(name: "YourApp", dependencies: [
+    .product(name: "PipecatClientIOS", package: "pipecat-client-ios")
+    .product(name: "PipecatClientIOSDaily", package: "pipecat-client-ios-daily")
+]),</code></pre>
+<h2>Example</h2>
+<p>Here's a simple example using Daily as the transport layer:</p>
+<pre><code>import PipecatClientIOS
+import PipecatClientIOSDaily
+
+let pipecatClientOptions = PipecatClientOptions.init(
+    transport: DailyTransport.init(),
+    enableMic: currentSettings.enableMic,
+    enableCam: false,
+)
+self.pipecatClientIOS = PipecatClient.init(
+    options: pipecatClientOptions
+)
+let startBotParams = APIRequest.init(endpoint: URL(string: $PIPECAT_API_URL + "/connect")!)
+self.pipecatClientIOS?.startBotAndConnect(startBotParams: startBotParams) { (result: Result&lt;DailyTransportConnectionParams, AsyncExecutionError&gt;) in
+    switch result {
+    case .failure(let error):
+        // handle error
+    case .success(_):
+        // handle success
+    }
+}</code></pre>
+<h2>Documentation</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="API Reference" icon="book" href="/api-reference/client/ios/api-reference"&gt;     SDK API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Transport Packages" icon="network-wired" href="/api-reference/client/ios/transports/daily"&gt;     Daily, Gemini, OpenAI WebRTC, and SmallWebRTC transports   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-ios/"&gt;     Pipecat Client iOS on GitHub   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/simple-chatbot/client/ios"&gt;     Simple Chatbot Demo   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/ios/overview">https://docs.pipecat.ai/api-reference/client/ios/overview</a></p>
+</div></main></div></body></html>

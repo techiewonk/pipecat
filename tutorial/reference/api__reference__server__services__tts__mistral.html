@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistral Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Mistral Text-to-Speech</h1>
+<blockquote>MistralTTSService synthesizes speech with Mistral's Voxtral TTS API, streaming PCM audio over HTTP Server-Sent Events.</blockquote>
+<h2>Overview</h2>
+<p><code>MistralTTSService</code> provides text-to-speech synthesis using Mistral's Voxtral TTS API. It uses HTTP streaming with Server-Sent Events to generate PCM-encoded audio at 24kHz.</p>
+<p>Key features include:</p>
+<ul><li>Streaming TTS with real-time audio generation</li><li>Automatic resampling to pipeline sample rate</li><li>Built-in metrics support</li><li>Multiple voice options</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Mistral TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.mistral.tts.html"&gt;     Pipecat's API methods for Mistral TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-mistral.py"&gt;     Complete example with Mistral STT and TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Mistral Documentation" icon="book" href="https://docs.mistral.ai/"&gt;     Official Mistral API documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Mistral TTS service, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[mistral]"</code></pre>
+<h2>Prerequisites</h2>
+<p>Before using <code>MistralTTSService</code>, you need:</p>
+<ol><li><strong>Mistral Account</strong>: Sign up at <a href="https://mistral.ai/">Mistral AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure you have access to the Voxtral TTS API</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>MISTRAL_API_KEY</code>: Your Mistral API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str"&gt;   Mistral API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. Audio is resampled from Mistral's native 24kHz   when a different rate is requested. When <code>None</code>, uses the pipeline's   configured sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="MistralTTSService.Settings" default="None"&gt;   Runtime-configurable settings for the TTS service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>MistralTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"voxtral-mini-tts-2603"</code></td><td>Mistral TTS model to use. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h2>Available Voices</h2>
+<p>Mistral provides built-in voices grouped by language. The <code>voice</code> setting accepts either the <strong>slug</strong> (e.g. <code>fr_marie_neutral</code>) or the <strong>UUID</strong>.</p>
+<p>You can always retrieve the latest list of voices via the Mistral API:</p>
+<pre><code>curl "https://api.mistral.ai/v1/audio/voices?limit=200&amp;offset=0" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"</code></pre>
+<p>You will have to extract the 'slug' or 'id' field from the response for each voice to use in the <code>voice</code> setting, for example:</p>
+<pre><code>{
+  "name": "Marie - Neutral",
+  "slug": "fr_marie_neutral",
+  "languages": ["fr_fr"],
+  "gender": "female",
+  "age": 30,
+  "tags": ["composed", "steady", "neutral"],
+  "color": "#77778B",
+  "description": null,
+  "appearance": null,
+  "retention_notice": 30,
+  "id": "5a271406-039d-46fe-835b-fbbb00eaf08d",
+  "created_at": "2026-03-12T09:46:53.411124Z",
+  "user_id": null,
+  "trimmed_seconds": null
+}</code></pre>
+<p>Slug example: <code>fr_marie_neutral</code> and UUID example: <code>5a271406-039d-46fe-835b-fbbb00eaf08d</code> can both be used as the <code>voice</code> identifier in the service settings.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.mistral import MistralTTSService
+
+tts = MistralTTSService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+)</code></pre>
+<h3>With a Built-in Voice</h3>
+<pre><code>tts = MistralTTSService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+    settings=MistralTTSService.Settings(
+        model="voxtral-mini-tts-2603",
+        voice="fr_marie_neutral",  # see Available Voices section for all slugs
+        language="fr",
+    ),
+)</code></pre>
+<h3>With a Custom Voice</h3>
+<p>If you have created a custom voice in your Mistral account, use its UUID as the <code>voice</code> identifier:</p>
+<pre><code>import os
+from pipecat.services.mistral import MistralTTSService
+
+tts = MistralTTSService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+    settings=MistralTTSService.Settings(
+        voice="your-custom-voice-uuid",  # UUID from your Mistral account dashboard
+    ),
+)</code></pre>
+<h3>With Custom Sample Rate</h3>
+<pre><code>import os
+from pipecat.services.mistral import MistralTTSService
+
+tts = MistralTTSService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+    sample_rate=16000,  # Resample from 24kHz to 16kHz
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Audio format conversion</strong>: The Mistral API returns base64-encoded float32 PCM chunks via Server-Sent Events. The service automatically converts these to int16 PCM for the Pipecat pipeline.</li><li><strong>Native sample rate</strong>: Mistral's TTS API outputs audio at 24kHz. When a different sample rate is specified, the service automatically resamples the audio.</li><li><strong>Streaming</strong>: The service uses HTTP streaming with Server-Sent Events for real-time audio generation, allowing for low-latency synthesis.</li><li><strong>Voice identifiers</strong>: Both slugs (e.g. <code>fr_marie_neutral</code>) and UUIDs are accepted. Built-in voice slugs are listed in the <a href="#available-voices">Available Voices</a> section. Custom voices created in your Mistral account dashboard are referenced by their UUID.</li></ul>
+<h2>Event Handlers</h2>
+<p>This service does not currently expose connection event handlers, as it uses HTTP streaming rather than persistent WebSocket connections.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/mistral">https://docs.pipecat.ai/api-reference/server/services/tts/mistral</a></p>
+</div></main></div></body></html>

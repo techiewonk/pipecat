@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat cloud regions · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat cloud regions</h1>
+<blockquote>pipecat cloud regions lists the regions available for deploying agents and storing secrets in Pipecat Cloud.</blockquote>
+<p>The <code>regions</code> command helps you discover which regions are available for deploying agents and storing secrets in Pipecat Cloud.</p>
+<h2>list</h2>
+<p>List all available regions with their codes and display names.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud regions list</code></pre>
+<p>This command displays a table of all regions where you can deploy agents and store secrets. Use the region codes shown in this list when specifying the <code>--region</code> flag in other commands.</p>
+<p><strong>Example output:</strong></p>
+<pre><code>Code         Name
+us-west      US West (Oregon)
+us-east      US East (Virginia)
+eu-central   Europe (Frankfurt)
+ap-south     Asia Pacific (Mumbai)</code></pre>
+<h2>Using regions</h2>
+<p>Once you know the available region codes, you can use them with other commands:</p>
+<p><strong>Deploy an agent to a specific region:</strong></p>
+<pre><code>pipecat cloud deploy my-agent my-image:latest --region eu-central</code></pre>
+<p><strong>Create secrets in a specific region:</strong></p>
+<pre><code>pipecat cloud secrets set my-secrets API_KEY=abc123 --region eu-central</code></pre>
+<p><strong>List agents in a specific region:</strong></p>
+<pre><code>pipecat cloud agent list --region us-east</code></pre>
+<p>&lt;Info&gt;   Secrets and image pull secrets must be in the same region as the agents that   use them. When deploying multi-region applications, create separate secret   sets for each region. &lt;/Info&gt;</p>
+<p>&lt;Tip&gt;   Choose a region close to your users for optimal latency and performance. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/cloud/regions">https://docs.pipecat.ai/api-reference/cli/cloud/regions</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L34 · Evals & testing — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 34 · Part VI — Production & quality</div>
+      <h1>Evals & testing</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate → advanced</span></div>
+      <p class="lead">Voice agents are hard to test by hand. Pipecat ships an eval framework that scripts conversations, runs your bot headless, and judges the results — plus plain unit testing for processors.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Script, run, judge</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="Scenario:scripted turns|EvalTransport (no mic)|your bot runs|transcript captured|LLM judge → pass/fail"
+           data-caption="A Scenario defines scripted user turns and expectations|the EvalTransport feeds them in without real audio|your actual bot pipeline runs headless|the conversation transcript is captured|an LLM judge scores it against the expectations">
+      </div>
+      <p>The <code>EvalTransport</code> is a headless transport (you saw <code>EvalTransportParams</code> in every example's <code>transport_params</code>) — it drives the pipeline in CI with no microphone or browser.</p>
+
+      <h2 id="code">A scenario + judge</h2>
+      <pre><code class="language-python"># evals/ provides the pieces: Scenario, the harness/runner, and a Judge.
+from pipecat.evals.scenario import Scenario
+from pipecat.evals.judge import Judge
+
+scenario = Scenario(
+    name="weather_tool",
+    turns=["What's the weather in Paris?"],
+    expect="the bot calls the weather tool and states a temperature",
+)
+# the harness runs your bot() against EvalTransport, captures the transcript,
+# and the Judge (an LLM) decides pass/fail against `expect`.</code></pre>
+
+      <h2 id="unit">Unit-testing processors</h2>
+      <p>A <code>FrameProcessor</code> is ordinary Python — feed it frames and assert what it pushes. No transport needed.</p>
+      <pre><code class="language-python">async def test_censor():
+    proc = Censor(banned="secret")
+    out = await run_processor(proc, [TranscriptionFrame(text="the secret code")])
+    assert "secret" not in out[0].text</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>evals/transport.py</code> — <code>EvalTransport</code>/<code>EvalTransportParams</code>. <code>evals/scenario.py</code>, <code>evals/harness.py</code>, <code>evals/judge.py</code>, <code>evals/suite.py</code>, <code>evals/speech.py</code>/<code>transcribe.py</code>. <code>tests/</code> — framework unit tests. Run with <code>python -m pipecat.evals</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 14</p>
+        <p>Write one eval scenario for Atlas (e.g. "asks for the order number before refunding") and a judge check. Now you can refactor Atlas without fear.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Write a scenario with two turns and an <code>expect</code>. (2) Run it headless via the harness. (3) Unit-test a custom processor from Lesson 4.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What replaces the mic/browser in an eval?</summary><p>The <code>EvalTransport</code> — a headless transport that feeds scripted turns and captures the transcript.</p></details>
+      <details><summary>2. How is pass/fail decided?</summary><p>An LLM <code>Judge</code> scores the captured transcript against the scenario's expectations.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part VI complete. Next: <a href="l35-capstone-a2a.html">Lesson 35 — the Capstone →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

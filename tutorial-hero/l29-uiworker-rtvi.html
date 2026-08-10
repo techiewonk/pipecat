@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L29 · UIWorker + RTVI client — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 29 · Part V — Multi-agent</div>
+      <h1>UIWorker + RTVI client</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">RTVI is the protocol your browser/mobile client speaks to a bot. A UIWorker bridges the bus to that client so voice can see and drive a web GUI — read the screen, fill forms, show progress.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="rtvi">RTVI: the client protocol</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="pipeline frames|RTVIObserver|typed events|🖥️ web client|RTVIProcessor ← user actions"
+           data-caption="Frames flow through the bot pipeline|an RTVIObserver translates them to typed JSON events|user/bot speaking, transcripts, LLM/TTS text, metrics|the web client renders them|and sends actions/snapshots back through the RTVIProcessor">
+      </div>
+      <p>RTVI (Real-Time Voice Inference) is transport messages carrying typed events. An <code>RTVIObserver</code> emits them; an <code>RTVIProcessor</code> handles inbound client messages (client-ready, DTMF, send-text, UI events).</p>
+
+      <h2 id="uiworker">The UIWorker</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="page snapshot|UIWorker sees &lt;ui_state&gt;|@ui_event handlers|send_command:scroll/click/fill|client updates"
+           data-caption="The client sends an accessibility snapshot of the page|the UIWorker reads it (auto-injected into the LLM)|@ui_event handlers react to user actions|the worker drives the page: scroll_to, highlight, click, set_input_value|and can fan out long work as cancellable job cards">
+      </div>
+      <pre><code class="language-python">from pipecat.workers.ui.ui_worker import UIWorker
+from pipecat.workers.ui.ui_event_decorator import ui_event
+
+class FormFiller(UIWorker):
+    @ui_event("field_focused")
+    async def on_field(self, data):
+        await self.send_command(scroll_to(data.node_id))     # drive the page
+
+    @tool
+    async def fill(self, params, field: str, value: str):
+        """Fill a form field for the user."""
+        await self.set_input_value(field, value)
+        await params.result_callback({"ok": True})</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/frameworks/rtvi/processor.py</code> (<code>RTVIProcessor</code>), <code>observer.py</code> (<code>RTVIObserver</code>), <code>models.py</code> (wire models incl. UI/a11y). <code>workers/ui/ui_worker.py</code> (<code>UIWorker</code>, <code>send_command</code>, <code>ui_job_group</code>), <code>ui_event_decorator.py</code> (<code>@ui_event</code>). <code>bus/ui/messages.py</code> — UI bus carriers. Examples: <code>examples/multi-worker/ui-worker/</code>.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>ui-worker/hello-snapshot/</code> and see voice grounded in the page. (2) Try <code>form-fill/</code> and <code>deixis/</code> ("explain this"). (3) Explore <code>async-tasks/</code> — job-group progress streamed to the UI.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does RTVI carry between bot and client?</summary><p>Typed JSON events — speaking, transcripts, LLM/TTS text, metrics, and UI commands.</p></details>
+      <details><summary>2. How does a UIWorker "see" the page?</summary><p>The client sends an accessibility snapshot (<code>&lt;ui_state&gt;</code>) that the worker reads and the LLM is grounded in.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part V complete. Next: <a href="l30-runner-telephony.html">Lesson 30 — Runner & telephony →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

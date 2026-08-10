@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L23 · Observability & metrics — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 23 · Part IV — Structure, control & capture</div>
+      <h1>Observability & metrics</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">In production you need to see latency, per-service timing, token usage, and health — without touching the flow. Observers watch; metrics measure; RTVI streams it to a client.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="vs">Observer vs. processor</h2>
+      <div class="pcflow" data-dur="6"
+           data-stages="pipeline flow|—|Observer (beside):read-only|logs / metrics / RTVI|dashboard"
+           data-caption="Frames flow through the pipeline as usual|an observer sits BESIDE it, not in it|it sees every frame read-only via on_push_frame|and turns them into logs, metrics, or RTVI client events|which you watch on a dashboard — no risk to the flow">
+      </div>
+      <div class="box concept">
+        <p class="title">🧠 Why observers</p>
+        <p>A processor sits <em>in</em> the pipeline and can change frames; an observer sits <em>beside</em> it and only watches. Use observers for logging/metrics so you can't accidentally break the conversation.</p>
+      </div>
+
+      <h2 id="metrics">Metrics</h2>
+      <pre><code class="language-python">worker = PipelineWorker(pipeline, params=PipelineParams(
+    enable_metrics=True, enable_usage_metrics=True))
+# emits MetricsFrames: TTFB (time-to-first-byte), per-service processing time, token/char usage
+</code></pre>
+      <p>The framework tracks <strong>TTFB</strong> (how fast the first response byte arrives), processing time per service, and LLM/TTS usage. Built-in observers turn these into logs; Sentry ships them to a dashboard.</p>
+
+      <h2 id="observers">Writing/using an observer</h2>
+      <pre><code class="language-python">from pipecat.observers.base_observer import BaseObserver
+
+class MyObserver(BaseObserver):
+    async def on_push_frame(self, data):        # called per frame; never blocks the flow
+        logger.debug(type(data.frame).__name__)
+
+worker = PipelineWorker(pipeline, observers=[MyObserver()])
+# ready-made: DebugLogObserver, LLMLogObserver, TurnTrackingObserver, UserBotLatencyObserver</code></pre>
+
+      <h2 id="analytics">Analytics &amp; tracing services</h2>
+      <p>Beyond in-process observers, Pipecat integrates <strong>analytics/tracing</strong> back-ends so you can watch production traffic on a dashboard: <strong>Sentry</strong> (errors + performance), <strong>Langfuse</strong> and other LLM-observability tools, and <strong>OpenTelemetry</strong> spans via the <code>@traced_llm</code> helper. These consume the same <code>MetricsFrame</code> data and observer stream.</p>
+      <pre><code class="language-python"># OpenTelemetry tracing is a flag on the worker + a tracing context:
+worker = PipelineWorker(pipeline, params=PipelineParams(enable_metrics=True, enable_tracing=True))
+# Sentry: see examples/observability/observability-sentry-metrics.py</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>observers/base_observer.py</code> — <code>BaseObserver</code> (<code>on_push_frame</code>, <code>on_process_frame</code>). <code>observers/*</code> — debug/LLM/metrics/transcription loggers, <code>turn_tracking_observer.py</code>, <code>user_bot_latency_observer.py</code>. <code>metrics/metrics.py</code> — metric types. <code>processors/frameworks/rtvi/observer.py</code> — the RTVI client stream. <code>frames/frames.py</code> <code>MetricsFrame</code> (1168). Docs: metrics.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 8</p>
+        <p>Instrument Atlas: enable metrics and add a latency observer to watch TTFB per turn. You'll reuse this in the capstone to compare agents.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Enable metrics and read the TTFB output. (2) Add <code>TurnTrackingObserver</code> and watch turn boundaries. (3) Run <code>observability/observability-observer.py</code> and <code>observability-heartbeats.py</code>.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why prefer an observer over a processor for logging?</summary><p>It watches read-only and can't alter or stall the frame flow.</p></details>
+      <details><summary>2. What does TTFB measure?</summary><p>Time-to-first-byte — how quickly the first response byte arrives, the key latency signal.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part IV complete. Next: <a href="l24-bus.html">Lesson 24 — The worker bus & bridge →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

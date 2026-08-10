@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L15 · Realtime speech-to-speech — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 15 · Part III — Realtime & multimodal</div>
+      <h1>Realtime speech-to-speech</h1>
+      <div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: intermediate</span><span class="pill">Capstone engine</span></div>
+      <p class="lead">Realtime models collapse STT + LLM + TTS into a single service: audio in, audio out. Lower latency, server-driven turns — and the engine our capstone standardizes on.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="collapse">One service instead of three</h2>
+      <div class="pcflow" data-dur="6"
+           data-stages="transport.input|InputAudioRawFrame|Gemini Live (one service)|TTSAudioRawFrame|transport.output"
+           data-caption="The transport captures mic audio|which flows straight in as InputAudioRawFrame|Gemini Live listens, reasons, and speaks — all server-side|it emits audio directly as TTSAudioRawFrame|the transport plays it back — no separate STT or TTS stage">
+      </div>
+      <p>A cascaded agent is STT → LLM → TTS (three swappable parts). A realtime service (Gemini Live, OpenAI Realtime, AWS Nova Sonic, Grok, Inworld, Ultravox) is one <code>LLMService</code> that consumes <code>InputAudioRawFrame</code> and emits <code>TTSAudioRawFrame</code>. Trade-off: fewer parts to swap, but much lower latency and the model manages turns itself.</p>
+
+      <h2 id="build">Gemini Live with tools + search</h2>
+      <pre><code class="language-python">from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import AdapterType, ToolsSchema
+from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+
+weather = FunctionSchema(
+    name="get_current_weather", description="Get the current weather",
+    properties={"location": {"type": "string", "description": "City, State"},
+                "format": {"type": "string", "enum": ["celsius", "fahrenheit"]}},
+    required=["location", "format"], handler=fetch_weather)
+
+tools = ToolsSchema(
+    standard_tools=[weather],
+    custom_tools={AdapterType.GEMINI: [{"google_search": {}}]})   # provider-native tool
+
+llm = GeminiLiveLLMService(
+    api_key=os.environ["GOOGLE_API_KEY"],
+    settings=GeminiLiveLLMService.Settings(
+        system_instruction=SYSTEM, voice="Aoede"),           # Puck, Charon, Kore, Fenrir, Aoede
+    tools=tools)
+
+pipeline = Pipeline([transport.input(), user_agg, llm, assistant_agg, transport.output()])</code></pre>
+      <div class="box py">
+        <p class="title">🐍 FunctionSchema vs docstring tools</p>
+        <p>In Lesson 12 the docstring was the schema. Realtime providers want an explicit <code>FunctionSchema</code> (name, <code>properties</code>, <code>required</code>, <code>handler</code>); provider-native tools go under <code>custom_tools</code>.</p>
+      </div>
+      <div class="box errors">
+        <p class="title">⚠️ Realtime quirks</p>
+        <p>Gemini Live drives turns server-side and emits <em>no</em> VAD/turn frames — don't build custom turn logic on those. On <code>GeminiVertexLiveLLMService</code>, <code>google_search</code> can't combine with other tools.</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/google/gemini_live/llm.py</code> — <code>GeminiLiveLLMService</code> (marks <code>is_realtime_service=True</code>; consumes <code>InputAudioRawFrame</code>, emits <code>TTSAudioRawFrame</code>). Also <code>services/openai/realtime/*</code>, <code>services/aws/nova_sonic/*</code>. Adapter: <code>adapters/services/gemini_live_adapter</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 4</p>
+        <p>Swap Atlas's STT+LLM+TTS cascade for a single <code>GeminiLiveLLMService</code>. Same tools, one service. This is the engine the capstone scales into many agents.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Change <code>voice="Aoede"</code>. (2) Add a third <code>FunctionSchema</code> tool. (3) Try <code>realtime/realtime-gemini-live-video.py</code> (show your camera) and <code>-locally-driven-turns.py</code> to control turns yourself.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What three services does one realtime model replace?</summary><p>STT, LLM, and TTS.</p></details>
+      <details><summary>2. Where do provider-native tools like <code>google_search</code> go?</summary><p>In <code>ToolsSchema(custom_tools={AdapterType.GEMINI: [...]})</code>.</p></details>
+      <details><summary>3. Should you add smart-turn on top of Gemini Live?</summary><p>No — realtime models manage turns server-side and emit no turn frames.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l16-vision-video.html">Lesson 16 — Vision, video & avatars →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

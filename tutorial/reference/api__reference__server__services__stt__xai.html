@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>xAI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>xAI Speech-to-Text</h1>
+<blockquote>XAISTTService streams real-time STT over xAI's WebSocket API with interim results, configurable endpointing, and multichannel audio.</blockquote>
+<h2>Overview</h2>
+<p><code>XAISTTService</code> provides real-time speech-to-text transcription using xAI's WebSocket STT API with support for interim results, configurable endpointing, multichannel audio, and speaker diarization.</p>
+<p>The service streams raw audio (PCM, μ-law, or A-law) to xAI's endpoint and emits interim and final transcription frames based on the server's <code>is_final</code> and <code>speech_final</code> flags. The connection is persistent: audio is streamed continuously and the server automatically detects utterance boundaries.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="xAI STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.xai.stt.html"&gt;     Pipecat's API methods for xAI STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transcription/transcription-xai.py"&gt;     Complete transcription example with xAI STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Agent Example" icon="microphone" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-xai.py"&gt;     Full voice agent with xAI STT, LLM, and TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="xAI Documentation" icon="book" href="https://docs.x.ai/developers/rest-api-reference/inference/voice"&gt;     Official xAI voice API documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use xAI STT services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[xai]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>xAI Account Setup</h3>
+<p>Before using xAI STT services, you need:</p>
+<ol><li><strong>xAI Account</strong>: Sign up at <a href="https://x.ai/">xAI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Language Selection</strong>: Choose from 16 supported languages</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>XAI_API_KEY</code>: Your xAI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>XAISTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   xAI API key for authentication (used as Bearer token for the WebSocket   handshake). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ws_url" type="str" default="wss://api.x.ai/v1/stt"&gt;   WebSocket endpoint URL for xAI STT. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="16000"&gt;   Audio sample rate in Hz. Supported values: 8000, 16000, 22050, 24000, 44100,   48000\. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm"&gt;   Audio encoding format. One of <code>"pcm"</code> (signed 16-bit LE), <code>"mulaw"</code>, or   <code>"alaw"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="XAISTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="XAI_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>XAISTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Not applicable for xAI STT. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Recognition language. Supports: AR, BN, DE, EN, ES, FR, HI, ID, IT, JA, KO, PT, RU, TR, VI, ZH. *(Inherited from base STT settings.)*</td></tr><tr><td><code>interim_results</code></td><td><code>bool</code></td><td><code>True</code></td><td>When True, partial transcripts are emitted approximately every 500ms.</td></tr><tr><td><code>endpointing</code></td><td>`int \</td><td>None`</td><td><code>None</code></td><td>Silence duration in milliseconds that triggers a speech-final event. Range 0-5000. Server default is 10ms.</td></tr><tr><td><code>multichannel</code></td><td>`bool \</td><td>None`</td><td><code>None</code></td><td>When True, transcribes each interleaved channel independently. Requires <code>channels</code> &gt;= 2.</td></tr><tr><td><code>channels</code></td><td>`int \</td><td>None`</td><td><code>None</code></td><td>Number of interleaved channels (2-8). Required when <code>multichannel</code> is True.</td></tr><tr><td><code>diarize</code></td><td>`bool \</td><td>None`</td><td><code>None</code></td><td>When True, the server attaches a <code>speaker</code> field to each word identifying the detected speaker.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.xai.stt import XAISTTService
+
+stt = XAISTTService(
+    api_key=os.getenv("XAI_API_KEY"),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>import os
+from pipecat.services.xai.stt import XAISTTService
+from pipecat.transcriptions.language import Language
+
+stt = XAISTTService(
+    api_key=os.getenv("XAI_API_KEY"),
+    sample_rate=24000,
+    settings=XAISTTService.Settings(
+        language=Language.ES,
+        interim_results=True,
+        endpointing=1000,
+        diarize=True,
+    ),
+)</code></pre>
+<h3>With Multichannel Audio</h3>
+<pre><code>import os
+from pipecat.services.xai.stt import XAISTTService
+
+stt = XAISTTService(
+    api_key=os.getenv("XAI_API_KEY"),
+    settings=XAISTTService.Settings(
+        multichannel=True,
+        channels=2,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Connection management</strong>: The WebSocket connection is persistent and automatically reconnects if it drops mid-session. Audio is streamed continuously and the server emits <code>transcript.partial</code> events with <code>is_final</code> and <code>speech_final</code> flags to mark utterance boundaries.</li><li><strong>Language support</strong>: xAI STT accepts two-letter language codes. When set, the server applies Inverse Text Normalization for improved accuracy.</li><li><strong>Audio encoding</strong>: Supports PCM (signed 16-bit LE), μ-law, and A-law encoding formats. PCM is recommended for best quality.</li><li><strong>Settings updates</strong>: Changing settings requires reconnecting to the WebSocket. The service automatically handles disconnect and reconnect when settings are updated via <code>STTUpdateSettingsFrame</code>.</li></ul>
+<h2>Event Handlers</h2>
+<p>xAI STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to xAI WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from xAI WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to xAI STT")
+
+@stt.event_handler("on_disconnected")
+async def on_disconnected(service):
+    print("Disconnected from xAI STT")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/xai">https://docs.pipecat.ai/api-reference/server/services/stt/xai</a></p>
+</div></main></div></body></html>

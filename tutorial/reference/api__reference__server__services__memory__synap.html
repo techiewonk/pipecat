@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synap Memory · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Synap Memory</h1>
+<blockquote>The synap-pipecat integration gives Pipecat voice agents persistent, cross-session memory backed by Synap.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="maximem-ai" maintainerUrl="https://github.com/maximem-ai" repo="https://github.com/maximem-ai/maximem_synap_sdk" /&gt;</p>
+<h2>Overview</h2>
+<p>The <code>synap-pipecat</code> integration connects <a href="https://www.maximem.ai/synap">Synap</a>, Maximem AI's long-term memory layer, to Pipecat voice pipelines. It ships two <code>FrameProcessor</code> classes: <code>SynapMemoryProcessor</code> injects relevant user memory into the shared <code>LLMContext</code> before the LLM replies, and <code>SynapRecorder</code> captures each user and assistant turn back to Synap so memory persists across sessions. A <code>SynapShortTermProcessor</code> is also provided for injecting short-term conversation context.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/maximem-ai/maximem_synap_sdk"&gt;     Source code, examples, and issues for the Synap SDK and its Pipecat     integration (under <code>packages/integrations/synap-pipecat</code>)   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Documentation" icon="book" href="https://www.maximem.ai/docs"&gt;     Synap documentation from Maximem AI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Website" icon="globe" href="https://www.maximem.ai/synap"&gt;     Learn more about Synap and request an API key   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Dashboard" icon="key" href="https://synap.maximem.ai"&gt;     Manage your Synap account and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add maximem-synap-pipecat</code></pre>
+<p>Requires <code>pipecat-ai&gt;=0.0.80</code> and <code>maximem-synap&gt;=0.2.0</code>.</p>
+<h2>Prerequisites</h2>
+<h3>Synap Account Setup</h3>
+<p>Before using the Synap integration, you need:</p>
+<ol><li><strong>Synap Account / API Key</strong>: Get one at</li></ol>
+<p>   <a href="https://www.maximem.ai/synap">maximem.ai/synap</a></p>
+<ol><li>A configured <code>MaximemSynapSDK</code> instance, created with your API key:</li></ol>
+<p>   <code>MaximemSynapSDK(api_key="sk-...")</code></p>
+<h2>Configuration</h2>
+<h3><code>SynapMemoryProcessor</code></h3>
+<p>Inserted <strong>before</strong> the user context aggregator. On each <code>TranscriptionFrame</code>, fetches user-scoped context from Synap and appends it as a system message to the shared <code>LLMContext</code>.</p>
+<p>&lt;ParamField path="sdk" type="MaximemSynapSDK" required&gt;   A configured <code>MaximemSynapSDK</code> instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_id" type="str" required&gt;   Required — Synap memory is user-scoped. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="customer_id" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Optional customer/org scope. An empty string means customer-less. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="context" type="LLMContext" default="None"&gt;   Shared <code>LLMContext</code> used by the user/assistant aggregators. When <code>None</code>, the   processor is inert (no injection) but still passes frames through. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mode" type="str" default="&amp;#x22;accurate&amp;#x22;"&gt;   Synap fetch mode (<code>"accurate"</code> or <code>"fast"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_results" type="int" default="10"&gt;   Cap on <code>sdk.fetch</code> results per turn. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="include_conversation_context" type="bool" default="False"&gt;   Whether to request Synap's recent conversation block alongside the semantic   memory. &lt;/ParamField&gt;</p>
+<h3><code>SynapRecorder</code></h3>
+<p>Inserted <strong>after</strong> the assistant context aggregator. Buffers the latest user transcription and the streamed assistant response, then records both turns via <code>sdk.conversation.record_message</code> on <code>LLMFullResponseEndFrame</code>.</p>
+<p>&lt;ParamField path="sdk" type="MaximemSynapSDK" required&gt;   A configured <code>MaximemSynapSDK</code> instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_id" type="str" required&gt;   Required — Synap conversations are user-scoped. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="customer_id" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Optional customer/org scope. An empty string means customer-less. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="conversation_id" type="str" default="None"&gt;   Stable id for this call. Auto-generated per processor lifetime when absent. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   A <code>SynapShortTermProcessor</code> is also exported for injecting short-term   conversation context. See the <a href="https://github.com/maximem-ai/maximem_synap_sdk">source   repository</a> for its full   configuration. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat.pipeline.pipeline import Pipeline
+from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMUserAggregator,
+    LLMAssistantAggregator,
+)
+from maximem_synap import MaximemSynapSDK
+from synap_pipecat import SynapMemoryProcessor, SynapRecorder
+
+sdk = MaximemSynapSDK(api_key="sk-...")
+context = LLMContext(
+    messages=[{"role": "system", "content": "You are a helpful assistant."}]
+)
+
+user_agg = LLMUserAggregator(context=context)
+asst_agg = LLMAssistantAggregator(context=context)
+
+pipeline = Pipeline([
+    transport.input(),
+    stt,
+    SynapMemoryProcessor(sdk, user_id="alice", customer_id="acme", context=context),
+    user_agg,
+    llm,
+    tts,
+    transport.output(),
+    asst_agg,
+    SynapRecorder(sdk, user_id="alice", customer_id="acme"),
+])</code></pre>
+<p>&lt;Note&gt;   Reads degrade gracefully — if a Synap fetch fails, the frame continues   downstream with no context injected so a Synap blip never breaks a live call.   Write failures surface as a <code>SynapIntegrationError</code> pushed upstream as an   <code>ErrorFrame</code>. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>The integration requires <code>pipecat-ai&gt;=0.0.80</code>. Check the <a href="https://github.com/maximem-ai/maximem_synap_sdk">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/memory/synap">https://docs.pipecat.ai/api-reference/server/services/memory/synap</a></p>
+</div></main></div></body></html>

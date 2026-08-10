@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anannas AI LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Anannas AI LLM</h1>
+<blockquote>AnannasLLMService routes chat completions through Anannas AI's unified gateway: 500+ models behind one OpenAI-compatible API.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="Anannas-AI" maintainerUrl="https://github.com/Anannas-AI" repo="https://github.com/Anannas-AI/anannas-pipecat-integration" /&gt;</p>
+<h2>Overview</h2>
+<p><code>AnannasLLMService</code> provides an OpenAI-compatible interface for accessing <a href="https://anannas.ai">Anannas AI</a>'s unified inference gateway, which routes to 500+ models from providers such as OpenAI, Anthropic, Mistral, Gemini, and DeepSeek through a single API. It extends Pipecat's <code>OpenAILLMService</code>, so it supports streaming responses and function calling.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/Anannas-AI/anannas-pipecat-integration"&gt;     Source code, examples, and issues for the Anannas AI integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-anannas/"&gt;     The <code>pipecat-anannas</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Anannas AI" icon="book" href="https://docs.anannas.ai"&gt;     Documentation and supported models for Anannas AI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://anannas.ai/dashboard"&gt;     Create and manage your Anannas AI API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-anannas</code></pre>
+<h2>Prerequisites</h2>
+<h3>Anannas AI Account Setup</h3>
+<p>Before using the Anannas AI LLM service, you need:</p>
+<ol><li><strong>Anannas AI Account</strong>: Sign up at <a href="https://anannas.ai/">Anannas AI</a></li><li><strong>API Key</strong>: Create a key from your <a href="https://anannas.ai/dashboard">dashboard</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>ANANNAS_API_KEY</code>: Your Anannas AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Anannas AI API key. Falls back to the <code>ANANNAS_API_KEY</code> environment variable   if not provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="gpt-4o"&gt;   Model identifier to use. Supports any model available through Anannas AI   (e.g., <code>"gpt-4o"</code>, <code>"claude-3-5-sonnet-20241022"</code>, <code>"deepseek-chat"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.anannas.ai/v1"&gt;   Base URL for the Anannas AI API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="kwargs"&gt;   Additional keyword arguments passed through to the underlying   <code>OpenAILLMService</code>. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+
+from pipecat_anannas import AnannasLLMService
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.services.azure.tts import AzureTTSService
+
+# Create services
+stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY"))
+llm = AnannasLLMService(
+    api_key=os.getenv("ANANNAS_API_KEY"),
+    model="gpt-4o",  # or any supported model
+)
+tts = AzureTTSService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region=os.getenv("AZURE_SPEECH_REGION"),
+)
+
+# Build pipeline
+pipeline = Pipeline([stt, llm, tts])</code></pre>
+<p>See the <a href="https://github.com/Anannas-AI/anannas-pipecat-integration">source repository</a> for a complete function calling example.</p>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.86+. Check the <a href="https://github.com/Anannas-AI/anannas-pipecat-integration">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/anannas">https://docs.pipecat.ai/api-reference/server/services/llm/anannas</a></p>
+</div></main></div></body></html>

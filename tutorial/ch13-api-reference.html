@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 13 — API Reference · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+#apifilter{width:100%;max-width:520px;padding:10px 14px;background:var(--code-bg);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:15px;margin:6px 0 4px}
+#apifilter:focus{outline:none;border-color:var(--accent)}
+.apicount{color:var(--muted);font-size:13px;margin:0 0 8px}
+h2.apih2{color:var(--accent-2)}
+.apihide{display:none!important}
+</style></head>
+<body>
+<button id="menuBtn" aria-label="Menu">&#9776; Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 13 · Reference</div>
+<h1>API Reference — every page, indexed</h1>
+<div class="meta"><span class="pill">Reference</span><span class="pill grey">322 pages</span></div>
+<p class="lead">A complete, categorized index of the official <a href="reference/api__reference.html" target="_blank" rel="noopener">Pipecat API Reference</a> — server services, utilities, frames, workers, pipeline, bus, client SDKs and more. Every page is linked with its one-line description. Type to filter across all 322 entries.</p>
+<div class="box start"><p class="title">📥 Make this fully offline (one-time)</p>
+<p>The tutorial chapters already work with no internet. To also mirror all 344 documentation pages locally, run once (needs internet):</p>
+<pre><code class="language-bash">python tutorial/build_offline_docs.py   # or: uv run python tutorial/build_offline_docs.py</code></pre>
+<p>It downloads each page, saves a themed offline copy under <code>tutorial/reference/</code>, and rewrites every link below (and in every chapter) to the local copy. After it finishes, nothing here needs the internet.</p></div>
+<input id="apifilter" type="search" placeholder="Filter (e.g. deepgram, VAD, serializer, worker, RTVI)" autocomplete="off">
+<p class="apicount" id="apicount"></p>
+<h2 id="sec-top" class="apih2">Top</h2>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__index.html" target="_blank" rel="noopener">API Reference</a></td><td>Reference documentation for every part of Pipecat: the Python server framework, client SDKs, Pipecat Flows, Pipecat Cloud, the CLI, etc.</td></tr>
+<tr><td><a href="reference/api__reference__context__hub.html" target="_blank" rel="noopener">Pipecat Context Hub</a></td><td>A local index of Pipecat docs, examples, and API source for AI coding tools — available as a CLI and an MCP server.</td></tr>
+</tbody></table></div>
+<h2 id="sec-cli" class="apih2">Cli</h2>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__cli__overview.html" target="_blank" rel="noopener">CLI overview</a></td><td></td></tr>
+<tr><td><a href="reference/api__reference__cli__init.html" target="_blank" rel="noopener">pipecat init</a></td><td>pipecat init scaffolds a new Pipecat app from the CLI: the single entry point for starting a project with Pipecat.</td></tr>
+<tr><td><a href="reference/api__reference__cli__eval.html" target="_blank" rel="noopener">pipecat eval</a></td><td>pipecat eval runs scenario-based behavioral evals against a running Pipecat agent, individually or as a suite from the CLI.</td></tr>
+<tr><td><a href="reference/api__reference__cli__context__hub.html" target="_blank" rel="noopener">pipecat context-hub</a></td><td>Query the Pipecat Context Hub from the CLI and register it as an MCP server for coding agents with pipecat context-hub install.</td></tr>
+</tbody></table></div>
+<h3>Cloud</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__cli__cloud__agent.html" target="_blank" rel="noopener">pipecat cloud agent</a></td><td>pipecat cloud agent subcommands manage deployed Pipecat Cloud agents: view status and control agent lifecycle from the CLI.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__auth.html" target="_blank" rel="noopener">pipecat cloud auth</a></td><td>pipecat cloud auth manages authentication with Pipecat Cloud: login, logout, and checking your current credentials.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__build.html" target="_blank" rel="noopener">pipecat cloud build</a></td><td>pipecat cloud build manages Pipecat Cloud builds: view build logs, check build status, and inspect builds from the CLI.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__docker.html" target="_blank" rel="noopener">pipecat cloud docker</a></td><td>pipecat cloud docker builds, tags, and pushes agent Docker images to container registries for Pipecat Cloud deployments.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__deploy.html" target="_blank" rel="noopener">pipecat cloud deploy</a></td><td>pipecat cloud deploy creates or updates a Pipecat Cloud agent deployment, building a deployment manifest from your options.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__organizations.html" target="_blank" rel="noopener">pipecat cloud organizations</a></td><td>pipecat cloud organizations manages Pipecat Cloud organizations and API keys: list, select, and manage from the CLI.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__secrets.html" target="_blank" rel="noopener">pipecat cloud secrets</a></td><td>pipecat cloud secrets manages secret sets for agent deployments: create, update, list, and delete sensitive configuration.</td></tr>
+<tr><td><a href="reference/api__reference__cli__cloud__regions.html" target="_blank" rel="noopener">pipecat cloud regions</a></td><td>pipecat cloud regions lists the regions available for deploying agents and storing secrets in Pipecat Cloud.</td></tr>
+</tbody></table></div>
+<h2 id="sec-client" class="apih2">Client SDKs</h2>
+<h3>Android</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__android__overview.html" target="_blank" rel="noopener">Android SDK Overview</a></td><td>The Pipecat Android SDK: a Kotlin client library for building voice and multimodal AI applications on Android.</td></tr>
+<tr><td><a href="https://docs.pipecat.ai/api-reference/client/android/api-reference" target="_blank" rel="noopener">Android SDK Reference</a></td><td>Complete Kotlin API reference for the Pipecat Android client SDK, hosted at docs-android.rtvi.ai.</td></tr>
+</tbody></table></div>
+<h3>Android › Transports</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__android__transports__daily.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>The Daily transport for the Pipecat Android SDK: real-time WebRTC audio and video in Kotlin apps on Daily's infrastructure.</td></tr>
+<tr><td><a href="reference/api__reference__client__android__transports__gemini__websocket.html" target="_blank" rel="noopener">Gemini Live WebSocket Transport</a></td><td>The Gemini Live WebSocket transport for the Pipecat Android SDK: connect Kotlin apps directly to Google's Gemini Live service.</td></tr>
+<tr><td><a href="reference/api__reference__client__android__transports__openai__webrtc.html" target="_blank" rel="noopener">OpenAI Realtime WebRTC Transport</a></td><td>The OpenAI Realtime WebRTC transport for the Pipecat Android SDK: connect Kotlin apps directly to the OpenAI Realtime service.</td></tr>
+<tr><td><a href="reference/api__reference__client__android__transports__small__webrtc.html" target="_blank" rel="noopener">Small WebRTC Transport</a></td><td>The Small WebRTC transport for the Android SDK: direct peer-to-peer WebRTC between Kotlin clients and a Pipecat bot.</td></tr>
+</tbody></table></div>
+<h3>Cpp</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__cpp__overview.html" target="_blank" rel="noopener">C++ SDK Overview</a></td><td>The Pipecat C++ SDK: a native client library for voice and multimodal AI applications on Linux, macOS, and Windows.</td></tr>
+<tr><td><a href="reference/api__reference__client__cpp__transport.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>The Daily transport for the Pipecat C++ SDK: real-time WebRTC audio and video in native applications on Daily's infrastructure.</td></tr>
+</tbody></table></div>
+<h3>Ios</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__ios__overview.html" target="_blank" rel="noopener">iOS SDK Overview</a></td><td>The Pipecat iOS SDK: a Swift client library for building voice and multimodal AI applications on iOS.</td></tr>
+<tr><td><a href="reference/api__reference__client__ios__api__reference.html" target="_blank" rel="noopener">iOS SDK Reference</a></td><td>Complete Swift API reference for the Pipecat iOS client SDK, hosted at docs-ios.pipecat.ai.</td></tr>
+</tbody></table></div>
+<h3>Ios › Transports</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__ios__transports__daily.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>The Daily transport for the Pipecat iOS SDK: real-time WebRTC audio and video in Swift apps on Daily's infrastructure.</td></tr>
+<tr><td><a href="reference/api__reference__client__ios__transports__gemini__websocket.html" target="_blank" rel="noopener">Gemini Live WebSocket Transport</a></td><td>The Gemini Live WebSocket transport for the Pipecat iOS SDK: connect Swift apps directly to Google's Gemini Live service.</td></tr>
+<tr><td><a href="reference/api__reference__client__ios__transports__openai__webrtc.html" target="_blank" rel="noopener">OpenAI Realtime WebRTC Transport</a></td><td>OpenAIRealTimeWebRTCTransport for the Pipecat iOS SDK: connect Swift apps directly to the OpenAI Realtime API over WebRTC.</td></tr>
+<tr><td><a href="reference/api__reference__client__ios__transports__small__webrtc.html" target="_blank" rel="noopener">Small WebRTC Transport</a></td><td>SmallWebRTCTransport for the iOS SDK: peer-to-peer WebRTC between Swift clients and a Pipecat bot, no third-party provider.</td></tr>
+</tbody></table></div>
+<h3>Js</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__js__overview.html" target="_blank" rel="noopener">JavaScript SDK Overview</a></td><td>The Pipecat JavaScript client SDK: device and media stream management, bot connectivity, and events for web voice AI apps.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__client__constructor.html" target="_blank" rel="noopener">PipecatClient Constructor</a></td><td>Construct a PipecatClient from @pipecat-ai/client-js: transport selection, callbacks, and configuration options.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__client__methods.html" target="_blank" rel="noopener">Client Methods</a></td><td>PipecatClient methods for starting bots, managing sessions, sending messages, and controlling devices in the JavaScript SDK.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__callbacks.html" target="_blank" rel="noopener">Callbacks and Events</a></td><td>Handle bot events and state changes in the Pipecat JavaScript client with PipecatClient callbacks and event listeners.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__errors.html" target="_blank" rel="noopener">Errors</a></td><td>Error types thrown by the Pipecat JavaScript client: RTVIError and its subclasses, and how to catch and handle each.</td></tr>
+</tbody></table></div>
+<h3>Js › Transports</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__js__transports__transport.html" target="_blank" rel="noopener">Transport Overview</a></td><td>The Transport base class in the Pipecat JavaScript SDK: device management, connectivity, and messaging every transport implements.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__transports__daily.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>DailyTransport for the Pipecat JavaScript SDK: WebRTC audio and video on Daily's infrastructure, wrapping a Daily-JS call client.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__transports__small__webrtc.html" target="_blank" rel="noopener">Small WebRTC Transport</a></td><td>SmallWebRTCTransport for the JavaScript SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__transports__websocket.html" target="_blank" rel="noopener">WebSocket Transport</a></td><td>WebSocketTransport for the JavaScript SDK: a lightweight, purely WebSocket-based connection between clients and a Pipecat bot.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__transports__gemini.html" target="_blank" rel="noopener">Gemini Live WebSocket Transport</a></td><td>GeminiLiveWebsocketTransport for the JavaScript SDK: connect directly to Google's Gemini Live service over WebSocket.</td></tr>
+<tr><td><a href="reference/api__reference__client__js__transports__openai__webrtc.html" target="_blank" rel="noopener">OpenAI Realtime WebRTC Transport</a></td><td>OpenAIRealTimeWebRTCTransport for the JavaScript SDK: connect directly to the OpenAI Realtime API over WebRTC.</td></tr>
+</tbody></table></div>
+<h3>React</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__react__overview.html" target="_blank" rel="noopener">React SDK Overview</a></td><td>The Pipecat React SDK wraps PipecatClient with React components and hooks for building voice and multimodal AI applications.</td></tr>
+<tr><td><a href="reference/api__reference__client__react__components.html" target="_blank" rel="noopener">Components</a></td><td>Ready-to-use React components from the Pipecat React SDK: PipecatClientProvider, audio and video rendering, and visualizers.</td></tr>
+<tr><td><a href="reference/api__reference__client__react__hooks.html" target="_blank" rel="noopener">Hooks</a></td><td>React hooks from the Pipecat React SDK for client access, media device management, and bot event handling, like usePipecatClient.</td></tr>
+</tbody></table></div>
+<h3>React Native</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__react__native__overview.html" target="_blank" rel="noopener">React Native SDK Overview</a></td><td>The Pipecat React Native SDK brings PipecatClient from the JavaScript SDK to React Native voice and multimodal apps.</td></tr>
+<tr><td><a href="reference/api__reference__client__react__native__api__reference.html" target="_blank" rel="noopener">React Native SDK Reference</a></td><td>API reference for the Pipecat React Native SDK, which layers React Native support over the Pipecat JavaScript SDK.</td></tr>
+</tbody></table></div>
+<h3>React Native › Transports</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__client__react__native__transports__daily.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>DailyTransport for the Pipecat React Native SDK: WebRTC audio and video on Daily's infrastructure in native mobile apps.</td></tr>
+<tr><td><a href="reference/api__reference__client__react__native__transports__small__webrtc.html" target="_blank" rel="noopener">Small WebRTC Transport</a></td><td>SmallWebRTCTransport for the React Native SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider.</td></tr>
+</tbody></table></div>
+<h2 id="sec-pipecat-cloud" class="apih2">Pipecat Cloud</h2>
+<h3>Rest Reference</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__overview.html" target="_blank" rel="noopener">Pipecat Cloud REST API</a></td><td>Base URLs, authentication, error handling, and the OpenAPI specification for the Pipecat Cloud REST API.</td></tr>
+</tbody></table></div>
+<h3>Rest Reference › Endpoint</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__create.html" target="_blank" rel="noopener">Create an Agent</a></td><td>POST /agents creates a Pipecat Cloud agent from a container image with deployment configuration settings.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__update.html" target="_blank" rel="noopener">Update an Agent</a></td><td>POST /agents/{agentName} updates an existing Pipecat Cloud agent's configuration or deploys a new version of its image.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__start.html" target="_blank" rel="noopener">Start an Agent Session</a></td><td>POST /{agentName}/start starts a new session with a deployed Pipecat Cloud agent.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__stop.html" target="_blank" rel="noopener">Stop an Agent Session</a></td><td>DELETE /agents/{agentName}/sessions/{sessionId} stops a running Pipecat Cloud agent session and cleans up its resources.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__session__proxy.html" target="_blank" rel="noopener">Session API</a></td><td>Proxy HTTP requests to endpoints defined in your running Pipecat Cloud bot: GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__logs.html" target="_blank" rel="noopener">Retrieve Agent Logs</a></td><td>GET /agents/{agentName}/logs returns execution logs for a Pipecat Cloud agent, with filtering and pagination options.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__sessions.html" target="_blank" rel="noopener">List All Sessions</a></td><td>GET /agents/{agentName}/sessions lists sessions for a Pipecat Cloud agent with filtering and pagination options.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__session.html" target="_blank" rel="noopener">Get Session Details</a></td><td>GET /agents/{agentName}/sessions/{sessionId} returns details for one agent session, including resource metrics.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__list__all.html" target="_blank" rel="noopener">List All Agents</a></td><td>GET /agents lists all Pipecat Cloud agents in your organization with their status and configuration.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__list__one.html" target="_blank" rel="noopener">Get Agent Details</a></td><td>GET /agents/{agentName} returns details for one Pipecat Cloud agent, including its deployment status and configuration.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__agent__delete.html" target="_blank" rel="noopener">Delete an Agent</a></td><td>DELETE /agents/{agentName} permanently deletes a Pipecat Cloud agent and its associated resources.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__secret__create__update.html" target="_blank" rel="noopener">Create or Update Secrets</a></td><td>PUT /secrets/{setName} creates or updates a Pipecat Cloud secret set and its key-value pairs.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__secret__list__all.html" target="_blank" rel="noopener">List All Secret Sets</a></td><td>GET /secrets lists all secret sets in your Pipecat Cloud organization with their names and metadata.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__secret__list__one.html" target="_blank" rel="noopener">Get Secret Set Details</a></td><td>GET /secrets/{setName} returns the key-value pairs for a specific Pipecat Cloud secret set.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__secret__delete__secret__set.html" target="_blank" rel="noopener">Delete Entire Secret Set</a></td><td>DELETE /secrets/{setName} deletes an entire Pipecat Cloud secret set and all the secrets it contains.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__secret__delete__specific__secret.html" target="_blank" rel="noopener">Delete Specific Secret From Set</a></td><td>DELETE /secrets/{setName}/{secretKey} removes a single secret from a Pipecat Cloud secret set by its key.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__build__upload__url.html" target="_blank" rel="noopener">Get Upload URL</a></td><td>POST /builds/upload-url returns a pre-signed URL for uploading your Docker build context to Pipecat Cloud.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__build__create.html" target="_blank" rel="noopener">Create Build</a></td><td>POST /builds creates a new Pipecat Cloud build, or returns a cached build for your uploaded context.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__build__list.html" target="_blank" rel="noopener">List Builds</a></td><td>GET /builds lists all Pipecat Cloud builds for your organization, with optional filters.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__build__get.html" target="_blank" rel="noopener">Get Build</a></td><td>GET /builds/{buildId} returns the current status and details of a specific Pipecat Cloud build.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__build__get__logs.html" target="_blank" rel="noopener">Get Build Logs</a></td><td>GET /builds/{buildId}/logs returns the build logs for a specific Pipecat Cloud build.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__regions__list.html" target="_blank" rel="noopener">List Regions</a></td><td>GET /regions lists all available Pipecat Cloud regions for deploying agents and storing secrets.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__properties__get.html" target="_blank" rel="noopener">Get Organization Properties</a></td><td>GET /properties returns the current values of configurable properties for your Pipecat Cloud organization.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__rest__reference__endpoint__properties__update.html" target="_blank" rel="noopener">Update Organization Properties</a></td><td>PATCH /properties updates configurable properties for your Pipecat Cloud organization, such as organization defaults.</td></tr>
+</tbody></table></div>
+<h3>Sdk Reference</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__pipecat__cloud__sdk__reference__overview.html" target="_blank" rel="noopener">Pipecat Cloud SDK Overview</a></td><td>The Pipecat Cloud Python SDK (pipecatcloud): programmatic agent deployment and session management from Python.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__sdk__reference__sessions.html" target="_blank" rel="noopener">Session Management</a></td><td>Start and manage Pipecat Cloud agent sessions programmatically with the pipecatcloud Python SDK's session APIs.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__sdk__reference__session__arguments.html" target="_blank" rel="noopener">Session Arguments</a></td><td>Understand the session arguments Pipecat Cloud passes to your bot entry point at session start, from the Python SDK.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__sdk__reference__exceptions.html" target="_blank" rel="noopener">Error Handling</a></td><td>Handle errors from the Pipecat Cloud Python SDK: exception types raised by deployment and session operations, and how to catch them.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__cloud__sdk__reference__examples.html" target="_blank" rel="noopener">Examples</a></td><td>Common Pipecat Cloud Python SDK patterns: starting agent sessions, handling session arguments, and managing deployments.</td></tr>
+</tbody></table></div>
+<h2 id="sec-pipecat-flows" class="apih2">Pipecat Flows</h2>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__pipecat__flows__overview.html" target="_blank" rel="noopener">Pipecat Flows API Overview</a></td><td>Reference documentation for Pipecat Flows: FlowManager, node configuration, actions, and the flows type system.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__flows__flow__manager.html" target="_blank" rel="noopener">FlowManager</a></td><td>FlowManager orchestrates Pipecat Flows conversations: node transitions, function registration, and flow state.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__flows__types.html" target="_blank" rel="noopener">Types</a></td><td>Type definitions and configuration schemas for Pipecat Flows: NodeConfig, task messages, and flow configuration structures.</td></tr>
+<tr><td><a href="reference/api__reference__pipecat__flows__exceptions.html" target="_blank" rel="noopener">Exceptions</a></td><td>The Pipecat Flows exception hierarchy: FlowError and subclasses raised during flow execution, and how to handle each.</td></tr>
+</tbody></table></div>
+<h2 id="sec-server" class="apih2">Server</h2>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__introduction.html" target="_blank" rel="noopener">Pipecat Server API Overview</a></td><td>API reference for the Pipecat Python framework: pipelines, services, transports, utilities, and the server runtime.</td></tr>
+</tbody></table></div>
+<h3>Bus</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__bus__bus.html" target="_blank" rel="noopener">Worker Bus</a></td><td>WorkerBus is the abstract base for inter-agent and runner-agent pub/sub messaging in Pipecat's multi-agent framework.</td></tr>
+<tr><td><a href="reference/api__reference__server__bus__messages.html" target="_blank" rel="noopener">Bus Messages</a></td><td>Bus message types for Pipecat multi-agent communication: the pub/sub primitives, organized by priority level.</td></tr>
+<tr><td><a href="reference/api__reference__server__bus__serializers.html" target="_blank" rel="noopener">Bus Serializers</a></td><td>MessageSerializer is the abstract base for Pipecat bus message serialization used by network bus implementations.</td></tr>
+<tr><td><a href="reference/api__reference__server__bus__proxy.html" target="_blank" rel="noopener">Bus Proxy Agents</a></td><td>WebSocketProxyClient and the bus proxy API: forward Pipecat bus messages to remote agents for distributed deployments.</td></tr>
+</tbody></table></div>
+<h3>Events</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__events__overview.html" target="_blank" rel="noopener">Events Overview</a></td><td>Monitor Pipecat lifecycle changes with the event system: frame processor and service events, and how to subscribe.</td></tr>
+<tr><td><a href="reference/api__reference__server__events__frame__processor__events.html" target="_blank" rel="noopener">FrameProcessor Events</a></td><td>Handle errors and monitor frame processing with events available on every processor</td></tr>
+<tr><td><a href="reference/api__reference__server__events__service__events.html" target="_blank" rel="noopener">Service Events</a></td><td>Handle connection lifecycle and service-specific events for STT, TTS, and LLM services</td></tr>
+</tbody></table></div>
+<h3>Extensions</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__extensions__ivr.html" target="_blank" rel="noopener">IVRNavigator</a></td><td>AI-powered Interactive Voice Response system navigation with automatic classification and goal-oriented decision making</td></tr>
+<tr><td><a href="reference/api__reference__server__extensions__pipecat__backchannel.html" target="_blank" rel="noopener">Pipecat Backchannel</a></td><td>Backchannel implementation that plays short listening sounds while the user is still speaking</td></tr>
+<tr><td><a href="reference/api__reference__server__extensions__voicemail.html" target="_blank" rel="noopener">VoicemailDetector</a></td><td>Technical implementation details and architecture for voicemail detection</td></tr>
+</tbody></table></div>
+<h3>Frames</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__frames__overview.html" target="_blank" rel="noopener">Frames</a></td><td>Frame categories, processing behavior, and common patterns for Pipecat pipelines</td></tr>
+<tr><td><a href="reference/api__reference__server__frames__data__frames.html" target="_blank" rel="noopener">Data Frames</a></td><td>Reference for DataFrame types: audio, image, text, transcription, and transport messages</td></tr>
+<tr><td><a href="reference/api__reference__server__frames__control__frames.html" target="_blank" rel="noopener">Control Frames</a></td><td>Reference for ControlFrame types: pipeline lifecycle, response boundaries, service settings, and runtime configuration</td></tr>
+<tr><td><a href="reference/api__reference__server__frames__system__frames.html" target="_blank" rel="noopener">System Frames</a></td><td>Reference for SystemFrame types: pipeline lifecycle, interruptions, speaking state, input, and diagnostics</td></tr>
+<tr><td><a href="reference/api__reference__server__frames__llm__frames.html" target="_blank" rel="noopener">LLM Frames</a></td><td>LLM frame reference for Pipecat: context frames and the function calling helper dataclasses passed through pipelines.</td></tr>
+</tbody></table></div>
+<h3>Pipeline</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__pipeline__pipeline__params.html" target="_blank" rel="noopener">PipelineParams</a></td><td>PipelineParams configures Pipecat pipeline execution: audio rates, metrics, heartbeats, and interruption settings.</td></tr>
+<tr><td><a href="reference/api__reference__server__pipeline__pipeline__worker.html" target="_blank" rel="noopener">PipelineWorker</a></td><td>PipelineWorker manages Pipecat pipeline execution and lifecycle inside the multi-agent framework.</td></tr>
+<tr><td><a href="reference/api__reference__server__pipeline__pipeline__idle__detection.html" target="_blank" rel="noopener">Pipeline Idle Detection</a></td><td>Detect and handle idle Pipecat pipelines with no bot or user activity, and shut them down automatically.</td></tr>
+<tr><td><a href="reference/api__reference__server__pipeline__heartbeats.html" target="_blank" rel="noopener">Pipeline Heartbeats</a></td><td>Monitor Pipecat pipeline health with heartbeat frames that verify frames still flow end to end.</td></tr>
+<tr><td><a href="reference/api__reference__server__pipeline__parallel__pipeline.html" target="_blank" rel="noopener">ParallelPipeline</a></td><td>Run multiple pipeline branches in parallel, with synchronized inputs and outputs for complex flows</td></tr>
+</tbody></table></div>
+<h3>Rtvi</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__rtvi__introduction.html" target="_blank" rel="noopener">RTVI (Real-Time Voice Interaction)</a></td><td>Build real-time voice and multimodal applications with Pipecat’s RTVI protocol</td></tr>
+<tr><td><a href="reference/api__reference__server__rtvi__rtvi__processor.html" target="_blank" rel="noopener">RTVIProcessor</a></td><td>RTVIProcessor coordinates RTVI protocol communication between Pipecat pipelines and connected clients.</td></tr>
+<tr><td><a href="reference/api__reference__server__rtvi__rtvi__observer.html" target="_blank" rel="noopener">RTVIObserver</a></td><td>RTVIObserver converts Pipecat pipeline frames into RTVI protocol messages for connected clients.</td></tr>
+<tr><td><a href="reference/api__reference__server__rtvi__google__rtvi__observer.html" target="_blank" rel="noopener">Google RTVI Observer</a></td><td>GoogleRTVIObserver adds support for sending Google search responses to RTVI clients in Pipecat pipelines.</td></tr>
+</tbody></table></div>
+<h3>Services</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__supported__services.html" target="_blank" rel="noopener">Supported Services</a></td><td>The full catalog of AI services integrated with Pipecat: STT, TTS, LLM, transports, and more, with setup requirements.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__community__integrations.html" target="_blank" rel="noopener">Community Integrations</a></td><td>Community-maintained service integrations for Pipecat: how to find, install, and contribute them.</td></tr>
+</tbody></table></div>
+<h3>Services › Analytics</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__analytics__finchvox.html" target="_blank" rel="noopener">Finchvox Session Replay</a></td><td>Finchvox is local session replay for voice AI: unified conversation timelines, audio, and traces for Pipecat debugging.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__analytics__future__agi.html" target="_blank" rel="noopener">Future AGI Observability</a></td><td>traceAI-pipecat adds OpenTelemetry tracing and evaluation instrumentation from Future AGI to Pipecat applications.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__analytics__noveum__trace.html" target="_blank" rel="noopener">Noveum Trace</a></td><td>Community-maintained observability integration that maps Pipecat pipeline events into Noveum traces and spans</td></tr>
+<tr><td><a href="reference/api__reference__server__services__analytics__openinference.html" target="_blank" rel="noopener">OpenInference Tracing</a></td><td>OpenTelemetry-based auto-instrumentation that converts Pipecat traces to OpenInference for viewing in Arize Phoenix or Arize AX</td></tr>
+<tr><td><a href="reference/api__reference__server__services__analytics__roark.html" target="_blank" rel="noopener">Roark Call Analytics</a></td><td>RoarkObserver sends Pipecat call analytics to Roark: call lifecycle, transcripts, tool calls, and recordings from one observer.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__analytics__sentry.html" target="_blank" rel="noopener">Sentry Metrics</a></td><td>SentryMetrics extends FrameProcessorMetrics for performance monitoring of Pipecat pipelines with Sentry.</td></tr>
+</tbody></table></div>
+<h3>Services › Audio Filters</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__audio__filters__aic__filter.html" target="_blank" rel="noopener">AIC Audio Filter</a></td><td>AICFilter enhances user speech with the ai-coustics SDK, reducing background noise in real-time Pipecat audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__audio__filters__arctan.html" target="_blank" rel="noopener">Arctan Audio Filter</a></td><td>ArctanAudioFilter provides real-time speech enhancement and noise cancellation with Arctan Eigen models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__audio__filters__koala__filter.html" target="_blank" rel="noopener">Koala Audio Filter</a></td><td>KoalaFilter reduces background noise in real-time audio using Picovoice Koala noise suppression in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__audio__filters__krisp__viva__filter.html" target="_blank" rel="noopener">Krisp VIVA Audio Filter</a></td><td>KrispVivaFilter isolates the user's voice in real-time audio using the Krisp VIVA model in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__audio__filters__rnnoise__filter.html" target="_blank" rel="noopener">RNNoise Audio Filter</a></td><td>RNNoiseFilter suppresses background noise in real-time audio with the RNNoise recurrent neural network.</td></tr>
+</tbody></table></div>
+<h3>Services › Image Generation</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__image__generation__azure.html" target="_blank" rel="noopener">Azure OpenAI Image Generation</a></td><td>AzureImageGenServiceREST generates images with Azure OpenAI's image API from text prompts in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__image__generation__fal.html" target="_blank" rel="noopener">fal Image Generation</a></td><td>FalImageGenService generates images from text prompts using fal's fast Stable Diffusion models in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__image__generation__google.html" target="_blank" rel="noopener">Google Image Generation</a></td><td>GoogleImageGenService generates images with Google's Imagen models from text prompts in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__image__generation__openai.html" target="_blank" rel="noopener">OpenAI Image Generation</a></td><td>OpenAIImageGenService generates images with OpenAI's DALL-E models from text prompts in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__image__generation__replicate.html" target="_blank" rel="noopener">Replicate Image Generation</a></td><td>ReplicateImageGenService generates images from text prompts using models hosted on Replicate, within Pipecat pipelines.</td></tr>
+</tbody></table></div>
+<h3>Services › Knowledge Retrieval</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__knowledge__retrieval__moss.html" target="_blank" rel="noopener">Moss Knowledge Retrieval</a></td><td>MossRetrievalService injects low-latency semantic search results from Moss into your Pipecat agent's context.</td></tr>
+</tbody></table></div>
+<h3>Services › Llm</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__llm__anannas.html" target="_blank" rel="noopener">Anannas AI LLM</a></td><td>AnannasLLMService routes chat completions through Anannas AI's unified gateway: 500+ models behind one OpenAI-compatible API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__anthropic.html" target="_blank" rel="noopener">Anthropic LLM</a></td><td>AnthropicLLMService integrates Claude models with streaming responses, function calling, and prompt caching support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__aws.html" target="_blank" rel="noopener">AWS Bedrock LLM</a></td><td>AWSBedrockLLMService runs Amazon Bedrock foundation models, including Claude and Amazon Nova, with streaming and function calling.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__azure.html" target="_blank" rel="noopener">Azure OpenAI LLM</a></td><td>AzureLLMService reaches Azure OpenAI language models through the OpenAI-compatible interface it inherits from OpenAILLMService.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__baseten.html" target="_blank" rel="noopener">Baseten LLM</a></td><td>BasetenLLMService connects to Baseten Model APIs and dedicated deployments, inheriting OpenAILLMService's streaming and tools.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__cerebras.html" target="_blank" rel="noopener">Cerebras LLM</a></td><td>CerebrasLLMService accesses Cerebras language models for chat completion via an OpenAI-compatible interface with streaming.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__crusoe.html" target="_blank" rel="noopener">Crusoe LLM</a></td><td>CrusoeLLMService generates chat completions on Crusoe Cloud's Managed Inference API, OpenAI-compatible with streaming support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__deepseek.html" target="_blank" rel="noopener">DeepSeek LLM</a></td><td>DeepSeekLLMService accesses DeepSeek language models through an OpenAI-compatible interface, inheriting from OpenAILLMService.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__fireworks.html" target="_blank" rel="noopener">Fireworks AI LLM</a></td><td>FireworksLLMService accesses Fireworks AI language models with streaming and function calling via an OpenAI-compatible API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__floe.html" target="_blank" rel="noopener">Floe LLM</a></td><td>LLM service that routes OpenAI-compatible chat completions through Floe with per-call spend caps</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__google.html" target="_blank" rel="noopener">Google Gemini LLM</a></td><td>GoogleLLMService integrates Google's Gemini models with streaming responses, function calling, and multimodal input support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__google__vertex.html" target="_blank" rel="noopener">Google Vertex AI LLM</a></td><td>GoogleVertexLLMService extends GoogleLLMService with Vertex AI authentication for running Gemini models on Google Cloud.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__grok.html" target="_blank" rel="noopener">Grok LLM</a></td><td>GrokLLMService accesses xAI's Grok language models through an OpenAI-compatible interface with streaming and function calling.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__groq.html" target="_blank" rel="noopener">Groq LLM</a></td><td>GroqLLMService runs chat completions on Groq's high-speed inference API through an OpenAI-compatible interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__inception.html" target="_blank" rel="noopener">Inception LLM</a></td><td>InceptionLLMService serves Inception's Mercury-2 diffusion-based reasoning model via an OpenAI-compatible interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__mistral.html" target="_blank" rel="noopener">Mistral LLM</a></td><td>MistralLLMService accesses Mistral language models through an OpenAI-compatible interface, inheriting OpenAILLMService streaming.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__nebius.html" target="_blank" rel="noopener">Nebius LLM</a></td><td>NebiusLLMService generates chat completions on Nebius Token Factory's OpenAI-compatible API with streaming responses.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__novita.html" target="_blank" rel="noopener">Novita AI LLM</a></td><td>NovitaLLMService connects Pipecat to Novita AI's language model catalog through an OpenAI-compatible streaming interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__nvidia.html" target="_blank" rel="noopener">NVIDIA NIM LLM</a></td><td>NvidiaLLMService accesses NVIDIA NIM (NVIDIA Inference Microservice) models via an OpenAI-compatible interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__ollama.html" target="_blank" rel="noopener">Ollama LLM</a></td><td>OLLamaLLMService runs locally hosted Ollama models with no cloud API, via BaseOpenAILLMService's OpenAI-compatible interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__openai.html" target="_blank" rel="noopener">OpenAI LLM</a></td><td>OpenAILLMService for GPT chat completions: streaming responses, function calling, vision input, and OpenAI-compatible base URLs.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__openai__responses.html" target="_blank" rel="noopener">OpenAI Responses LLM</a></td><td>OpenAIResponsesLLMService and OpenAIResponsesHttpLLMService bring OpenAI's Responses API to Pipecat voice pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__openrouter.html" target="_blank" rel="noopener">OpenRouter LLM</a></td><td>OpenRouterLLMService reaches OpenRouter's multi-provider model catalog through an OpenAI-compatible streaming interface.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__perplexity.html" target="_blank" rel="noopener">Perplexity LLM</a></td><td>PerplexityLLMService accesses Perplexity language models through an OpenAI-compatible interface, inheriting OpenAILLMService.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__qwen.html" target="_blank" rel="noopener">Qwen LLM</a></td><td>QwenLLMService runs Alibaba Cloud's Qwen models through an OpenAI-compatible interface with streaming chat completions.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__sambanova.html" target="_blank" rel="noopener">SambaNova LLM</a></td><td>SambaNovaLLMService connects to SambaNova language models through an OpenAI-compatible interface with streaming support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__sarvam.html" target="_blank" rel="noopener">Sarvam AI LLM</a></td><td>SarvamLLMService generates chat completions on Sarvam AI's OpenAI-compatible API with streaming and function calling.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__simplismart.html" target="_blank" rel="noopener">Simplismart LLM</a></td><td>SimplismartLLMService generates chat completions with Simplismart's OpenAI-compatible Chat Completions API, extending BaseOpenAILLMService.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__llm__together.html" target="_blank" rel="noopener">Together AI LLM</a></td><td>TogetherLLMService accesses Together AI's model catalog, including Meta Llama 3.1 and 3.2, via an OpenAI-compatible interface.</td></tr>
+</tbody></table></div>
+<h3>Services › Memory</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__memory__mem0.html" target="_blank" rel="noopener">Mem0 Long-Term Memory</a></td><td>Mem0MemoryService adds long-term conversation memory to Pipecat agents, recalling context across sessions with Mem0.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__memory__synap.html" target="_blank" rel="noopener">Synap Memory</a></td><td>The synap-pipecat integration gives Pipecat voice agents persistent, cross-session memory backed by Synap.</td></tr>
+</tbody></table></div>
+<h3>Services › S2S</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__s2s__aws.html" target="_blank" rel="noopener">AWS Nova Sonic</a></td><td>AWSNovaSonicLLMService provides real-time speech-to-speech (S2S) conversation with AWS's Nova Sonic model.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__gemini__live.html" target="_blank" rel="noopener">Gemini Live</a></td><td>GeminiLiveLLMService connects Pipecat to Google's Gemini Live API for real-time speech-to-speech multimodal conversation.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__gemini__live__vertex.html" target="_blank" rel="noopener">Gemini Live Vertex AI</a></td><td>GeminiLiveVertexLLMService runs Gemini Live speech-to-speech conversation through Vertex AI with Google Cloud authentication.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__grok.html" target="_blank" rel="noopener">Grok Realtime</a></td><td>GrokRealtimeLLMService provides real-time multimodal speech-to-speech conversation using xAI's Grok Realtime API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__inworld.html" target="_blank" rel="noopener">Inworld Realtime</a></td><td>InworldRealtimeLLMService provides real-time multimodal conversation using Inworld's Realtime API for voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__openai.html" target="_blank" rel="noopener">OpenAI Realtime</a></td><td>OpenAIRealtimeLLMService provides speech-to-speech conversation over the OpenAI Realtime API, replacing separate STT, LLM, and TTS.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__s2s__ultravox.html" target="_blank" rel="noopener">Ultravox Realtime</a></td><td>UltravoxRealtimeLLMService provides real-time conversational AI with Ultravox Realtime, with agent and one-shot input modes.</td></tr>
+</tbody></table></div>
+<h3>Services › Serializers</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__serializers__introduction.html" target="_blank" rel="noopener">Frame Serializer Overview</a></td><td>How Pipecat FrameSerializers convert between internal frames and provider wire formats, and how to write a custom serializer.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__acefone.html" target="_blank" rel="noopener">Acefone Frame Serializer</a></td><td>AcefoneFrameSerializer converts between Pipecat frames and Acefone's telephony WebSocket protocol for hosted voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__asterisk.html" target="_blank" rel="noopener">Asterisk Frame Serializer</a></td><td>AsteriskFrameSerializer converts between Pipecat frames and an Asterisk server's media stream for self-hosted telephony.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__awaazai.html" target="_blank" rel="noopener">AwaazAI Frame Serializer</a></td><td>AwaazAIFrameSerializer converts between Pipecat frames and Awaaz AI's telephony WebSocket streaming protocol.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__bandwidth.html" target="_blank" rel="noopener">Bandwidth Frame Serializer</a></td><td>BandwidthFrameSerializer converts between Pipecat frames and Bandwidth Programmable Voice WebSocket media streams.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__exotel.html" target="_blank" rel="noopener">Exotel Frame Serializer</a></td><td>ExotelFrameSerializer integrates Pipecat pipelines with Exotel's WebSocket media streaming protocol for phone calls.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__genesys.html" target="_blank" rel="noopener">Genesys AudioHook Serializer</a></td><td>GenesysAudioHookSerializer connects Pipecat to Genesys Cloud Contact Center via the AudioHook WebSocket protocol.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__plivo.html" target="_blank" rel="noopener">Plivo Frame Serializer</a></td><td>PlivoFrameSerializer integrates Pipecat with Plivo's Audio Streaming WebSocket protocol for telephony bots.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__twilio.html" target="_blank" rel="noopener">Twilio Frame Serializer</a></td><td>TwilioFrameSerializer integrates Pipecat with Twilio's Media Streams WebSocket protocol for phone call audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__telnyx.html" target="_blank" rel="noopener">Telnyx Frame Serializer</a></td><td>TelnyxFrameSerializer integrates Pipecat with Telnyx's WebSocket media streaming protocol for telephony bots.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__vonage.html" target="_blank" rel="noopener">Vonage Frame Serializer</a></td><td>VonageFrameSerializer integrates Pipecat with the Vonage Video API Audio Connector WebSocket protocol.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__serializers__wavix.html" target="_blank" rel="noopener">Wavix Frame Serializer</a></td><td>WavixFrameSerializer converts audio between Pipecat frames and the Wavix WebSocket media streaming protocol.</td></tr>
+</tbody></table></div>
+<h3>Services › Stt</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__stt__assemblyai.html" target="_blank" rel="noopener">AssemblyAI Speech-to-Text</a></td><td>Real-time STT with AssemblyAISTTService: WebSocket streaming, interim results, and end-of-turn detection for voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__aws.html" target="_blank" rel="noopener">AWS Transcribe Speech-to-Text</a></td><td>AWSTranscribeSTTService streams real-time STT over Amazon Transcribe's WebSocket API, with interim results and multi-language support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__azure.html" target="_blank" rel="noopener">Azure Speech-to-Text</a></td><td>AzureSTTService runs continuous real-time STT on the Azure Cognitive Services Speech SDK, with custom endpoints and broad language support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__cartesia.html" target="_blank" rel="noopener">Cartesia Speech-to-Text</a></td><td>Real-time STT with CartesiaSTTService and turn-aware CartesiaTurnsSTTService over Cartesia's streaming transcription API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__deepgram.html" target="_blank" rel="noopener">Deepgram Speech-to-Text</a></td><td>Streaming STT with DeepgramSTTService and DeepgramFluxSTTService: Nova models, Flux turn detection, and SageMaker variants.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__elevenlabs.html" target="_blank" rel="noopener">ElevenLabs Speech-to-Text</a></td><td>Speech recognition with ElevenLabsRealtimeSTTService (live WebSocket streaming) and ElevenLabsSTTService for file-based STT.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__fal.html" target="_blank" rel="noopener">Fal Wizper Speech-to-Text</a></td><td>FalSTTService transcribes speech segments with Fal's Wizper API, using VAD-segmented audio to cut STT cost and latency.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__floe.html" target="_blank" rel="noopener">Floe Speech-to-Text</a></td><td>Streaming speech-to-text service over Floe's transcription WebSocket with per-call spend caps</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__funasr.html" target="_blank" rel="noopener">FunASR Speech-to-Text</a></td><td>Offline STT with FunASRSTTService running SenseVoice models locally on CPU or GPU: multilingual, with strong Chinese support.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__gladia.html" target="_blank" rel="noopener">Gladia Speech-to-Text</a></td><td>GladiaSTTService streams real-time STT over Gladia's WebSocket API: 99+ languages, custom vocabulary, translation, and sentiment.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__gnani.html" target="_blank" rel="noopener">Gnani Speech-to-Text</a></td><td>STT for 10+ Indian languages with GnaniSTTService (WebSocket streaming) and GnaniHttpSTTService (REST) on the Gnani platform.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__google.html" target="_blank" rel="noopener">Google Speech-to-Text</a></td><td>GoogleSTTService provides real-time STT on Google Cloud Speech-to-Text V2, with 125+ languages, model selection, and VAD.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__gradium.html" target="_blank" rel="noopener">Gradium Speech-to-Text</a></td><td>GradiumSTTService streams real-time STT over Gradium's WebSocket API with multilingual transcription and semantic VAD.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__groq.html" target="_blank" rel="noopener">Groq Whisper Speech-to-Text</a></td><td>GroqSTTService runs VAD-segmented STT on Groq's hosted Whisper API, pairing Whisper accuracy with ultra-fast inference.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__hakim.html" target="_blank" rel="noopener">Hakim Speech-to-Text</a></td><td>HakimSTTService provides Arabic-first realtime STT over a persistent WebSocket connection to Hakim's transcription API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__mistral.html" target="_blank" rel="noopener">Mistral Speech-to-Text</a></td><td>MistralSTTService streams real-time STT through Mistral's Voxtral Realtime API via the Mistral SDK's RealtimeConnection.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__moonshine.html" target="_blank" rel="noopener">Moonshine Speech-to-Text</a></td><td>Offline STT with MoonshineSTTService: small, fast Moonshine ASR models running locally on CPU via ONNX Runtime, no GPU or API key.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__nvidia.html" target="_blank" rel="noopener">NVIDIA Nemotron Speech-to-Text</a></td><td>Real-time STT with NvidiaSTTService, NvidiaSegmentedSTTService, and a SageMaker variant, running NVIDIA Nemotron Speech models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__openai.html" target="_blank" rel="noopener">OpenAI Speech-to-Text</a></td><td>STT with OpenAIRealtimeSTTService for live streaming and OpenAISTTService for segmented transcription of OpenAI speech models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__quickdial.html" target="_blank" rel="noopener">Quickdial Speech-to-Text</a></td><td>QuickdialSTTService extends SegmentedSTTService to transcribe speech with Quickdial's whisper.cpp-powered STT API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__ringg.html" target="_blank" rel="noopener">Ringg AI Speech-to-Text</a></td><td>RinggSTTService streams STT through the official ringglabs Python SDK, which manages the WebSocket connection and event parsing.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__sarvam.html" target="_blank" rel="noopener">Sarvam AI Speech-to-Text</a></td><td>SarvamSTTService streams real-time STT for Indian languages over Sarvam AI's WebSocket API, with VAD-based segmentation.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__simplismart.html" target="_blank" rel="noopener">Simplismart Speech-to-Text</a></td><td>SimplismartSTTService POSTs WAV audio segments to Simplismart's HTTP /predict endpoint for segmented STT transcription.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__slng.html" target="_blank" rel="noopener">SLNG Speech-to-Text</a></td><td>SlngSTTService streams real-time STT over a persistent WebSocket to SLNG, a unified voice AI gateway routing multiple providers.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__smallest.html" target="_blank" rel="noopener">Smallest AI Speech-to-Text</a></td><td>SmallestSTTService provides real-time streaming STT through Smallest AI's Pulse model over the Waves WebSocket API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__soniox.html" target="_blank" rel="noopener">Soniox Speech-to-Text</a></td><td>SonioxSTTService streams real-time STT over Soniox's WebSocket API: 60+ languages, custom context, and mixed-language audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__speechmatics.html" target="_blank" rel="noopener">Speechmatics Speech-to-Text</a></td><td>SpeechmaticsSTTService delivers real-time STT with partial and final results, speaker diarization, and end-of-utterance detection.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__together.html" target="_blank" rel="noopener">Together AI Speech-to-Text</a></td><td>TogetherSTTService streams real-time STT via Together AI's OpenAI-compatible WebSocket transcription endpoints.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__upliftai.html" target="_blank" rel="noopener">Uplift AI Speech-to-Text</a></td><td>UpliftAISTTService transcribes Urdu-optimized speech using Uplift AI's Scribe STT API with VAD-segmented audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__whisper.html" target="_blank" rel="noopener">Whisper Speech-to-Text</a></td><td>Offline STT with WhisperSTTService: OpenAI Whisper models running locally, with multiple sizes and hardware acceleration.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__stt__xai.html" target="_blank" rel="noopener">xAI Speech-to-Text</a></td><td>XAISTTService streams real-time STT over xAI's WebSocket API with interim results, configurable endpointing, and multichannel audio.</td></tr>
+</tbody></table></div>
+<h3>Services › Translation</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__translation__pinch.html" target="_blank" rel="noopener">Pinch Translation</a></td><td>PinchTranslatorService provides real-time speech-to-speech translation in Pipecat pipelines, powered by Pinch.</td></tr>
+</tbody></table></div>
+<h3>Services › Transport</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__transport__beyond__presence.html" target="_blank" rel="noopener">Beyond Presence Transport</a></td><td>BeyTransport generates real-time Beyond Presence video avatars for Pipecat agents, built on Daily's WebRTC infrastructure.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__daily.html" target="_blank" rel="noopener">Daily WebRTC Transport</a></td><td>DailyTransport connects Pipecat pipelines to Daily's hosted WebRTC infrastructure for real-time audio and video sessions.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__fastapi__websocket.html" target="_blank" rel="noopener">FastAPI WebSocket Transport</a></td><td>FastAPIWebsocketTransport serves Pipecat sessions over WebSockets in FastAPI apps, pairing with telephony FrameSerializers.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__heygen.html" target="_blank" rel="noopener">HeyGen Transport</a></td><td>HeyGenTransport joins your Pipecat bot to the same virtual room as a HeyGen avatar for interactive avatar sessions.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__lemonslice.html" target="_blank" rel="noopener">LemonSlice Transport</a></td><td>LemonSliceTransport joins your Pipecat bot to a room with a LemonSlice avatar, layered on the Daily transport.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__livekit.html" target="_blank" rel="noopener">LiveKit Transport</a></td><td>LiveKitTransport provides real-time audio communication for Pipecat pipelines over LiveKit's WebRTC infrastructure.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__small__webrtc.html" target="_blank" rel="noopener">Small WebRTC Transport</a></td><td>SmallWebRTCTransport makes serverless peer-to-peer WebRTC connections between a client and your Pipecat bot, no provider needed.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__tavus.html" target="_blank" rel="noopener">Tavus Transport</a></td><td>TavusTransport joins your Pipecat bot to the same virtual room as a Tavus avatar for conversational video sessions.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__vonage.html" target="_blank" rel="noopener">Vonage Video Connector Transport</a></td><td>VonageVideoConnectorTransport provides real-time WebRTC audio and video for Pipecat using the Vonage Video API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__websocket__server.html" target="_blank" rel="noopener">WebSocket Transports</a></td><td>WebsocketServerTransport and WebsocketClientTransport connect Pipecat to clients over plain WebSockets for real-time audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__whatsapp.html" target="_blank" rel="noopener">WhatsApp Transport</a></td><td>WhatsAppTransport connects Pipecat bots to WhatsApp voice calls via the WhatsApp Business API and SmallWebRTCTransport.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__transport__transport__params.html" target="_blank" rel="noopener">TransportParams</a></td><td>TransportParams is the base configuration class shared by all Pipecat transports: audio, video, and VAD settings.</td></tr>
+</tbody></table></div>
+<h3>Services › Tts</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__tts__asyncai.html" target="_blank" rel="noopener">AsyncAI Text-to-Speech</a></td><td>TTS with AsyncAITTSService for real-time WebSocket streaming with interruption support, and AsyncAIHttpTTSService for HTTP synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__aws.html" target="_blank" rel="noopener">AWS Polly Text-to-Speech</a></td><td>AWSPollyTTSService synthesizes TTS through Amazon Polly's standard, neural, and generative engines with configurable voice options.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__azure.html" target="_blank" rel="noopener">Azure Text-to-Speech</a></td><td>TTS on Azure Cognitive Services: AzureTTSService for real-time WebSocket streaming and AzureHttpTTSService for simpler HTTP synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__camb.html" target="_blank" rel="noopener">Camb AI Text-to-Speech</a></td><td>CambTTSService streams high-quality TTS using Camb AI's MARS model family, with multiple model and voice options.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__cartesia.html" target="_blank" rel="noopener">Cartesia Text-to-Speech</a></td><td>Low-latency TTS with CartesiaTTSService (WebSocket streaming, word timestamps) and CartesiaHttpTTSService for batch synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__deepdub.html" target="_blank" rel="noopener">Deepdub Text-to-Speech</a></td><td>DeepdubTTSService streams real-time TTS over Deepdub AI's WebSocket API, extending InterruptibleTTSService for interruption handling.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__deepgram.html" target="_blank" rel="noopener">Deepgram Text-to-Speech</a></td><td>Aura TTS with DeepgramTTSService, DeepgramHttpTTSService, DeepgramFluxTTSService, and a SageMaker variant for hosted inference.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__elevenlabs.html" target="_blank" rel="noopener">ElevenLabs Text-to-Speech</a></td><td>TTS with ElevenLabsTTSService (WebSocket streaming, word-level timestamps) and ElevenLabsHttpTTSService for HTTP synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__fish.html" target="_blank" rel="noopener">Fish Audio Text-to-Speech</a></td><td>FishAudioTTSService streams real-time TTS through Fish Audio's WebSocket API with custom voice models and prosody control.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__floe.html" target="_blank" rel="noopener">Floe Text-to-Speech</a></td><td>Text-to-speech service that routes OpenAI-compatible speech synthesis through Floe with per-call spend caps</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__gnani.html" target="_blank" rel="noopener">Gnani Text-to-Speech</a></td><td>TTS for 10+ Indian languages with GnaniTTSService (WebSocket), GnaniSSETTSService (SSE), and GnaniHttpTTSService (REST).</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__google.html" target="_blank" rel="noopener">Google Text-to-Speech</a></td><td>Google Cloud TTS with GoogleTTSService (low-latency streaming), GoogleHttpTTSService, and GeminiTTSService for Gemini TTS models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__gradium.html" target="_blank" rel="noopener">Gradium Text-to-Speech</a></td><td>GradiumTTSService streams expressive TTS over Gradium's WebSocket API with instant voice cloning and low-latency inference.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__groq.html" target="_blank" rel="noopener">Groq Text-to-Speech</a></td><td>GroqTTSService delivers fast TTS from Groq's API with multiple voice options at a fixed 48kHz sample rate for voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__hakim.html" target="_blank" rel="noopener">Hakim Text-to-Speech</a></td><td>HakimTTSService synthesizes Arabic-first realtime TTS, subclassing InterruptibleTTSService for interruption handling.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__hume.html" target="_blank" rel="noopener">Hume Text-to-Speech</a></td><td>HumeTTSService generates expressive TTS with Hume AI's Octave models: context-aware pitch, speed, emotion, and word timestamps.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__inworld.html" target="_blank" rel="noopener">Inworld Text-to-Speech</a></td><td>TTS with InworldTTSService (real-time WebSocket) and InworldHttpTTSService, running Inworld AI's TTS-2 and TTS-1.5 models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__kokoro.html" target="_blank" rel="noopener">Kokoro Text-to-Speech</a></td><td>Local offline TTS with KokoroTTSService and the kokoro-onnx engine: on-device synthesis with no external API calls.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__lmnt.html" target="_blank" rel="noopener">LMNT Text-to-Speech</a></td><td>LMNTTTSService streams TTS through LMNT's WebSocket API, optimized for ultra-low-latency conversational voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__lokutor.html" target="_blank" rel="noopener">Lokutor Text-to-Speech</a></td><td>LokutorTTSService generates TTS over a persistent WebSocket connection to Lokutor's CPU-only speech synthesis API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__minimax.html" target="_blank" rel="noopener">MiniMax Text-to-Speech</a></td><td>TTS with MiniMaxTTSService and MiniMaxHttpTTSService on MiniMax's T2A API: streaming, emotional voice control, and voice options.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__mistral.html" target="_blank" rel="noopener">Mistral Text-to-Speech</a></td><td>MistralTTSService synthesizes speech with Mistral's Voxtral TTS API, streaming PCM audio over HTTP Server-Sent Events.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__murf.html" target="_blank" rel="noopener">Murf AI Text-to-Speech</a></td><td>MurfTTSService streams real-time TTS from Murf AI's WebSocket API with voice customization and styling options.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__neuphonic.html" target="_blank" rel="noopener">Neuphonic Text-to-Speech</a></td><td>TTS with NeuphonicTTSService (real-time WebSocket streaming with interruptions) and NeuphonicHttpTTSService for HTTP synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__nvidia.html" target="_blank" rel="noopener">NVIDIA Nemotron Text-to-Speech</a></td><td>TTS with NvidiaTTSService plus SageMaker variants, running NVIDIA Nemotron Speech models for real-time synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__openai.html" target="_blank" rel="noopener">OpenAI Text-to-Speech</a></td><td>OpenAITTSService provides TTS through OpenAI's speech API, supporting both traditional and GPT-4o family voice models.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__piper.html" target="_blank" rel="noopener">Piper Text-to-Speech</a></td><td>PiperTTSService and PiperHttpTTSService synthesize neural TTS from a self-hosted Piper server: private, no external API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__pocket__tts.html" target="_blank" rel="noopener">Pocket TTS</a></td><td>PocketTTSService runs kyutai-labs' pocket-tts streaming model for local, CPU-only TTS with no external API or GPU.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__resembleai.html" target="_blank" rel="noopener">Resemble AI Text-to-Speech</a></td><td>ResembleAITTSService streams TTS over Resemble AI's WebSocket API with word-level timestamps and audio context management.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__respeecher.html" target="_blank" rel="noopener">Respeecher Text-to-Speech</a></td><td>RespeecherTTSService streams real-time TTS audio over a WebSocket connection to Respeecher's voice synthesis API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__quickdial.html" target="_blank" rel="noopener">Quickdial Text-to-Speech</a></td><td>QuickdialTTSService generates speech from Quickdial's real-time TTS API, extending Pipecat's base TTSService.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__rime.html" target="_blank" rel="noopener">Rime Text-to-Speech</a></td><td>TTS with RimeTTSService (WebSocket streaming with word timing and interruptions) and RimeHttpTTSService for batch synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__rumik.html" target="_blank" rel="noopener">Rumik AI Text-to-Speech</a></td><td>pipecat-rumik provides RumikTTSService (WebSocket streaming) and RumikHttpTTSService for TTS with Rumik AI's APIs.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__sarvam.html" target="_blank" rel="noopener">Sarvam AI Text-to-Speech</a></td><td>TTS for Indian languages with SarvamTTSService and SarvamHttpTTSService, with extensive voice customization on Sarvam AI's API.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__simplismart.html" target="_blank" rel="noopener">Simplismart Text-to-Speech</a></td><td>SimplismartHttpTTSService streams raw PCM TTS audio from Simplismart's /tts API endpoint for low-latency synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__slng.html" target="_blank" rel="noopener">SLNG Text-to-Speech</a></td><td>SlngTTSService and SlngHttpTTSService synthesize TTS through SLNG, a unified voice AI gateway routing multiple providers.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__smallest.html" target="_blank" rel="noopener">Smallest AI Text-to-Speech</a></td><td>SmallestTTSService streams real-time TTS through Smallest AI's Waves WebSocket API with configurable voice parameters.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__soniox.html" target="_blank" rel="noopener">Soniox Text-to-Speech</a></td><td>SonioxTTSService streams text incrementally to Soniox's WebSocket TTS endpoint for real-time speech synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__speechmatics.html" target="_blank" rel="noopener">Speechmatics Text-to-Speech</a></td><td>SpeechmaticsTTSService provides production-grade low-latency TTS, streaming 16kHz mono audio tuned for telephony voice agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__supertonic.html" target="_blank" rel="noopener">Supertonic Text-to-Speech</a></td><td>SupertonicTTSService wraps the official Supertonic Python SDK as a Pipecat-compatible TTSService for speech synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__together.html" target="_blank" rel="noopener">Together AI Text-to-Speech</a></td><td>TogetherTTSService streams real-time TTS over Together AI's WebSocket API with configurable voice and model options.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__tts__cache.html" target="_blank" rel="noopener">Pipecat TTS Cache</a></td><td>TTSCacheMixin transparently wraps any Pipecat TTS service, caching repeated phrases to cut API costs and response latency.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__typecast.html" target="_blank" rel="noopener">Typecast Text-to-Speech</a></td><td>TypecastTTSService synthesizes expressive TTS with Typecast's neural voices, with emotion control and audio customization.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__upliftai.html" target="_blank" rel="noopener">Uplift AI Text-to-Speech</a></td><td>UpliftHttpTTSService converts text to speech with Uplift AI's HTTP TTS API for high-quality, low-latency synthesis.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__voiceai.html" target="_blank" rel="noopener">Voice.ai Text-to-Speech</a></td><td>VoiceAiTTSService streams TTS through Voice.ai's Multi-Context WebSocket API over a single persistent connection.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__xai.html" target="_blank" rel="noopener">xAI Text-to-Speech</a></td><td>TTS in 20 languages with XAITTSService (WebSocket streaming) and XAIHttpTTSService on xAI's speech synthesis APIs.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__xtts.html" target="_blank" rel="noopener">Coqui XTTS Text-to-Speech</a></td><td>XTTSTTSService provides multilingual TTS with voice cloning through a locally hosted Coqui XTTS streaming server.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__tts__xtts__vllm.html" target="_blank" rel="noopener">XTTS-vLLM Text-to-Speech</a></td><td>XTTSVLLMTTSService streams TTS from a self-hosted XTTSv2 + vLLM streaming server for low-latency open-model synthesis.</td></tr>
+</tbody></table></div>
+<h3>Services › Vad</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__vad__aic__quail__vad__analyzer.html" target="_blank" rel="noopener">AIC Quail VAD</a></td><td>AICQuailVADAnalyzer is a standalone voice activity detection (VAD) analyzer powered by ai-coustics Quail.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__vad__fire__vad.html" target="_blank" rel="noopener">FireRed VAD</a></td><td>FireVadAnalyzer provides streaming voice activity detection (VAD) for Pipecat using the FireRedVAD model.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__vad__krisp__viva__vad__analyzer.html" target="_blank" rel="noopener">Krisp VIVA VAD</a></td><td>KrispVivaVadAnalyzer detects voice activity (VAD) using the Krisp VIVA SDK for accurate speech boundaries.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__vad__silero__vad__analyzer.html" target="_blank" rel="noopener">Silero VAD</a></td><td>SileroVADAnalyzer detects voice activity with the Silero VAD ONNX model for speech detection in Pipecat pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__vad__ten__vad.html" target="_blank" rel="noopener">TEN VAD</a></td><td>TenVadAnalyzer implements Pipecat's VADAnalyzer interface with the TEN VAD backend for voice activity detection.</td></tr>
+</tbody></table></div>
+<h3>Services › Video</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__video__anam.html" target="_blank" rel="noopener">Anam Video Avatar</a></td><td>AnamVideoService generates real-time interactive Anam video avatars synchronized with your Pipecat agent's audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__video__heygen.html" target="_blank" rel="noopener">HeyGen Video Avatar</a></td><td>HeyGenVideoService drives HeyGen LiveAvatar interactive video avatars from your Pipecat agent's speech output.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__video__protoface.html" target="_blank" rel="noopener">Protoface Video Avatar</a></td><td>ProtofaceVideoService renders Pipecat TTS output through a real-time Protoface video avatar for conversational AI.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__video__simli.html" target="_blank" rel="noopener">Simli Video Avatar</a></td><td>SimliVideoService creates real-time Simli AI avatar video over WebRTC, animated by your Pipecat agent's audio.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__video__tavus.html" target="_blank" rel="noopener">Tavus Video Avatar</a></td><td>TavusVideoService generates Tavus AI avatar video that speaks your Pipecat agent's TTS output in real time.</td></tr>
+</tbody></table></div>
+<h3>Services › Vision</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__services__vision__moondream.html" target="_blank" rel="noopener">Moondream Vision</a></td><td>MoondreamService runs local image analysis and visual question answering with the Moondream vision model.</td></tr>
+<tr><td><a href="reference/api__reference__server__services__vision__smolvlm.html" target="_blank" rel="noopener">SmolVLM Vision</a></td><td>SmolVlmService runs HuggingFace SmolVLM vision-language models locally for image analysis in Pipecat pipelines.</td></tr>
+</tbody></table></div>
+<h3>Utilities</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__context__summarization.html" target="_blank" rel="noopener">LLMContextSummarizer</a></td><td>Reference for LLMContextSummarizer, LLMAutoContextSummarizationConfig, LLMContextSummaryConfig, and SummaryAppliedEvent.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__opentelemetry.html" target="_blank" rel="noopener">OpenTelemetry Tracing</a></td><td>Monitor and analyze your Pipecat conversational pipelines using OpenTelemetry</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__dtmf__aggregator.html" target="_blank" rel="noopener">DTMFAggregator</a></td><td>Aggregates DTMF (phone keypad) input into meaningful sequences for LLM processing</td></tr>
+</tbody></table></div>
+<h3>Utilities › Audio</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__audio__audio__buffer__processor.html" target="_blank" rel="noopener">AudioBufferProcessor</a></td><td>Process and buffer audio frames from conversations with flexible event handling</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__audio__soundfile__mixer.html" target="_blank" rel="noopener">SoundfileMixer</a></td><td>SoundfileMixer combines real-time Pipecat audio with sound files for background audio and effects.</td></tr>
+</tbody></table></div>
+<h3>Utilities › Daily</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__daily__rest__helper.html" target="_blank" rel="noopener">DailyRESTHelper</a></td><td>Classes and methods for interacting with the Daily API to manage rooms and tokens</td></tr>
+</tbody></table></div>
+<h3>Utilities › Filters</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__filters__frame__filter.html" target="_blank" rel="noopener">FrameFilter</a></td><td>FrameFilter selectively passes only specified frame types through a Pipecat pipeline, dropping the rest.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__filters__function__filter.html" target="_blank" rel="noopener">FunctionFilter</a></td><td>FunctionFilter filters frames in a Pipecat pipeline using a custom filter function for flexible frame control.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__filters__identify__filter.html" target="_blank" rel="noopener">IdentityFilter</a></td><td>IdentityFilter passes all frames through unchanged, a no-op Pipecat processor useful for testing pipelines.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__filters__null__filter.html" target="_blank" rel="noopener">NullFilter</a></td><td>NullFilter blocks every frame except system frames, useful for muting a Pipecat pipeline branch.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__filters__wake__check__filter.html" target="_blank" rel="noopener">WakeCheckFilter</a></td><td>Processor that passes frames only after detecting wake phrases in transcriptions</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__filters__wake__notifier__filter.html" target="_blank" rel="noopener">WakeNotifierFilter</a></td><td>Processor that triggers a notifier when specified frame types pass a custom filter</td></tr>
+</tbody></table></div>
+<h3>Utilities › Frame</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__frame__llm__text__processor.html" target="_blank" rel="noopener">LLMTextProcessor</a></td><td>A processor for aggregating LLMTextFrames into logical units before passing them to downstream services</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__frame__producer__consumer.html" target="_blank" rel="noopener">Producer &amp; Consumer Processors</a></td><td>Route frames between different parts of a pipeline, allowing selective frame sharing across parallel branches or within complex pipelines</td></tr>
+</tbody></table></div>
+<h3>Utilities › Mcp</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__mcp__mcp.html" target="_blank" rel="noopener">MCPClient</a></td><td>MCPClient connects Pipecat bots to MCP (Model Context Protocol) servers and registers their tools with your LLM.</td></tr>
+</tbody></table></div>
+<h3>Utilities › Observers</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__observers__observer__pattern.html" target="_blank" rel="noopener">Observer Pattern</a></td><td>The Pipecat observer pattern: watch frames flow through a pipeline without modifying them, and write your own observers.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__debug__observer.html" target="_blank" rel="noopener">Debug Log Observer</a></td><td>DebugLogObserver logs every frame flowing through a Pipecat pipeline with configurable filtering by frame type.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__llm__observer.html" target="_blank" rel="noopener">LLM Log Observer</a></td><td>LLMLogObserver logs LLM activity in a Pipecat pipeline: context frames, responses, and function calls.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__transcription__observer.html" target="_blank" rel="noopener">Transcription Log Observer</a></td><td>TranscriptionLogObserver logs speech-to-text transcription activity in a Pipecat pipeline for STT debugging.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__startup__timing__observer.html" target="_blank" rel="noopener">Startup Timing Observer</a></td><td>Measure processor startup times and transport readiness during pipeline initialization</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__turn__tracking__observer.html" target="_blank" rel="noopener">Turn Tracking Observer</a></td><td>TurnTrackingObserver tracks conversation turns in a Pipecat pipeline and emits turn started and ended events.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__observers__user__bot__latency__observer.html" target="_blank" rel="noopener">User-Bot Latency Observer</a></td><td>Measure response time between user speech and bot responses in Pipecat</td></tr>
+</tbody></table></div>
+<h3>Utilities › Runner</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__runner__guide.html" target="_blank" rel="noopener">Development Runner</a></td><td>Unified runner for building voice AI bots with Daily, WebRTC, and telephony transports</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__runner__transport__utils.html" target="_blank" rel="noopener">Transport Utilities</a></td><td>Configuration and helper utilities for Daily, LiveKit, telephony, and WebRTC transports</td></tr>
+</tbody></table></div>
+<h3>Utilities › Service Switchers</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__service__switchers__service__switcher.html" target="_blank" rel="noopener">ServiceSwitcher</a></td><td>Dynamically switch between different service instances at runtime using configurable strategies</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__service__switchers__llm__switcher.html" target="_blank" rel="noopener">LLMSwitcher</a></td><td>Dynamically switch between different LLM services with support for ad-hoc inference and unified function registration</td></tr>
+</tbody></table></div>
+<h3>Utilities › Text</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__text__overview.html" target="_blank" rel="noopener">Text Aggregators and Filters</a></td><td>An overview of text aggregators and filters available in the server utilities</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__text__markdown__text__filter.html" target="_blank" rel="noopener">MarkdownTextFilter</a></td><td>Converts Markdown-formatted text to TTS-friendly plain text while preserving structure</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__text__pattern__pair__aggregator.html" target="_blank" rel="noopener">PatternPairAggregator</a></td><td>Text aggregator that identifies and processes content between pattern pairs in streaming text</td></tr>
+</tbody></table></div>
+<h3>Utilities › Turn Detection</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__turn__detection__smart__turn__overview.html" target="_blank" rel="noopener">Smart Turn Overview</a></td><td>Advanced conversational turn detection powered by the smart-turn model</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__detection__krisp__viva__turn.html" target="_blank" rel="noopener">Krisp VIVA Turn</a></td><td>Turn detection with the Krisp VIVA SDK in Pipecat as an alternative to VAD-based end-of-turn detection.</td></tr>
+</tbody></table></div>
+<h3>Utilities › Turn Management</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__user__turn__strategies.html" target="_blank" rel="noopener">User Turn Strategies</a></td><td>Configure how Pipecat detects and manages user turns: turn start and stop strategies for conversational timing.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__user__mute__strategies.html" target="_blank" rel="noopener">User Mute Strategies</a></td><td>Control when Pipecat suppresses user input: mute strategies during bot speech and other pipeline operations.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__filter__incomplete__turns.html" target="_blank" rel="noopener">Filter Incomplete User Turns</a></td><td>Use LLM-based detection to suppress responses when users are cut off mid-thought</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__turn__events.html" target="_blank" rel="noopener">Turn Events</a></td><td>Handle user and assistant turn lifecycle events for transcriptions and turn tracking</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__transcriptions.html" target="_blank" rel="noopener">Transcriptions</a></td><td>Collect user and assistant transcripts in Pipecat with turn-management transcription events and aggregators.</td></tr>
+<tr><td><a href="reference/api__reference__server__utilities__turn__management__external__turn__management.html" target="_blank" rel="noopener">External Turn Management</a></td><td>Handle turn detection externally using UserTurnProcessor or external services</td></tr>
+</tbody></table></div>
+<h3>Workers</h3>
+<div class="tablewrap"><table><thead><tr><th>Class / Page</th><th>Description</th></tr></thead><tbody>
+<tr><td><a href="reference/api__reference__server__workers__base__worker.html" target="_blank" rel="noopener">BaseWorker</a></td><td>BaseWorker is the core agent class in Pipecat's multi-agent framework: lifecycle, bus access, and messaging.</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__llm__worker.html" target="_blank" rel="noopener">LLMWorker</a></td><td>LLMWorker is a Pipecat agent with a built-in LLM pipeline and automatic tool registration for multi-agent systems.</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__llm__context__worker.html" target="_blank" rel="noopener">LLMContextWorker</a></td><td>LLMContextWorker extends LLMWorker with a built-in conversation context and aggregators for stateful agents.</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__ui__worker.html" target="_blank" rel="noopener">UIWorker</a></td><td>LLM agent that observes and drives a client GUI over the RTVI UI channel</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__runner.html" target="_blank" rel="noopener">WorkerRunner</a></td><td>WorkerRunner orchestrates the lifecycle of Pipecat multi-agent systems: starting, supervising, and stopping workers.</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__types.html" target="_blank" rel="noopener">Types</a></td><td>Shared types for Pipecat workers and job coordination: JobStatus, job context enums, and data classes.</td></tr>
+<tr><td><a href="reference/api__reference__server__workers__exceptions.html" target="_blank" rel="noopener">Exceptions</a></td><td>Error types for Pipecat job coordination: JobError and the exceptions raised by JobContext-based single-agent jobs.</td></tr>
+</tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script>
+<script>
+(function(){
+  var q=document.getElementById("apifilter"), cnt=document.getElementById("apicount");
+  var rows=[].slice.call(document.querySelectorAll(".content tbody tr"));
+  function upd(){
+    var t=(q.value||"").toLowerCase(), shown=0;
+    rows.forEach(function(r){var m=!t||r.textContent.toLowerCase().indexOf(t)>-1;r.classList.toggle("apihide",!m);if(m)shown++;});
+    document.querySelectorAll(".content .tablewrap").forEach(function(tw){
+      tw.classList.toggle("apihide", tw.querySelectorAll("tbody tr:not(.apihide)").length===0);
+    });
+    document.querySelectorAll(".content h3").forEach(function(h){
+      var tw=h.nextElementSibling;
+      h.classList.toggle("apihide", !(tw&&tw.classList.contains("tablewrap")&&!tw.classList.contains("apihide")));
+    });
+    document.querySelectorAll(".content h2").forEach(function(h){
+      var m=h.nextElementSibling, ok=false;
+      while(m && m.tagName!=="H2"){ if(m.classList&&m.classList.contains("tablewrap")&&!m.classList.contains("apihide")){ok=true;break;} m=m.nextElementSibling; }
+      h.classList.toggle("apihide", !ok);
+    });
+    cnt.textContent=shown+" of "+rows.length+" pages shown";
+  }
+  q.addEventListener("input",upd); upd();
+})();
+</script>
+</body></html>

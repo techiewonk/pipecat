@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix A · Frame catalog — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix A · Reference</div>
+      <h1>Frame catalog</h1>
+      <p class="lead">The 125 frame types grouped by lane and role. You don't memorize these — you recognize the families and look up specifics. Source: <code>frames/frames.py</code>.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="system">System lane (high priority)</h2>
+      <p><code>SystemFrame</code> — preempts buffered data; used for lifecycle, control, input, and speaking events.</p>
+      <div class="tablewrap"><table><thead><tr><th>Frame</th><th>Meaning</th></tr></thead><tbody>
+        <tr><td><code>StartFrame</code> / <code>CancelFrame</code></td><td>Initialize / abort the pipeline.</td></tr>
+        <tr><td><code>ErrorFrame</code> / <code>FatalErrorFrame</code></td><td>Recoverable / fatal error.</td></tr>
+        <tr><td><code>InterruptionFrame</code></td><td>User interrupted — cancel in-flight output.</td></tr>
+        <tr><td><code>InputAudioRawFrame</code> / <code>UserAudioRawFrame</code></td><td>Incoming mic audio.</td></tr>
+        <tr><td><code>InputImageRawFrame</code> / <code>UserImageRawFrame</code></td><td>Incoming video/image.</td></tr>
+        <tr><td><code>InputTextRawFrame</code></td><td>Text input from the client.</td></tr>
+        <tr><td><code>UserStartedSpeakingFrame</code> / <code>UserStoppedSpeakingFrame</code></td><td>Turn boundaries.</td></tr>
+        <tr><td><code>VADUserStartedSpeakingFrame</code> / <code>VADUserStoppedSpeakingFrame</code></td><td>VAD-level speech edges.</td></tr>
+        <tr><td><code>UserSpeakingFrame</code> / <code>UserMuteStartedFrame</code> / <code>UserMuteStoppedFrame</code></td><td>Speaking / mute state.</td></tr>
+        <tr><td><code>BotStartedSpeakingFrame</code> / <code>BotStoppedSpeakingFrame</code> / <code>BotSpeakingFrame</code></td><td>Bot speaking state (for UI).</td></tr>
+        <tr><td><code>FunctionCallsStartedFrame</code> / <code>FunctionCallCancelFrame</code></td><td>Tool-call lifecycle.</td></tr>
+        <tr><td><code>MetricsFrame</code></td><td>TTFB / processing / usage metrics.</td></tr>
+        <tr><td><code>STTMuteFrame</code></td><td>Mute the STT input.</td></tr>
+        <tr><td><code>InputDTMFFrame</code> / <code>OutputDTMFUrgentFrame</code></td><td>Keypad tones.</td></tr>
+        <tr><td><code>SpeechControlParamsFrame</code></td><td>Broadcast turn/VAD params.</td></tr>
+        <tr><td><code>ServiceMetadataFrame</code> / <code>STTMetadataFrame</code> / <code>LLMServiceMetadataFrame</code></td><td>Service self-description (e.g. realtime, latency).</td></tr>
+        <tr><td><code>UserImageRequestFrame</code></td><td>Ask the transport for the current frame (upstream).</td></tr>
+      </tbody></table></div>
+
+      <h2 id="data">Data lane (ordered)</h2>
+      <p><code>DataFrame</code> — the payloads that flow in order.</p>
+      <div class="tablewrap"><table><thead><tr><th>Frame</th><th>Meaning</th></tr></thead><tbody>
+        <tr><td><code>OutputAudioRawFrame</code> / <code>TTSAudioRawFrame</code></td><td>Audio for playback.</td></tr>
+        <tr><td><code>OutputImageRawFrame</code> / <code>URLImageRawFrame</code> / <code>SpriteFrame</code></td><td>Images/video out.</td></tr>
+        <tr><td><code>TextFrame</code></td><td>Generic text.</td></tr>
+        <tr><td><code>LLMTextFrame</code></td><td>A streamed LLM token.</td></tr>
+        <tr><td><code>AggregatedTextFrame</code> / <code>TTSTextFrame</code></td><td>Sentence-aggregated / spoken text.</td></tr>
+        <tr><td><code>TranscriptionFrame</code> / <code>InterimTranscriptionFrame</code> / <code>TranslationFrame</code></td><td>STT results.</td></tr>
+        <tr><td><code>LLMContextFrame</code></td><td>The conversation sent to the LLM.</td></tr>
+        <tr><td><code>LLMRunFrame</code></td><td>Trigger an LLM response now.</td></tr>
+        <tr><td><code>LLMMessagesAppendFrame</code> / <code>UpdateFrame</code> / <code>TransformFrame</code></td><td>Modify context messages.</td></tr>
+        <tr><td><code>LLMSetToolsFrame</code> / <code>LLMSetToolChoiceFrame</code></td><td>Configure tools at runtime.</td></tr>
+        <tr><td><code>LLMConfigureOutputFrame</code></td><td>e.g. <code>skip_tts</code> for output.</td></tr>
+        <tr><td><code>LLMThoughtStartFrame</code> / <code>LLMThoughtTextFrame</code> / <code>LLMThoughtEndFrame</code></td><td>Reasoning phase (control/data).</td></tr>
+        <tr><td><code>FunctionCallResultFrame</code></td><td>Tool result (also <code>UninterruptibleFrame</code>).</td></tr>
+        <tr><td><code>TTSSpeakFrame</code></td><td>Speak text directly (bypass LLM).</td></tr>
+        <tr><td><code>*UpdateSettingsFrame</code></td><td>Runtime setting deltas (STT/TTS/LLM/Mixer/Filter).</td></tr>
+      </tbody></table></div>
+
+      <h2 id="control">Control lane (ordered)</h2>
+      <p><code>ControlFrame</code> — ordered boundary/lifecycle markers: <code>EndFrame</code>, <code>TTSStartedFrame</code>/<code>TTSStoppedFrame</code>, <code>LLMFullResponseStartFrame</code>/<code>LLMFullResponseEndFrame</code>, <code>ServiceSwitcherRequestMetadataFrame</code>, mixer/filter control frames.</p>
+
+      <h2 id="bases">Media bases &amp; markers</h2>
+      <p><code>AudioRawFrame</code>, <code>ImageRawFrame</code>, <code>TextFrame</code> carry payloads and combine with a lane base. <code>UninterruptibleFrame</code> opts a frame out of interruption discarding (e.g. <code>FunctionCallResultFrame</code>).</p>
+
+      <p class="lead" style="margin-top:26px">See also: <a href="ax-glossary.html">Appendix B — Glossary →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

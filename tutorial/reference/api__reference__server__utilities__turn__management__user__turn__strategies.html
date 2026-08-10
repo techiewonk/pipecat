@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Turn Strategies · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>User Turn Strategies</h1>
+<blockquote>Configure how Pipecat detects and manages user turns: turn start and stop strategies for conversational timing.</blockquote>
+<h2>Overview</h2>
+<p>User turn strategies provide fine-grained control over how user speaking turns are detected in conversations. They determine when a user's turn starts (user begins speaking) and when it stops (user finishes speaking and expects a response).</p>
+<p>By default, Pipecat uses a combination of VAD (Voice Activity Detection) and AI-powered turn detection:</p>
+<ul><li><strong>Start</strong>: VAD detection or transcription received</li><li><strong>Stop</strong>: AI-powered turn detection using <code>LocalSmartTurnAnalyzerV3</code></li></ul>
+<p>You can customize this behavior by providing your own strategies for more sophisticated turn detection, such as requiring a minimum number of words before triggering a turn, or using AI-powered turn detection models.</p>
+<p>&lt;Note&gt;   In Pipecat &gt;=1.0.0, the <code>turn_analyzer</code> must be specified in the   <code>TurnAnalyzerUserTurnStopStrategy</code>. See the <a href="/pipecat/migration/migration-1.0#3-vad-&amp;-turn-analyzer-configuration">migration   guide</a>   for more information. &lt;/Note&gt;</p>
+<h2>How It Works</h2>
+<ol><li><strong>Turn Start Detection</strong>: When any start strategy triggers, the user aggregator:</li><li>Marks the start of a user turn</li><li>Optionally emits <code>UserStartedSpeakingFrame</code></li><li>Optionally emits an interruption frame (if the bot is speaking)</li></ol>
+<ol><li><strong>During User Turn</strong>: The aggregator collects transcriptions and audio frames.</li></ol>
+<ol><li><strong>Turn Stop Detection</strong>: When a stop strategy triggers, the user aggregator:</li><li>Marks the end of the user turn</li><li>Emits <code>UserStoppedSpeakingFrame</code></li><li>Pushes the aggregated user message to the LLM context</li></ol>
+<ol><li><strong>Timeout Handling</strong>: If no stop strategy triggers within <code>user_turn_stop_timeout</code> seconds (default: 5.0), the turn is automatically ended. This timeout is configurable via <code>LLMUserAggregatorParams</code> (see <a href="#configuration">Configuration</a> below). When the timeout fires, the <a href="/api-reference/server/utilities/turn-management/turn-events#on_user_turn_stop_timeout"><code>on_user_turn_stop_timeout</code></a> event is emitted.</li></ol>
+<h3>When a user turn ends</h3>
+<p>A <strong>user turn stop strategy</strong> decides when the user is done talking and the bot should respond. You choose the strategy; the rest of the timing follows from it. <strong>If you want to adjust how long the bot waits before responding, do it in the stop strategy</strong> — that's the knob built for it.</p>
+<p>Whatever the strategy, closing a turn takes two ingredients:</p>
+<ol><li><strong>A transcript.</strong> Every stop strategy waits for the STT service to transcribe what the user said (<code>wait_for_transcript</code>, on by default). This is usually the largest and most variable part of the delay, and it's dominated by your STT provider's latency — see the <a href="https://github.com/pipecat-ai/stt-benchmark">STT benchmark</a> to compare services.</li><li><strong>The strategy's own end-of-turn criteria.</strong> Once the transcript is in, the strategy applies its logic to decide whether the turn is actually complete.</li></ol>
+<p>The turn closes only when both are satisfied.</p>
+<h4>Choosing a strategy</h4>
+<div class="tablewrap"><table><thead><tr><th>Strategy</th><th>How it decides the turn is complete</th></tr></thead><tbody><tr><td><code>SpeechTimeoutUserTurnStopStrategy</code></td><td>A fixed silence window (<code>user_speech_timeout</code>, default <code>0.6s</code>) elapses after the user pauses.</td></tr><tr><td><code>TurnAnalyzerUserTurnStopStrategy</code></td><td>A turn-detection ("smart turn") model predicts end-of-turn from the audio and transcript.</td></tr><tr><td><code>FilterIncompleteUserTurnStrategies</code></td><td>An LLM assesses whether the user's utterance is semantically complete.</td></tr><tr><td>Custom</td><td>Your own logic implementing the stop-strategy interface.</td></tr></tbody></table></div>
+<p>This is also where you tune responsiveness. For example, raise or lower <code>user_speech_timeout</code> on <code>SpeechTimeoutUserTurnStopStrategy</code> to give users more or less time to resume before the bot replies.</p>
+<h4>Where the latency comes from</h4>
+<p>Before any strategy can act, two things have to happen:</p>
+<ul><li><strong>VAD silence (<code>stop_secs</code>):</strong> The VAD waits a short, fixed interval (default <code>0.2s</code>) after audio goes quiet before reporting that the user stopped speaking. This is a low-level detection threshold — leave it alone. To change wait time, use the stop strategy, not <code>stop_secs</code>.</li><li><strong>Transcription:</strong> STT returns a transcript. Latency here is mostly your STT provider's; strategies use the provider's reported p99 latency as a fallback timer and short-circuit it the moment a finalized transcript arrives.</li></ul>
+<p>Then the strategy's criteria run (the silence window, the turn model, or the LLM check) to finalize the turn.</p>
+<p>&lt;Note&gt;   Extra silence users notice usually isn't one tunable value — it's VAD silence   plus transcription latency plus the strategy's own window stacking up. If your   STT service is slow to return transcripts, that delay shows up in every turn   regardless of which strategy you use. Adjust responsiveness in the stop   strategy, and check the <a href="https://github.com/pipecat-ai/stt-benchmark">STT   benchmark</a> if transcription is   the bottleneck. &lt;/Note&gt;</p>
+<p><code>user_turn_stop_timeout</code> (default <code>5.0s</code>, on <code>LLMUserAggregatorParams</code>) is a backstop, not part of normal timing: if a turn somehow never finalizes, it forces the turn to end so the bot isn't stuck waiting.</p>
+<h2>Configuration</h2>
+<p>User turn strategies are configured via <code>LLMUserAggregatorParams</code> when creating an <code>LLMContextAggregatorPair</code>:</p>
+<pre><code>from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+context = LLMContext(messages)
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=UserTurnStrategies(
+            start=[...],  # List of start strategies
+            stop=[...],   # List of stop strategies
+        ),
+    ),
+)</code></pre>
+<h3>Additional Parameters</h3>
+<p>In addition to <code>user_turn_strategies</code>, <code>LLMUserAggregatorParams</code> accepts these turn-related parameters:</p>
+<p>&lt;ParamField path="user_turn_stop_timeout" type="float" default="5.0"&gt;   Safety-net timeout in seconds. If a user turn starts but no stop strategy   triggers within this duration, the turn is automatically ended and the   <a href="/api-reference/server/utilities/turn-management/turn-events#on_user_turn_stop_timeout"><code>on_user_turn_stop_timeout</code></a>   event is emitted. &lt;/ParamField&gt;</p>
+<pre><code>user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_stop_timeout=4.0,  # Decrease timeout to 4 seconds
+    ),
+)</code></pre>
+<p>&lt;ParamField path="vad_analyzer" type="VADAnalyzer" default="None"&gt;   The Voice Activity Detection analyzer instance used to produce VAD signals for   turn detection. In Pipecat 1.x, VAD is configured on the aggregator rather   than the transport. This is separate from <code>VADUserTurnStartStrategy</code>: the   analyzer *produces* the VAD signals; the start strategy decides *what to do*   with them. &lt;/ParamField&gt;</p>
+<h2>Start Strategies</h2>
+<p>Start strategies determine when a user's turn begins. Multiple strategies can be provided, and the first one to trigger will signal the start of a user turn.</p>
+<h3>Base Parameters</h3>
+<p>All start strategies inherit these parameters:</p>
+<p>&lt;ParamField path="enable_interruptions" type="bool" default="True"&gt;   If True, the user aggregator will emit an interruption frame when the user   turn starts, allowing the user to interrupt the bot. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_user_speaking_frames" type="bool" default="True"&gt;   If True, the user aggregator will emit frames indicating when the user starts   speaking. Disable this if another component (e.g., an STT service) already   generates these frames. &lt;/ParamField&gt;</p>
+<h3>VADUserTurnStartStrategy</h3>
+<p>Triggers a user turn start based on Voice Activity Detection. This is the most responsive strategy, detecting speech as soon as the VAD indicates the user has started speaking.</p>
+<pre><code>from pipecat.turns.user_start import VADUserTurnStartStrategy
+
+strategy = VADUserTurnStartStrategy()</code></pre>
+<h3>TranscriptionUserTurnStartStrategy</h3>
+<p>Triggers a user turn start when a transcription is received. This serves as a fallback for scenarios where VAD-based detection fails (e.g., when the user speaks very softly) but the STT service still produces transcriptions.</p>
+<p>&lt;ParamField path="use_interim" type="bool" default="True"&gt;   Whether to trigger on interim (partial) transcription frames for earlier   detection. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_start import TranscriptionUserTurnStartStrategy
+
+strategy = TranscriptionUserTurnStartStrategy(use_interim=True)</code></pre>
+<h3>MinWordsUserTurnStartStrategy</h3>
+<p>Requires the user to speak a minimum number of words before triggering a turn start. This is useful for preventing brief utterances like "okay" or "yeah" from triggering responses.</p>
+<p>&lt;ParamField path="min_words" type="int" required&gt;   Minimum number of spoken words required to trigger the start of a user turn. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_interim" type="bool" default="True"&gt;   Whether to consider interim transcription frames for earlier detection. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_start import MinWordsUserTurnStartStrategy
+
+# Require at least 3 words to start a turn
+strategy = MinWordsUserTurnStartStrategy(min_words=3)</code></pre>
+<p>&lt;Note&gt;   When the bot is not speaking, this strategy will trigger after just 1 word.   The <code>min_words</code> threshold only applies when the bot is actively speaking,   preventing short affirmations from interrupting the bot. &lt;/Note&gt;</p>
+<h3>WakePhraseUserTurnStartStrategy</h3>
+<p>Requires a wake phrase to be detected before allowing interaction. This strategy blocks subsequent strategies until a wake phrase is detected in a transcription, then allows interaction for a configurable timeout period.</p>
+<p>&lt;ParamField path="phrases" type="List[str]" required&gt;   List of wake phrases to detect (e.g., <code>["hey pipecat", "ok pipecat"]</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timeout" type="float" default="10.0"&gt;   Inactivity timeout in seconds before returning to IDLE state. In timeout mode,   the timer resets on activity. In single activation mode, acts as a keepalive   window after wake phrase detection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="single_activation" type="bool" default="False"&gt;   If True, the wake phrase is required before every turn. The strategy returns   to IDLE after each turn completes. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_start import WakePhraseUserTurnStartStrategy
+
+# Timeout mode: wake phrase unlocks interaction for 10 seconds
+strategy = WakePhraseUserTurnStartStrategy(
+    phrases=["hey pipecat", "ok pipecat"],
+    timeout=10.0,
+)
+
+# Single activation: wake phrase required before every turn
+strategy = WakePhraseUserTurnStartStrategy(
+    phrases=["hey pipecat"],
+    single_activation=True,
+)</code></pre>
+<p><strong>Event Handlers</strong></p>
+<p>The strategy provides event handlers for wake phrase detection:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Signature</th><th>Description</th></tr></thead><tbody><tr><td><code>on_wake_phrase_detected</code></td><td><code>async def handler(strategy, phrase: str)</code></td><td>Called when a wake phrase is matched</td></tr><tr><td><code>on_wake_phrase_timeout</code></td><td><code>async def handler(strategy)</code></td><td>Called when the inactivity timeout expires (timeout mode only)</td></tr></tbody></table></div>
+<pre><code>@strategy.event_handler("on_wake_phrase_detected")
+async def on_wake_phrase_detected(strategy, phrase):
+    print(f"Wake phrase detected: {phrase}")
+
+@strategy.event_handler("on_wake_phrase_timeout")
+async def on_wake_phrase_timeout(strategy):
+    print("Wake phrase timeout, returning to IDLE")</code></pre>
+<p>&lt;Note&gt;   This strategy should be placed <strong>first</strong> in the start strategies list to   properly gate all subsequent strategies. Use   <code>default_user_turn_start_strategies()</code> to extend the defaults with wake phrase   detection. &lt;/Note&gt;</p>
+<h3>KrispVivaIPUserTurnStartStrategy</h3>
+<p>Uses Krisp's Interruption Prediction (IP) model to distinguish genuine user interruptions from backchannels (e.g., "uh-huh", "yeah"). When VAD detects user speech, this strategy feeds audio frames into the Krisp VIVA IP model, which outputs a probability indicating whether the speech is a genuine interruption. A user turn is triggered only when this probability exceeds the configured threshold.</p>
+<p>This strategy is designed to work alongside other start strategies (e.g., <code>TranscriptionUserTurnStartStrategy</code> as a fallback).</p>
+<p>&lt;ParamField path="model_path" type="Optional[str]" default="None"&gt;   Path to the Krisp VIVA IP model file (.kef extension). If None, uses the   <code>KRISP_VIVA_IP_MODEL_PATH</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="threshold" type="float" default="0.5"&gt;   IP probability threshold (0.0 to 1.0). When the model's output exceeds this   value, the speech is classified as a genuine interruption. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="frame_duration_ms" type="int" default="20"&gt;   Frame duration in milliseconds for IP processing. Supported values: 10, 15,   20, 30, 32. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Krisp SDK API key. If empty, falls back to the <code>KRISP_VIVA_API_KEY</code>   environment variable. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_start import (
+    KrispVivaIPUserTurnStartStrategy,
+    TranscriptionUserTurnStartStrategy,
+)
+
+strategy = KrispVivaIPUserTurnStartStrategy(
+    model_path="/path/to/ip_model.kef",
+    threshold=0.5,
+)
+
+# Use with a fallback strategy
+strategies = UserTurnStrategies(
+    start=[
+        KrispVivaIPUserTurnStartStrategy(threshold=0.5),
+        TranscriptionUserTurnStartStrategy(),  # Fallback
+    ],
+)</code></pre>
+<p>&lt;Note&gt;   Requires the Krisp Python SDK. See the <a href="/pipecat/features/krisp-viva">Krisp VIVA   guide</a> for installation instructions. &lt;/Note&gt;</p>
+<h3>ExternalUserTurnStartStrategy</h3>
+<p>Delegates turn start detection to an external processor. This strategy listens for <code>UserStartedSpeakingFrame</code> frames emitted by other components in the pipeline (such as speech-to-speech services).</p>
+<pre><code>from pipecat.turns.user_start import ExternalUserTurnStartStrategy
+
+strategy = ExternalUserTurnStartStrategy()</code></pre>
+<p>&lt;Note&gt;   This strategy automatically sets <code>enable_interruptions=False</code> and   <code>enable_user_speaking_frames=False</code> since these are expected to be handled by   the external processor. &lt;/Note&gt;</p>
+<h2>Stop Strategies</h2>
+<p>Stop strategies determine when a user's turn ends and the bot should respond.</p>
+<h3>Base Parameters</h3>
+<p>All stop strategies inherit these parameters:</p>
+<p>&lt;ParamField path="enable_user_speaking_frames" type="bool" default="True"&gt;   If True, the aggregator will emit frames indicating when the user stops   speaking. Disable this if another component already generates these frames. &lt;/ParamField&gt;</p>
+<h3>SpeechTimeoutUserTurnStopStrategy</h3>
+<p>Signals the end of a user turn using two independent timers after VAD detects silence. The user turn stop is triggered only when both timers have finished and at least one transcript has been received:</p>
+<ul><li><strong>user\_speech\_timeout</strong>: Policy floor — the window in which the user may resume speaking after a pause. Always runs to completion.</li><li><strong>stt\_timeout</strong>: Safety net for STT latency — the P99 time for the STT service to return a final transcript after VAD stop. Short-circuited when the STT service emits a finalized transcript (<code>TranscriptionFrame.finalized=True</code>), since finalization means STT has nothing more to send.</li></ul>
+<p>For STT services that support finalization (Speechmatics, Soniox, Deepgram Flux, AssemblyAI), user turns now end as soon as <code>user_speech_timeout</code> elapses after VAD stop, rather than waiting for both timers.</p>
+<p>&lt;ParamField path="user_speech_timeout" type="float" default="0.6"&gt;   How long to wait (in seconds) after VAD detects silence before finalizing the   user turn. This is the minimum wait time and always runs to completion. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="wait_for_transcript" type="bool" default="True"&gt;   When <code>True</code> (default), turn-stop signaling waits for a transcript to arrive   after VAD silence. When <code>False</code>, the strategy signals turn-stop as soon as its   timing requirements are met, without waiting for transcripts — useful when   local turn detection drives a realtime (speech-to-speech) service, where   waiting for transcripts is unnecessary latency.   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services"><code>LLMContextAggregatorPair</code></a>   flips this to <code>False</code> for you when <code>realtime_service_mode=True</code>. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_stop import SpeechTimeoutUserTurnStopStrategy
+
+strategy = SpeechTimeoutUserTurnStopStrategy(user_speech_timeout=0.6)</code></pre>
+<p>&lt;Note&gt;   Built-in STT P99 latency values assume <code>VADParams.stop_secs=0.2</code> (the   recommended default). If you change <code>stop_secs</code>, the strategy will log a   warning suggesting you re-run the   <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a> with your VAD   settings and pass the measured TTFS P99 latency to your STT service   constructor via <code>ttfs_p99_latency</code>. The strategy will also warn if \`stop\_secs</p>
+<blockquote>\= STT p99 latency\`, which collapses the STT wait timeout to 0s and may cause delayed turn detection.</blockquote>
+<p>&lt;/Note&gt;</p>
+<h3>TurnAnalyzerUserTurnStopStrategy</h3>
+<p>Uses an AI-powered turn detection model to determine when the user has finished speaking. This provides more intelligent end-of-turn detection that can understand conversational context.</p>
+<p>&lt;ParamField path="turn_analyzer" type="BaseTurnAnalyzer" required&gt;   The turn detection analyzer instance to use for end-of-turn detection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="wait_for_transcript" type="bool" default="True"&gt;   When <code>True</code> (default), turn-stop signaling waits for a transcript to arrive   after the analyzer reports end-of-speech. When <code>False</code>, the strategy signals   turn-stop as soon as the analyzer fires, without waiting for transcripts —   useful when local turn detection drives a realtime (speech-to-speech) service.   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services"><code>LLMContextAggregatorPair</code></a>   flips this to <code>False</code> for you when <code>realtime_service_mode=True</code>. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+
+strategy = TurnAnalyzerUserTurnStopStrategy(
+    turn_analyzer=LocalSmartTurnAnalyzerV3()
+)</code></pre>
+<p>&lt;Tip&gt;   See the <a href="/api-reference/server/utilities/turn-detection/smart-turn-overview">Smart Turn   Detection</a>   documentation for more information on available turn analyzers. &lt;/Tip&gt;</p>
+<p>&lt;Note&gt;   Built-in STT P99 latency values assume <code>VADParams.stop_secs=0.2</code> (the   recommended default). If you change <code>stop_secs</code>, the strategy will log a   warning suggesting you re-run the   <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a> with your VAD   settings and pass the measured TTFS P99 latency to your STT service   constructor via <code>ttfs_p99_latency</code>. The strategy will also warn if \`stop\_secs</p>
+<blockquote>\= STT p99 latency\`, which collapses the STT wait timeout to 0s and may cause delayed turn detection.</blockquote>
+<p>&lt;/Note&gt;</p>
+<h3>ExternalUserTurnStopStrategy</h3>
+<p>Delegates turn stop detection to an external processor. This strategy listens for <code>UserStoppedSpeakingFrame</code> frames emitted by other components in the pipeline.</p>
+<p>&lt;ParamField path="timeout" type="float" default="0.5"&gt;   A short delay in seconds used to handle consecutive or slightly delayed   transcriptions. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="wait_for_transcript" type="bool" default="True"&gt;   When <code>True</code> (default), turn-stop signaling waits for a transcript to arrive   after the external <code>UserStoppedSpeakingFrame</code>. When <code>False</code>, the strategy   signals turn-stop as soon as that frame arrives, independent of transcripts —   useful when local turn detection drives a realtime (speech-to-speech) service.   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services"><code>LLMContextAggregatorPair</code></a>   flips this to <code>False</code> for you when <code>realtime_service_mode=True</code>. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_stop import ExternalUserTurnStopStrategy
+
+strategy = ExternalUserTurnStopStrategy()</code></pre>
+<h3>ExternalUserTurnCompletionStopStrategy</h3>
+<p>Finalizes the user turn whenever a <code>UserTurnInferenceCompletedFrame</code> arrives, regardless of which component produced it. Use this when an external component — an LLM with completion markers, an STT service with built-in turn detection, a dedicated end-of-turn classifier, or custom code — decides when a turn is semantically complete and emits that frame.</p>
+<p>Pair it with one or more detector strategies wrapped in <a href="#deferring-finalization"><code>deferred(...)</code></a>, which drive inference but leave finalization to this strategy:</p>
+<pre><code>from pipecat.turns.user_stop import (
+    ExternalUserTurnCompletionStopStrategy,
+    TurnAnalyzerUserTurnStopStrategy,
+    deferred,
+)
+
+stop = [
+    deferred(TurnAnalyzerUserTurnStopStrategy(turn_analyzer=...)),
+    ExternalUserTurnCompletionStopStrategy(),
+]</code></pre>
+<p>&lt;Note&gt;   If the producer never emits <code>UserTurnInferenceCompletedFrame</code>, the   <code>user_turn_stop_timeout</code> watchdog finalizes the turn after no activity. Tune   that timeout if your producer can take longer than the default to respond. &lt;/Note&gt;</p>
+<h3>LLMTurnCompletionUserTurnStopStrategy</h3>
+<p>A subclass of <code>ExternalUserTurnCompletionStopStrategy</code> that adds the LLM-specific setup for the marker-based completion protocol. On <code>StartFrame</code> it enables turn-completion filtering on the LLM; finalization then happens when the LLM emits a <code>✓</code> marker. This is the finalizer used by <a href="#filterincompleteuserturnstrategies"><code>FilterIncompleteUserTurnStrategies</code></a>.</p>
+<p>&lt;ParamField path="config" type="UserTurnCompletionConfig" default="None"&gt;   Configuration applied to the LLM (turn-completion instructions,   incomplete-turn timeouts, and re-prompts). Defaults to   <code>UserTurnCompletionConfig()</code>. &lt;/ParamField&gt;</p>
+<pre><code>from pipecat.turns.user_stop import LLMTurnCompletionUserTurnStopStrategy
+
+strategy = LLMTurnCompletionUserTurnStopStrategy()</code></pre>
+<p>&lt;Tip&gt;   See <a href="/api-reference/server/utilities/turn-management/filter-incomplete-turns">Filter Incomplete User   Turns</a>   for the full LLM-gated turn-completion feature. &lt;/Tip&gt;</p>
+<h3>Deferring finalization</h3>
+<p>Some stop strategies should trigger LLM inference without ending the turn — finalization is owned by another strategy in the chain (such as the two above). Wrap a detector strategy with <code>deferred(...)</code> to suppress its <code>on_user_turn_stopped</code> event while keeping its <a href="/api-reference/server/utilities/turn-management/turn-events#on_user_turn_inference_triggered"><code>on_user_turn_inference_triggered</code></a> trigger:</p>
+<pre><code>from pipecat.turns.user_stop import (
+    LLMTurnCompletionUserTurnStopStrategy,
+    TurnAnalyzerUserTurnStopStrategy,
+    deferred,
+)
+
+stop = [
+    deferred(TurnAnalyzerUserTurnStopStrategy(turn_analyzer=...)),
+    LLMTurnCompletionUserTurnStopStrategy(),
+]</code></pre>
+<h2>Helper Functions</h2>
+<p>Pipecat provides helper functions to compose custom strategy lists that extend the defaults.</p>
+<h3>default\_user\_turn\_start\_strategies()</h3>
+<p>Returns the default user turn start strategies: <code>[VADUserTurnStartStrategy, TranscriptionUserTurnStartStrategy]</code>.</p>
+<p>Useful when building a custom strategy list that extends the defaults, such as adding wake phrase detection before the standard strategies.</p>
+<pre><code>from pipecat.turns.user_start import WakePhraseUserTurnStartStrategy
+from pipecat.turns.user_turn_strategies import default_user_turn_start_strategies
+
+# Add wake phrase detection before the defaults
+start_strategies = [
+    WakePhraseUserTurnStartStrategy(phrases=["hey pipecat"]),
+    *default_user_turn_start_strategies(),
+]</code></pre>
+<h3>default\_user\_turn\_stop\_strategies()</h3>
+<p>Returns the default user turn stop strategies: <code>[TurnAnalyzerUserTurnStopStrategy(LocalSmartTurnAnalyzerV3)]</code>.</p>
+<p>Useful when building a custom strategy list that extends or replaces the defaults.</p>
+<pre><code>from pipecat.turns.user_turn_strategies import default_user_turn_stop_strategies
+
+# Use the defaults
+stop_strategies = default_user_turn_stop_strategies()</code></pre>
+<h2>UserTurnStrategies</h2>
+<p>Container for configuring user turn start and stop strategies.</p>
+<p>&lt;ParamField path="start" type="List[BaseUserTurnStartStrategy]" default="[VADUser...(), TranscriptionUser...()]"&gt;   List of strategies used to detect when the user starts speaking. The first   strategy to trigger will signal the start of the user's turn. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="stop" type="List[BaseUserTurnStopStrategy]" default="[TurnAnalyzerUserTurnStopStrategy(turn_analyzer=LocalSmartTurnAnalyzerV3())]"&gt;   List of strategies used to detect when the user stops speaking and expects a   response. Defaults to AI-powered turn detection using   <code>LocalSmartTurnAnalyzerV3</code>. &lt;/ParamField&gt;</p>
+<h2>ExternalUserTurnStrategies</h2>
+<p>A convenience class that preconfigures <code>UserTurnStrategies</code> with external strategies for both start and stop detection. Use this when an external processor (such as a speech-to-speech service) controls turn management.</p>
+<pre><code>from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=ExternalUserTurnStrategies(),
+    ),
+)</code></pre>
+<p>&lt;Note&gt;   When an STT service acts as the turn controller, you can optionally include a   VAD (such as <code>SileroVADAnalyzer</code>) in your transport. The VAD is not required   for core turn management functionality, but it does enable useful STT metrics.   Omit it if you don't need those metrics. &lt;/Note&gt;</p>
+<h2>FilterIncompleteUserTurnStrategies</h2>
+<p>A convenience class that preconfigures <code>UserTurnStrategies</code> for LLM-gated turn completion. It wraps your detector chain with <code>deferred(...)</code> and appends an <code>LLMTurnCompletionUserTurnStopStrategy</code>, so the public <code>on_user_turn_stopped</code> event fires only when the LLM confirms the turn is complete (<code>✓</code>). Detector strategies still drive LLM inference via <code>on_user_turn_inference_triggered</code>.</p>
+<pre><code>from pipecat.turns.user_turn_strategies import FilterIncompleteUserTurnStrategies
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=FilterIncompleteUserTurnStrategies(),
+    ),
+)</code></pre>
+<p>&lt;ParamField path="config" type="UserTurnCompletionConfig" default="None"&gt;   Optional turn-completion configuration (instructions, incomplete-turn   timeouts, and re-prompts) applied to the LLM. Defaults are used if not   provided. &lt;/ParamField&gt;</p>
+<p>The <code>start</code> and <code>stop</code> strategies default to the standard detector chain; override either to customize the detectors that trigger inference.</p>
+<p>&lt;Tip&gt;   See <a href="/api-reference/server/utilities/turn-management/filter-incomplete-turns">Filter Incomplete User   Turns</a>   for the full feature documentation, markers, and timeout behavior. &lt;/Tip&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Default Behavior</h3>
+<p>The default configuration uses VAD for turn start detection and AI-powered Smart Turn for turn end detection:</p>
+<pre><code>from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+# This is equivalent to the default behavior
+strategies = UserTurnStrategies(
+    start=[VADUserTurnStartStrategy(), TranscriptionUserTurnStartStrategy()],
+    stop=[TurnAnalyzerUserTurnStopStrategy(turn_analyzer=LocalSmartTurnAnalyzerV3())],
+)</code></pre>
+<h3>Minimum Words for Interruption</h3>
+<p>Require users to speak at least 3 words before they can interrupt the bot:</p>
+<pre><code>from pipecat.turns.user_start import MinWordsUserTurnStartStrategy
+from pipecat.turns.user_stop import SpeechTimeoutUserTurnStopStrategy
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=UserTurnStrategies(
+            start=[MinWordsUserTurnStartStrategy(min_words=3)],
+            stop=[SpeechTimeoutUserTurnStopStrategy()],
+        ),
+    ),
+)</code></pre>
+<h3>Wake Phrase Detection</h3>
+<p>Require a wake phrase before allowing interaction, then use the default turn strategies:</p>
+<pre><code>from pipecat.turns.user_start import WakePhraseUserTurnStartStrategy
+from pipecat.turns.user_turn_strategies import (
+    UserTurnStrategies,
+    default_user_turn_start_strategies,
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=UserTurnStrategies(
+            start=[
+                WakePhraseUserTurnStartStrategy(phrases=["hey pipecat"]),
+                *default_user_turn_start_strategies(),
+            ],
+        ),
+    ),
+)</code></pre>
+<h3>Local Smart Turn Detection</h3>
+<p>Use a local turn detection model instead of a cloud service:</p>
+<pre><code>from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=UserTurnStrategies(
+            stop=[
+                TurnAnalyzerUserTurnStopStrategy(
+                    turn_analyzer=LocalSmartTurnAnalyzerV3()
+                )
+            ]
+        ),
+    ),
+)</code></pre>
+<h2>Related</h2>
+<ul><li><a href="/pipecat/fundamentals/user-input-muting">User Input Muting</a> - Control when user input is ignored</li><li><a href="/api-reference/server/utilities/turn-detection/smart-turn-overview">Smart Turn Detection</a> - AI-powered turn detection</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-turn-strategies">https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-turn-strategies</a></p>
+</div></main></div></body></html>

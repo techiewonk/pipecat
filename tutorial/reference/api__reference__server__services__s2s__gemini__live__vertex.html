@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini Live Vertex AI · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Gemini Live Vertex AI</h1>
+<blockquote>GeminiLiveVertexLLMService runs Gemini Live speech-to-speech conversation through Vertex AI with Google Cloud authentication.</blockquote>
+<h2>Overview</h2>
+<p><code>GeminiLiveVertexLLMService</code> enables natural, real-time conversations with Google's Gemini model through Vertex AI. It provides built-in audio transcription, voice activity detection, and context management for creating interactive AI experiences with multimodal capabilities including audio, video, and text processing.</p>
+<p>&lt;Tip&gt;   Want to start building? Check out our <a href="/pipecat/features/gemini-live">Gemini Live   Guide</a> for general concepts, then follow the   Vertex AI-specific setup below. &lt;/Tip&gt;</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Gemini Live Vertex API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.gemini_live.vertex.llm.html"&gt;     Pipecat's API methods for Gemini Live Vertex AI integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/realtime/realtime-gemini-live-vertex.py"&gt;     Complete Gemini Live Vertex AI function calling example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Vertex AI Gemini Documentation" icon="book" href="https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live"&gt;     Official Vertex AI Gemini Live API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gemini Live Model Card" icon="book" href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-live-api"&gt;     Gemini Live available models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Gemini Live Vertex AI services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Cloud Setup</h3>
+<p>Before using Gemini Live Vertex AI services, you need:</p>
+<ol><li><strong>Google Cloud Project</strong>: Set up a project in the <a href="https://console.cloud.google.com/">Google Cloud Console</a></li><li><strong>Vertex AI API</strong>: Enable the Vertex AI API in your project</li><li><strong>Service Account</strong>: Create a service account with <code>roles/aiplatform.user</code> and <code>roles/ml.developer</code> permissions</li><li><strong>Authentication</strong>: Set up service account credentials or Application Default Credentials</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_VERTEX_TEST_CREDENTIALS</code>: JSON string of service account credentials (optional if using ADC)</li><li><code>GOOGLE_CLOUD_PROJECT_ID</code>: Your Google Cloud project ID</li><li><code>GOOGLE_CLOUD_LOCATION</code>: Vertex AI region (e.g., "us-east4")</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Enterprise Authentication</strong>: Secure service account-based authentication</li><li><strong>Multimodal Processing</strong>: Handle audio, video, and text inputs simultaneously</li><li><strong>Real-time Streaming</strong>: Low-latency audio and video processing</li><li><strong>Voice Activity Detection</strong>: Automatic speech detection and turn management</li><li><strong>Function Calling</strong>: Advanced tool integration and API calling capabilities</li><li><strong>Context Management</strong>: Intelligent conversation history and system instruction handling</li></ul>
+<h2>Configuration</h2>
+<h3>GeminiLiveVertexLLMService</h3>
+<p>This service extends <code>GeminiLiveLLMService</code> with Vertex AI authentication. It accepts all the same parameters as the <a href="/api-reference/server/services/s2s/gemini-live">Gemini Live</a> service, with these differences:</p>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string of Google service account credentials. If not provided, falls back   to <code>credentials_path</code> or Application Default Credentials (ADC). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to a service account JSON file. Used if <code>credentials</code> is not provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" required&gt;   GCP region for the Vertex AI endpoint (e.g., <code>"us-east4"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="project_id" type="str" required&gt;   Google Cloud project ID. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="google/gemini-live-2.5-flash-native-audio" deprecated&gt;   Vertex AI model identifier to use.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=GeminiLiveVertexLLMService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="Charon" deprecated&gt;   TTS voice identifier for audio responses.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=GeminiLiveVertexLLMService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="system_instruction" type="str" default="None"&gt;   System prompt for the model. Can also be provided via the LLM context. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools" type="ToolsSchema | List[FunctionSchema | DirectFunction] | List[dict]" default="None"&gt;   Tools available to the model: a <code>ToolsSchema</code>, a plain list of direct   functions and/or <code>FunctionSchema</code> objects, or a list of provider-native tool   dicts. Can also be provided via the LLM context. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="InputParams()" deprecated&gt;   Runtime-configurable generation and session settings. See the <a href="/api-reference/server/services/s2s/gemini-live#settings">Gemini Live   InputParams</a> for details.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=GeminiLiveVertexLLMService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GeminiLiveVertexLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See the <a href="/api-reference/server/services/s2s/gemini-live#settings">Gemini Live   Settings</a> for the   full reference. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="start_audio_paused" type="bool" default="False"&gt;   Whether to start with audio input paused. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="start_video_paused" type="bool" default="False"&gt;   Whether to start with video input paused. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="inference_on_context_initialization" type="bool" default="True"&gt;   Whether to generate a response when context is first set. Set to <code>False</code> to   wait for user input before the model responds. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_options" type="HttpOptions" default="None"&gt;   HTTP options for the Google API client. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>The Vertex AI variant uses the same Settings as the base Gemini Live service. See <a href="/api-reference/server/services/s2s/gemini-live#settings">Gemini Live Settings</a> for the full reference.</p>
+<h2>Usage</h2>
+<p>&lt;Tip&gt;   Pair this service with <code>LLMContextAggregatorPair(context,       realtime_service_mode=True)</code>. Realtime mode keeps context-writing correct for   speech-to-speech services and adapts turn handling to the service. See   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services">Realtime (Speech-to-Speech)   Services</a>. &lt;/Tip&gt;</p>
+<h3>Basic Setup with Service Account Credentials</h3>
+<pre><code>import os
+from pipecat.services.google.gemini_live import GeminiLiveVertexLLMService
+
+llm = GeminiLiveVertexLLMService(
+    credentials=os.getenv("GOOGLE_VERTEX_TEST_CREDENTIALS"),
+    project_id=os.getenv("GOOGLE_CLOUD_PROJECT_ID"),
+    location=os.getenv("GOOGLE_CLOUD_LOCATION"),
+    settings=GeminiLiveVertexLLMService.Settings(
+        voice="Charon",
+        system_instruction="You are a helpful assistant.",
+    ),
+)</code></pre>
+<h3>With Credentials File</h3>
+<pre><code>llm = GeminiLiveVertexLLMService(
+    credentials_path="/path/to/service-account.json",
+    project_id="my-gcp-project",
+    location="us-east4",
+    settings=GeminiLiveVertexLLMService.Settings(
+        voice="Puck",
+        system_instruction="You are a helpful assistant.",
+    ),
+)</code></pre>
+<h3>Using Application Default Credentials (ADC)</h3>
+<pre><code># When running on GCP or with gcloud auth application-default login
+llm = GeminiLiveVertexLLMService(
+    project_id="my-gcp-project",
+    location="us-east4",
+    settings=GeminiLiveVertexLLMService.Settings(
+        system_instruction="You are a helpful assistant.",
+    ),
+)</code></pre>
+<h3>With Settings</h3>
+<pre><code>from pipecat.services.google.gemini_live import GeminiVADParams
+
+llm = GeminiLiveVertexLLMService(
+    credentials=os.getenv("GOOGLE_VERTEX_TEST_CREDENTIALS"),
+    project_id=os.getenv("GOOGLE_CLOUD_PROJECT_ID"),
+    location="us-east4",
+    settings=GeminiLiveVertexLLMService.Settings(
+        model="google/gemini-live-2.5-flash-native-audio",
+        voice="Charon",
+        system_instruction="You are a helpful assistant.",
+        temperature=0.7,
+        max_tokens=2048,
+        vad=GeminiVADParams(
+            silence_duration_ms=500,
+        ),
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>No <code>api_key</code> parameter</strong>: Unlike the base <code>GeminiLiveLLMService</code>, Vertex AI uses service account credentials or ADC for authentication. Passing <code>api_key</code> will raise a <code>ValueError</code>.</li><li><strong>Authentication priority</strong>: The service tries credentials in this order: (1) <code>credentials</code> JSON string, (2) <code>credentials_path</code> file, (3) Application Default Credentials (ADC).</li><li><strong>File API not supported</strong>: The Gemini File API is not available through Vertex AI. Use Google Cloud Storage for file handling instead.</li><li><strong>Model naming</strong>: Vertex AI uses different model identifiers (e.g., <code>"google/gemini-live-2.5-flash-native-audio"</code>) compared to the Google AI variant.</li><li><strong>Async tool limitation</strong>: Vertex AI's Gemini Live endpoint does not currently support NON\_BLOCKING tool calls. Functions registered with <code>cancel_on_interruption=False</code> will log a one-time warning and fall back to synchronous behavior (the conversation pauses while the tool runs). Use <code>cancel_on_interruption=True</code> (the default) or use a non-realtime LLM service if your tool requires async semantics.</li><li><strong>All other features</strong> (VAD, context compression, thinking, function calling, etc.) work identically to the base <a href="/api-reference/server/services/s2s/gemini-live">Gemini Live</a> service.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live-vertex">https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live-vertex</a></p>
+</div></main></div></body></html>

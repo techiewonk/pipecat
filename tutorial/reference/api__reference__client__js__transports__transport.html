@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transport Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Transport Overview</h1>
+<blockquote>The Transport base class in the Pipecat JavaScript SDK: device management, connectivity, and messaging every transport implements.</blockquote>
+<p>Transports are the means by which <code>PipecatClient</code>s communicate with their bot services. Transports implement the underlying device management, connectivity, media transmission, and state logic that manage the lifecycle of your session.</p>
+<p>All transport packages (such as <code>DailyTransport</code>) extend from the <code>Transport</code> base class defined in the <code>client-js</code> library. You can extend this class if you are looking to implement your own or add additional functionality.</p>
+<h2>Transport lifecycle</h2>
+<p>Each Pipecat client instance is associated with a transport instance. The instance will re-use the transport instance across multiple calls to <code>connect()</code>, allowing you to connect to different bot services without needing to create a new transport or client each time.</p>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+const pcClient = new PipecatClient({
+  transport: new DailyTransport(),
+  ...
+});
+
+await pcClient.startBotAndConnect({ endpoint: "/api/start" });
+await pcClient.disconnect();
+await pcClient.connect(); // re-uses url returned from previous startBotAndConnect call, skipping the endpoint</code></pre>
+<h2>Transport states</h2>
+<p><code>TransportState</code></p>
+<p>Your transport instance goes through a series of states during its lifecycle. These states are:</p>
+<p>&lt;Steps&gt;   &lt;Step title="Disconnected"&gt;     Transport is idle and has not yet been initialized (default state).   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Initializing"&gt;     Transport is being initialized. This occurs in response to a     <code>pcClient.initDevices()</code> call, where the transport is being set up in order     to enumerate local media devices. If you call <code>connect()</code> and bypass     <code>initDevices()</code>, the transport will skip this state and go directly to     <code>Connecting</code>.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Initialized"&gt;     Transport has been initialized and is ready to connect. This state is     reached after a successful <code>pcClient.initDevices()</code> call and skipped if     <code>initDevices()</code> is not used.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Authenticating"&gt;     Your client has called <code>pcClient.startBot()</code> or     <code>pcClient.startBotAndConnect()</code> and is waiting for a response from your     server containing connection details for your transport (such as a session     URL and token). Note: If you provide the <code>TransportConnectionParams</code>     directly to <code>connect()</code> without calling either <code>startBot</code> methods, the     transport will skip this state and go directly to <code>Connecting</code>.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Authenticated"&gt;     Your client has called <code>pcClient.startBot()</code> or     <code>pcClient.startBotAndConnect()</code> and has successfully received a response. If     using <code>startBotAndConnect()</code>, it will quickly move into the <code>Connecting</code>     state. Note: If you provide the <code>TransportConnectionParams</code> directly to     <code>connect()</code> without calling either <code>startBot</code> methods, the transport will     skip this state and go directly to <code>Connecting</code>.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Connecting"&gt;The transport is connecting to the server.&lt;/Step&gt;</p>
+<p>  &lt;Step title="Connected"&gt;     The transport has successfully connected to the session and is awaiting a     client-ready signal (indicated audio and video tracks are ready to be sent     and received).   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Ready"&gt;Transport is ready and the session can begin.&lt;/Step&gt;</p>
+<p>  &lt;Step title="Disconnecting"&gt;     Transport is disconnecting from the session.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Error"&gt;     An error occurred during the transport lifecycle. This indicates a fatal     error and the transport should move quickly into the <code>Disconnected</code> state.   &lt;/Step&gt; &lt;/Steps&gt;</p>
+<p>You can access the current transport state via <code>pcClient.state</code>, or by defining a callback or event:</p>
+<pre><code>// Callback
+const pcClient = new PipecatClient({
+  transport: new DailyTransport(),
+  callbacks: {
+    onTransportStateChange: (state) =&gt; {
+      console.log(state);
+    }
+  //...
+});
+
+// Event
+pcClient.on(RTVIEvent.TransportStateChanged, (e) =&gt; console.log(e));
+
+// Client getter
+console.log(pcClient.state); // Disconnected &lt;TransportState&gt;</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/transports/transport">https://docs.pipecat.ai/api-reference/client/js/transports/transport</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AudioBufferProcessor · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AudioBufferProcessor</h1>
+<blockquote>Process and buffer audio frames from conversations with flexible event handling</blockquote>
+<h2>Overview</h2>
+<p>The <code>AudioBufferProcessor</code> captures and buffers audio frames from both input (user) and output (bot) sources during conversations. It provides synchronized audio streams with configurable sample rates, supports both mono and stereo output, and offers flexible event handlers for various audio processing workflows.</p>
+<h2>Constructor</h2>
+<pre><code>AudioBufferProcessor(
+    sample_rate=None,
+    num_channels=1,
+    buffer_size=0,
+    enable_turn_audio=False,
+    auto_start_recording=False,
+    **kwargs
+)</code></pre>
+<h3>Parameters</h3>
+<p>&lt;ParamField path="sample_rate" type="int | None" default="None"&gt;   The desired output sample rate in Hz. If <code>None</code>, uses the transport's sample   rate from the <code>StartFrame</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="num_channels" type="int" default="1"&gt;   Number of output audio channels:</p>
+<ul><li><code>1</code>: Mono output (user and bot audio are mixed together)</li><li><code>2</code>: Stereo output (user audio on left channel, bot audio on right channel)</li></ul>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="buffer_size" type="int" default="0"&gt;   Buffer size in bytes that triggers audio data events:</p>
+<ul><li><code>0</code>: Events only trigger when recording stops</li><li><code>&gt;0</code>: Events trigger whenever buffer reaches this size (useful for chunked processing)</li></ul>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_turn_audio" type="bool" default="False"&gt;   Whether to enable per-turn audio event handlers (<code>on_user_turn_audio_data</code> and   <code>on_bot_turn_audio_data</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auto_start_recording" type="bool" default="False"&gt;   Whether to start recording automatically when the pipeline starts, without   requiring a call to <code>start_recording()</code> or an   <code>AudioBufferStartRecordingFrame</code>. &lt;/ParamField&gt;</p>
+<h2>Properties</h2>
+<h3>sample\_rate</h3>
+<pre><code>@property
+def sample_rate(self) -&gt; int</code></pre>
+<p>The current sample rate of the audio processor in Hz.</p>
+<h3>num\_channels</h3>
+<pre><code>@property
+def num_channels(self) -&gt; int</code></pre>
+<p>The number of channels in the audio output (1 for mono, 2 for stereo).</p>
+<h2>Methods</h2>
+<h3>start\_recording()</h3>
+<pre><code>async def start_recording()</code></pre>
+<p>Start recording audio from both user and bot sources. Initializes recording state, resets audio buffers, and triggers the <code>on_recording_started</code> event. Does nothing when recording is already active.</p>
+<h3>stop\_recording()</h3>
+<pre><code>async def stop_recording()</code></pre>
+<p>Stop recording and trigger final audio data handlers with any remaining buffered audio, then triggers the <code>on_recording_stopped</code> event. Does nothing when recording is not active.</p>
+<h3>has\_audio()</h3>
+<pre><code>def has_audio() -&gt; bool</code></pre>
+<p>Check if both user and bot audio buffers contain data.</p>
+<p><strong>Returns:</strong> <code>True</code> if both buffers contain audio data.</p>
+<h2>Event Handlers</h2>
+<p>The processor supports multiple event handlers for different audio processing workflows. Register handlers using the <code>@processor.event_handler()</code> decorator.</p>
+<h3>on\_audio\_data</h3>
+<p>Triggered when <code>buffer_size</code> is reached or recording stops, providing merged audio.</p>
+<pre><code>@audiobuffer.event_handler("on_audio_data")
+async def on_audio_data(buffer, audio: bytes, sample_rate: int, num_channels: int):
+    # Handle merged audio data
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li><li><code>audio</code>: Merged audio data (format depends on <code>num_channels</code> setting)</li><li><code>sample_rate</code>: Sample rate in Hz</li><li><code>num_channels</code>: Number of channels (1 or 2)</li></ul>
+<h3>on\_track\_audio\_data</h3>
+<p>Triggered alongside <code>on_audio_data</code>, providing separate user and bot audio tracks.</p>
+<pre><code>@audiobuffer.event_handler("on_track_audio_data")
+async def on_track_audio_data(buffer, user_audio: bytes, bot_audio: bytes,
+                             sample_rate: int, num_channels: int):
+    # Handle separate audio tracks
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li><li><code>user_audio</code>: Raw user audio bytes (always mono)</li><li><code>bot_audio</code>: Raw bot audio bytes (always mono)</li><li><code>sample_rate</code>: Sample rate in Hz</li><li><code>num_channels</code>: Always 1 for individual tracks</li></ul>
+<h3>on\_user\_turn\_audio\_data</h3>
+<p>Triggered when a user speaking turn ends. Requires <code>enable_turn_audio=True</code>.</p>
+<pre><code>@audiobuffer.event_handler("on_user_turn_audio_data")
+async def on_user_turn_audio_data(buffer, audio: bytes, sample_rate: int, num_channels: int):
+    # Handle user turn audio
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li><li><code>audio</code>: Audio data from the user's speaking turn</li><li><code>sample_rate</code>: Sample rate in Hz</li><li><code>num_channels</code>: Always 1 (mono)</li></ul>
+<h3>on\_bot\_turn\_audio\_data</h3>
+<p>Triggered when a bot speaking turn ends. Requires <code>enable_turn_audio=True</code>.</p>
+<pre><code>@audiobuffer.event_handler("on_bot_turn_audio_data")
+async def on_bot_turn_audio_data(buffer, audio: bytes, sample_rate: int, num_channels: int):
+    # Handle bot turn audio
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li><li><code>audio</code>: Audio data from the bot's speaking turn</li><li><code>sample_rate</code>: Sample rate in Hz</li><li><code>num_channels</code>: Always 1 (mono)</li></ul>
+<h3>on\_recording\_started</h3>
+<p>Triggered when recording starts (state transitions to active).</p>
+<pre><code>@audiobuffer.event_handler("on_recording_started")
+async def on_recording_started(buffer):
+    # Handle recording start
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li></ul>
+<h3>on\_recording\_stopped</h3>
+<p>Triggered after recording stops and the final buffered audio has been emitted.</p>
+<pre><code>@audiobuffer.event_handler("on_recording_stopped")
+async def on_recording_stopped(buffer):
+    # Handle recording stop
+    pass</code></pre>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>buffer</code>: The AudioBufferProcessor instance</li></ul>
+<h2>Audio Processing Features</h2>
+<ul><li><strong>Automatic resampling</strong>: Converts incoming audio to the specified sample rate</li><li><strong>Buffer synchronization</strong>: Aligns user and bot audio streams temporally</li><li><strong>Silence insertion</strong>: Fills gaps in non-continuous audio streams to maintain timing</li><li><strong>Turn tracking</strong>: Monitors speaking turns when <code>enable_turn_audio=True</code></li></ul>
+<h2>Recording Control</h2>
+<p>Recording can be controlled in three ways:</p>
+<ol><li><strong>Automatically on pipeline start</strong>: Set <code>auto_start_recording=True</code> in the constructor</li><li><strong>Programmatically</strong>: Call <code>await processor.start_recording()</code> and <code>await processor.stop_recording()</code></li><li><strong>Via control frames</strong>: Push <code>AudioBufferStartRecordingFrame</code> and <code>AudioBufferStopRecordingFrame</code> through the pipeline</li></ol>
+<pre><code>from pipecat.frames.frames import AudioBufferStartRecordingFrame, AudioBufferStopRecordingFrame
+
+# Start recording via frame
+await worker.queue_frames([AudioBufferStartRecordingFrame()])
+
+# Stop recording via frame
+await worker.queue_frames([AudioBufferStopRecordingFrame()])</code></pre>
+<h2>Integration Notes</h2>
+<h3>STT Audio Passthrough</h3>
+<p>If using an STT service in your pipeline, enable audio passthrough to make audio available to the AudioBufferProcessor:</p>
+<pre><code>stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    audio_passthrough=True,
+)</code></pre>
+<p>&lt;Note&gt;<code>audio_passthrough</code> is enabled by default.&lt;/Note&gt;</p>
+<h3>Pipeline Placement</h3>
+<p>Add the AudioBufferProcessor after <code>transport.output()</code> to capture both user and bot audio:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    # ... other processors ...
+    transport.output(),
+    audiobuffer,  # Place after audio output
+    # ... remaining processors ...
+])</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/audio/audio-buffer-processor">https://docs.pipecat.ai/api-reference/server/utilities/audio/audio-buffer-processor</a></p>
+</div></main></div></body></html>

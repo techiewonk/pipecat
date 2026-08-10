@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fal Image Generation · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>fal Image Generation</h1>
+<blockquote>FalImageGenService generates images from text prompts using fal's fast Stable Diffusion models in Pipecat pipelines.</blockquote>
+<h2>Overview</h2>
+<p><code>FalImageGenService</code> provides high-speed image generation capabilities using fal's optimized Stable Diffusion XL models. It supports various image sizes, formats, and generation parameters with a focus on fast inference and low-latency image creation.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Fal Image Gen API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.fal.image.html"&gt;     Pipecat's API methods for fal image generation integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/getting-started/04-sync-speech-and-image.py"&gt;     Browse examples using fal image generation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="fal Documentation" icon="book" href="https://fal.ai/docs"&gt;     Official fal API documentation and model guides   &lt;/Card&gt;</p>
+<p>  &lt;Card title="fal Platform" icon="image" href="https://fal.ai/"&gt;     Access fast SDXL models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use fal image generation services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[fal]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>fal Account Setup</h3>
+<p>Before using fal image generation services, you need:</p>
+<ol><li><strong>fal Account</strong>: Sign up at <a href="https://fal.ai/">fal Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Selection</strong>: Choose from available fast SDXL models</li><li><strong>HTTP Session</strong>: Configure aiohttp session for image downloading</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FAL_KEY</code>: Your fal API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="params" type="InputParams" deprecated&gt;   Input parameters for image generation configuration. *Deprecated in v0.0.105.   Use <code>settings=FalImageGenService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   HTTP client session for downloading generated images. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="fal-ai/fast-sdxl" deprecated&gt;   The fal model to use for image generation. *Deprecated in v0.0.105. Use   <code>settings=FalImageGenService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="key" type="str" default="None"&gt;   Optional API key for fal. If provided, sets the <code>FAL_KEY</code> environment   variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="FalImageGenService.Settings" default="None"&gt;   Runtime-configurable generation settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>FalImageGenService.Settings(...)</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Fal model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>seed</code></td><td>`int \</td><td>None`</td><td><code>NOT_GIVEN</code></td><td>Random seed for reproducible generation. If <code>None</code>, uses a random seed.</td></tr><tr><td><code>num_inference_steps</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Number of inference steps for generation.</td></tr><tr><td><code>num_images</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Number of images to generate.</td></tr><tr><td><code>image_size</code></td><td>`str \</td><td>dict`</td><td><code>NOT_GIVEN</code></td><td>Image dimensions as a string preset or dict with <code>width</code>/<code>height</code> keys.</td></tr><tr><td><code>expand_prompt</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to automatically expand/enhance the prompt.</td></tr><tr><td><code>enable_safety_checker</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to enable content safety filtering.</td></tr><tr><td><code>format</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Output image format.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted from the request, letting the service use its   own defaults (<code>"fal-ai/fast-sdxl"</code> for model, <code>8</code> for num\_inference\_steps,   <code>"square_hd"</code> for image\_size, etc.). Only parameters that are explicitly set   are included. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import aiohttp
+from pipecat.services.fal import FalImageGenService
+
+async with aiohttp.ClientSession() as session:
+    image_gen = FalImageGenService(
+        aiohttp_session=session,
+        key=os.getenv("FAL_KEY"),
+        settings=FalImageGenService.Settings(
+            image_size="landscape_16_9",
+        ),
+    )</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>image_gen = FalImageGenService(
+    aiohttp_session=session,
+    key=os.getenv("FAL_KEY"),
+    settings=FalImageGenService.Settings(
+        model="fal-ai/fast-sdxl",
+        image_size={"width": 1024, "height": 768},
+        num_inference_steps=12,
+        seed=42,
+        enable_safety_checker=True,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Environment variable</strong>: If the <code>key</code> constructor parameter is provided, it sets the <code>FAL_KEY</code> environment variable automatically.</li><li><strong>HTTP session required</strong>: You must provide an <code>aiohttp.ClientSession</code> for downloading the generated images from fal's URLs.</li><li><strong>Image size presets</strong>: The <code>image_size</code> parameter accepts string presets (e.g., <code>"square_hd"</code>, <code>"landscape_16_9"</code>) or a dictionary with explicit <code>width</code> and <code>height</code> values.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/image-generation/fal">https://docs.pipecat.ai/api-reference/server/services/image-generation/fal</a></p>
+</div></main></div></body></html>

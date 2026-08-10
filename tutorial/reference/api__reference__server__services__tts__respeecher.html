@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Respeecher Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Respeecher Text-to-Speech</h1>
+<blockquote>RespeecherTTSService streams real-time TTS audio over a WebSocket connection to Respeecher's voice synthesis API.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="respeecher" maintainerUrl="https://github.com/respeecher" repo="https://github.com/respeecher/pipecat-respeecher" /&gt;</p>
+<h2>Overview</h2>
+<p><code>RespeecherTTSService</code> generates speech from text using <a href="https://www.respeecher.com/real-time-tts-api">Respeecher's</a> real-time TTS API. It streams audio over a WebSocket connection and supports voice customization via sampling parameters, with both English and Ukrainian language models available.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/respeecher/pipecat-respeecher"&gt;     Source code, examples, and issues for the Respeecher integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-respeecher/"&gt;     The <code>pipecat-respeecher</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Respeecher TTS API" icon="book" href="https://www.respeecher.com/real-time-tts-api"&gt;     Learn more about Respeecher's real-time TTS API   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://space.respeecher.com/api-keys"&gt;     Create and manage your Respeecher Space API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-respeecher</code></pre>
+<h2>Prerequisites</h2>
+<h3>Respeecher Account Setup</h3>
+<p>Before using the Respeecher TTS service, you need:</p>
+<ol><li><strong>Respeecher Account</strong>: Sign up at <a href="https://space.respeecher.com/">Respeecher Space</a></li><li><strong>API Key</strong>: Create a key from your <a href="https://space.respeecher.com/api-keys">API keys page</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>RESPEECHER_API_KEY</code>: Your Respeecher Space API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Respeecher API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="RespeecherTTSService.Settings" required&gt;   Respeecher TTS settings (model, voice, sampling params). See   <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.respeecher.com/v1"&gt;   WebSocket base URL for the Respeecher TTS API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate. If <code>None</code>, uses the default sample rate. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>RespeecherTTSService.Settings(...)</code>. The service requires a <code>model</code> and a <code>voice</code> to be set.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>voice</code></td><td><code>str</code></td><td>(required)</td><td>Voice ID used for synthesis.</td></tr><tr><td><code>model</code></td><td><code>str</code></td><td><code>"public/tts/en-rt"</code></td><td>Model path. Use <code>"public/tts/ua-rt"</code> for the Ukrainian model.</td></tr><tr><td><code>sampling_params</code></td><td><code>dict</code></td><td><code>{}</code></td><td>Sampling parameters used for speech synthesis.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   See the <a href="https://github.com/respeecher/pipecat-respeecher">source repository</a>   and Respeecher's <a href="https://space.respeecher.com/docs/api/tts/sampling-params-guide">Sampling Parameters   Guide</a> for   the authoritative, up-to-date list of options. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+from pipecat_respeecher import RespeecherTTSService
+
+tts = RespeecherTTSService(
+    api_key=os.getenv("RESPEECHER_API_KEY"),
+    settings=RespeecherTTSService.Settings(
+        voice="samantha",
+    ),
+)</code></pre>
+<p>To use the Ukrainian language model, set the corresponding <code>model</code> and <code>voice</code>:</p>
+<pre><code>import os
+from pipecat_respeecher import RespeecherTTSService
+
+tts = RespeecherTTSService(
+    api_key=os.getenv("RESPEECHER_API_KEY"),
+    settings=RespeecherTTSService.Settings(
+        voice="olesia-conversation",
+        model="public/tts/ua-rt",
+    ),
+)</code></pre>
+<h2>Compatibility</h2>
+<p>Requires Pipecat v1.1.0 or newer and has been tested with v1.1.0. Check the <a href="https://github.com/respeecher/pipecat-respeecher">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/respeecher">https://docs.pipecat.ai/api-reference/server/services/tts/respeecher</a></p>
+</div></main></div></body></html>

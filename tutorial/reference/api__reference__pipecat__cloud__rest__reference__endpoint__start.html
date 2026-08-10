@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start an Agent Session · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Start an Agent Session</h1>
+<blockquote>POST /{agentName}/start starts a new session with a deployed Pipecat Cloud agent.</blockquote>
+<p>This endpoint starts a new instance of a deployed agent. You can optionally create a Daily room for the service to connect to.</p>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /{agentName}/start:
+    servers:
+      - url: https://api.pipecat.daily.co/v1/public
+        description: Public API server
+    post:
+      summary: Start a service instance
+      operationId: startService
+      parameters:
+        - name: agentName
+          in: path
+          required: true
+          description: Name of the agent to start
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartRequest'
+      responses:
+        '200':
+          description: Service started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - PublicKeyAuth: []
+components:
+  schemas:
+    StartRequest:
+      type: object
+      properties:
+        createDailyRoom:
+          type: boolean
+          default: false
+          description: Whether to create a Daily room for the service instance
+          example: true
+        dailyRoomProperties:
+          type: object
+          description: &gt;-
+            Optional configuration for the Daily room. Only used when
+            createDailyRoom is true.
+
+
+            See [Daily API
+            documentation](https://docs.daily.co/reference/rest-api/rooms/config)
+            for supported properties.
+          example:
+            enable_recording: cloud
+        dailyMeetingTokenProperties:
+          type: object
+          description: &gt;-
+            Optional configuration for the Daily meeting token. Only used when
+            createDailyRoom is true.
+
+
+            See [Daily API
+            documentation](https://docs.daily.co/reference/rest-api/meeting-tokens/config)
+            for supported properties.
+          example:
+            is_owner: true
+            start_cloud_recording: true
+        enableDefaultIceServers:
+          type: boolean
+          default: false
+          description: &gt;-
+            Whether to use the default STUN/TURN ICE servers provided by Pipecat
+            Cloud.
+          example: true
+        transport:
+          type: string
+          description: Explicitly specify which transport the bot should use.
+          enum:
+            - daily
+            - webrtc
+            - websocket
+          example: webrtc
+        body:
+          type: object
+          description: &gt;-
+            Arbitrary user data / configuration object to pass to the service
+            instance. Accessible as the first parameter of the `bot` method or
+            custom entry point. Maximum size: 1 MB for `transport: "daily"` or
+            `"webrtc"`, 4 KB for `"websocket"`. For `transport: "websocket"`,
+            the body is returned in the response's `body` field base64-encoded;
+            the service must be deployed with `websocket_auth = "token"` to use
+            this encoding convenience. See the [`Starting Sessions`
+            docs](/pipecat-cloud/fundamentals/active-sessions#passing-data) for
+            details.
+          example:
+            foo: bar
+    StartResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: &gt;-
+            HMAC session token for WebSocket authentication (only when transport
+            is "websocket")
+          example: &gt;-
+            eyJzaCI6Im15LWFnZW50Lm15LW9yZyIsImV4cCI6MTcxMjgwMDAwMCwibm9uY2UiOiJhYmMxMjMifQ.dGVzdC1zaWduYXR1cmU
+        wsUrl:
+          type: string
+          description: WebSocket URL to connect to (only when transport is "websocket")
+          example: wss://us-west.api.pipecat.daily.co/ws/generic/my-agent.my-org
+        body:
+          type: string
+          description: &gt;-
+            Base64-encoded JSON body for the bot (only when transport is
+            "websocket" and the request included a `body`). Append to `wsUrl` as
+            a `?body=` query parameter when connecting.
+          example: eyJjYWxsZXJfaWQiOiJhYmMxMjMifQ==
+        dailyRoom:
+          type: string
+          description: URL of the created Daily room (if createDailyRoom was set to true)
+          example: &gt;-
+            https://cloud-354b1860310a444ba0f528b6a2f467c4.daily.co/qZbK9nyXCDCmQ0zDDZta
+        dailyToken:
+          type: string
+          description: Token to access the Daily room (if createDailyRoom was set to true)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        sessionId:
+          type: string
+          description: Session ID for the created session
+          example: 639f91d8-d511-4677-a83b-bd7564d5d92f
+        iceConfig:
+          type: object
+          description: &gt;-
+            ICE server configuration (only included when enableDefaultIceServers
+            is true)
+          properties:
+            iceServers:
+              type: array
+              items:
+                type: object
+                properties:
+                  urls:
+                    type: array
+                    items:
+                      type: string
+                    description: Array of STUN/TURN server URLs
+                  username:
+                    type: string
+                    description: Authentication username for TURN servers
+                  credential:
+                    type: string
+                    description: Authentication credential for TURN servers
+          example:
+            iceServers:
+              - urls:
+                  - stun:stun.cloudflare.com:3478
+                  - turn:turn.cloudflare.com:3478?transport=udp
+                  - turn:turn.cloudflare.com:3478?transport=tcp
+                  - turns:turn.cloudflare.com:5349?transport=tcp
+                username: g061f2543c0c7aab7d4b087ad407709...
+                credential: e6330e0a539d4cfe9cf9f01b9eb2f...
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Unauthorized / token expired
+            code: '401'
+  securitySchemes:
+    PublicKeyAuth:
+      type: http
+      scheme: bearer
+      description: &gt;-
+        Authentication using a Pipecat Cloud public API key.
+
+
+        Generate a public API key from your Dashboard (Settings &gt; API Keys &gt;
+        Public &gt; Create key) and include it as a Bearer token in the
+        Authorization header.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/start">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/start</a></p>
+</div></main></div></body></html>

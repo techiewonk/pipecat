@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FireRed VAD · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>FireRed VAD</h1>
+<blockquote>FireVadAnalyzer provides streaming voice activity detection (VAD) for Pipecat using the FireRedVAD model.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="rahulsolanki001" maintainerUrl="https://github.com/rahulsolanki001" repo="https://github.com/rahulsolanki001/pipecat-fire-vad" /&gt;</p>
+<h2>Overview</h2>
+<p><code>FireVadAnalyzer</code> is a Pipecat VAD analyzer backed by <a href="https://github.com/FireRedTeam/FireRedVAD">FireRedVAD</a>, a streaming voice activity detection model that supports 100+ languages. It processes audio one 10 ms frame at a time and reports speech probability to Pipecat's VAD layer, letting transports detect when a user starts and stops speaking.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/rahulsolanki001/pipecat-fire-vad"&gt;     Source code, examples, and issues for the FireRedVAD integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-firered-vad/"&gt;     The <code>pipecat-firered-vad</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="FireRedVAD Model" icon="book" href="https://github.com/FireRedTeam/FireRedVAD"&gt;     The upstream FireRedVAD model and benchmarks   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Model Weights" icon="cube" href="https://huggingface.co/FireRedTeam/FireRedVAD"&gt;     Download the FireRedVAD model weights from Hugging Face   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-firered-vad</code></pre>
+<h2>Prerequisites</h2>
+<p>This integration requires no API key. It does, however, depend on the upstream FireRedVAD package (not published to PyPI) and locally downloaded model weights.</p>
+<h3>1. Install FireRedVAD</h3>
+<p><code>fireredvad</code> is not on PyPI. Clone and install it from GitHub:</p>
+<pre><code>git clone https://github.com/FireRedTeam/FireRedVAD.git
+cd FireRedVAD
+pip install -r requirements.txt
+export PYTHONPATH=$PWD:$PYTHONPATH</code></pre>
+<h3>2. Download model weights</h3>
+<pre><code>pip install -U "huggingface_hub[cli]"
+huggingface-cli download FireRedTeam/FireRedVAD \
+    --local-dir ./pretrained_models/FireRedVAD</code></pre>
+<h3>3. Audio requirements</h3>
+<p>FireRedVAD only accepts <strong>16 kHz, 16-bit mono PCM</strong> audio (enforced at construction time). When using a transport such as <code>DailyTransport</code>, set <code>sample_rate=16000</code>.</p>
+<h3>Environment Variables</h3>
+<p>The integration does not read environment variables directly. The example uses the following for convenience:</p>
+<ul><li><code>FIREREDVAD_MODEL_DIR</code>: Path to the downloaded <code>Stream-VAD</code> model directory,</li></ul>
+<p>  passed to the analyzer's <code>model_dir</code> argument.</p>
+<ul><li><code>FIREREDVAD_USE_GPU</code>: Set to <code>1</code> to enable GPU inference (default: <code>0</code>).</li></ul>
+<h2>Configuration</h2>
+<p>Constructor parameters for <code>FireVadAnalyzer</code> (all keyword-only):</p>
+<p>&lt;ParamField path="model_dir" type="str" required&gt;   Path to the downloaded <code>Stream-VAD</code> model directory, e.g.   <code>"pretrained_models/FireRedVAD/Stream-VAD"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. Must be <code>16000</code> if provided (enforced). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="VADParams" default="None"&gt;   Pipecat-level VAD parameters controlling turn-detection smoothing   (<code>confidence</code>, <code>start_secs</code>, <code>stop_secs</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mode" type="int" default="None"&gt;   Optional <code>VadMode</code> sensitivity preset (0–3). When set, it overrides the   individual threshold/frame parameters below. See <a href="#vad-modes">VAD modes</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_gpu" type="bool" default="False"&gt;   Run DFSMN inference on GPU (requires CUDA). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="smooth_window_size" type="int" default="5"&gt;   Frames in the model's internal sliding-window smoother. Larger values reduce   jitter at the cost of slightly more onset latency. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="speech_threshold" type="float" default="0.4"&gt;   Model-level gate. Frames with a smoothed probability above this value are   considered speech. Range 0.0–1.0. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="pad_start_frame" type="int" default="5"&gt;   Extra frames prepended at speech onset to avoid clipping the leading edge of a   word. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="min_speech_frame" type="int" default="8"&gt;   Minimum consecutive speech frames before a segment is confirmed. Prevents   single-frame false positives. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_speech_frame" type="int" default="2000"&gt;   Maximum frames in one speech segment before a forced split. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="min_silence_frame" type="int" default="20"&gt;   Silence frames required to close a speech segment. Higher values make the bot   wait longer before deciding the turn ended. &lt;/ParamField&gt;</p>
+<h3>VAD modes</h3>
+<p><code>VadMode</code> provides pre-tuned sensitivity presets. Passing one to the <code>mode</code> argument adjusts <code>speech_threshold</code>, <code>min_speech_frame</code>, and <code>min_silence_frame</code> together as a matched set.</p>
+<div class="tablewrap"><table><thead><tr><th>Preset</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>VadMode.VERY_PERMISSIVE</code></td><td><code>0</code></td><td>Catches soft/distant speech. May increase false alarms.</td></tr><tr><td><code>VadMode.PERMISSIVE</code></td><td><code>1</code></td><td>Balanced — a good starting point for most use cases.</td></tr><tr><td><code>VadMode.AGGRESSIVE</code></td><td><code>2</code></td><td>Suppresses background noise well. May clip quiet speech.</td></tr><tr><td><code>VadMode.VERY_AGGRESSIVE</code></td><td><code>3</code></td><td>Maximum noise rejection. Best for loud environments.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<p>Pass the analyzer to a transport via <code>vad_analyzer</code>, the same way you would use <code>SileroVADAnalyzer</code>:</p>
+<pre><code>import os
+
+from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.transports.services.daily import DailyParams, DailyTransport
+from pipecat_firered_vad import FireVadAnalyzer, VadMode
+
+vad = FireVadAnalyzer(
+    model_dir=os.environ["FIREREDVAD_MODEL_DIR"],
+    sample_rate=16000,
+    params=VADParams(
+        confidence=0.7,
+        start_secs=0.2,
+        stop_secs=0.3,
+    ),
+    mode=VadMode.PERMISSIVE,
+    use_gpu=os.getenv("FIREREDVAD_USE_GPU", "0") == "1",
+)
+
+transport = DailyTransport(
+    os.environ["DAILY_ROOM_URL"],
+    os.getenv("DAILY_TOKEN"),
+    "FireRed VAD Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        vad_enabled=True,
+        vad_analyzer=vad,
+        vad_audio_passthrough=True,
+    ),
+)
+
+# ... build your pipeline with transport.input() / transport.output().</code></pre>
+<p>&lt;Note&gt;   Call <code>vad.reset()</code> between sessions (for example on <code>on_participant_left</code>) so   one caller's audio context does not bleed into the next. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>Requires <code>pipecat-ai &gt;= 0.0.90</code>. Check the <a href="https://github.com/rahulsolanki001/pipecat-fire-vad">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vad/fire-vad">https://docs.pipecat.ai/api-reference/server/services/vad/fire-vad</a></p>
+</div></main></div></body></html>

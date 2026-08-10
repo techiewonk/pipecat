@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L19 · Flows — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 19 · Part IV — Structure, control & capture</div>
+      <h1>Flows</h1>
+      <div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: intermediate → advanced</span></div>
+      <p class="lead">For step-by-step tasks — intake, ordering, reservations, triage — one giant prompt is unreliable. Flows model the conversation as a graph of nodes, each with its own instructions and scoped tools.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="graph">Conversation as a graph</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="Node: greet|ask name|Node: collect order|ask payment|Node: confirm|end"
+           data-caption="Each node has its own task/role messages and allowed tools|the bot only does what the current node permits|a flow function returns the NEXT node to advance|the FlowManager transitions and updates context|until it reaches a terminal node — reliably on-task">
+      </div>
+      <p>A <code>FlowManager</code> moves between <code>NodeConfig</code>s as the user progresses. Each node scopes its <code>functions</code>, so the bot can't wander off-task.</p>
+
+      <h2 id="node">A node and a transition</h2>
+      <pre><code class="language-python">from pipecat.flows import FlowManager, NodeConfig
+
+def create_initial_node() -> NodeConfig:
+    return NodeConfig(
+        name="initial",
+        role_messages=[{"role": "system", "content": "You are a friendly assistant."}],
+        task_messages=[{"role": "system", "content": "Ask the user their favorite color."}],
+        functions=[record_favorite_color],           # only this tool is allowed here
+    )
+
+async def record_favorite_color(flow_manager: FlowManager, color: str):
+    # do something with `color`, then RETURN THE NEXT NODE to advance
+    return "Thanks!", create_end_node()
+
+# start it
+flow = FlowManager(llm=llm, context_aggregator=context_agg, worker=worker)
+await flow.initialize(create_initial_node())</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Return <code>(result, next_node)</code></p>
+        <p>A flow function returns both what to say and <em>which node comes next</em>. That return value is how the graph advances — the core idea of Flows. <code>ContextStrategy</code> (APPEND / RESET / RESET_WITH_SUMMARY) controls what carries between nodes.</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>flows/manager.py</code> — <code>FlowManager</code> (initialize, set_node, transitions, actions). <code>flows/types.py</code> — <code>NodeConfig</code>, <code>ContextStrategy</code>, <code>FlowsFunctionSchema</code>, <code>ConsolidatedFunctionResult</code>. <code>flows/actions.py</code> — <code>ActionManager</code> (built-in <code>tts_say</code>/<code>end_conversation</code>). Examples: <code>examples/flows/</code> (hello_world, food_ordering, patient_intake, warm_transfer).</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 6</p>
+        <p>Give Atlas a structured task — a short booking or intake flow with 3–4 nodes. Notice how much more reliable it is than a single mega-prompt.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>flows/hello_world.py</code>, then add a node that asks a second question before ending. (2) Explore <code>food_ordering.py</code> and <code>patient_intake.py</code>. (3) Try <code>warm_transfer.py</code> — a bridge to multi-agent (Part V).</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does a flow function return, and why?</summary><p>A tuple of the spoken result and the next <code>NodeConfig</code>, so the graph advances.</p></details>
+      <details><summary>2. How do you stop the bot wandering off-task?</summary><p>Scope each node's tools via <code>functions=[...]</code> so only permitted actions are available.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l20-interruptions-switching.html">Lesson 20 — Interruptions, idle & switching →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

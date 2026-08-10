@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 10 — Production &amp; Telephony · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 10 · Part C — Production &amp; A2A</div>
+<h1>Production features &amp; telephony</h1>
+<div class="meta"><span class="pill">⏱ 60 min</span><span class="pill grey">Level: intermediate</span></div>
+<p class="lead">The features that make an agent shippable — wake phrase, translation, voicemail detection, recording, metrics — plus how to put your agent on a phone line.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="features">Everyday production features</h2>
+<div class="box concept"><p class="title">🎯 Mostly recombinations</p>
+<p>Almost everything here is built from Chapters 2–5: a custom processor, an event handler, or a settings-update frame. Wake phrase, live translation, service/voice/language switching, DTMF menus, voicemail detection, email gathering, and text transforms all live in <code>features/</code>.</p></div>
+
+<h2 id="observe">Observability</h2>
+<p>In production you need to see latency (TTFB), per-service timing, token usage, and health. <strong>Observers</strong> watch frames read-only; <strong>heartbeats</strong> confirm liveness; <strong>Sentry</strong> ships metrics. Docs: <a href="reference/pipecat__fundamentals__metrics.html" target="_blank" rel="noopener">Metrics</a>.</p>
+<pre><code class="language-python">class MyObserver(BaseObserver):
+    async def on_push_frame(self, data):        # called per frame, never blocks the flow
+        logger.debug(f"{type(data.frame).__name__}")
+# enable timing on the worker:
+worker = PipelineWorker(pipeline, params=PipelineParams(enable_metrics=True, enable_usage_metrics=True))</code></pre>
+<div class="box py"><p class="title">🐍 Python note — observer vs processor</p>
+<p>A processor sits <em>in</em> the pipeline and can change frames; an observer sits <em>beside</em> it and only watches. Use observers for logging/metrics so you can't accidentally break the flow.</p></div>
+
+<h2 id="telephony">Telephony — put it on a phone</h2>
+<p>Several transports connect your agent to a call. Twilio (over a websocket) is the most common; the others suit specific needs.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Transport</th><th>Use it for</th><th>Setup note</th></tr></thead>
+<tbody>
+<tr><td><strong>Twilio</strong> (websocket)</td><td>Classic phone numbers, IVR, outbound/inbound PSTN.</td><td>Run <code>ngrok http 7860</code>, point a TwiML app at it; <code>-t twilio -x &lt;ngrok-host&gt;</code>.</td></tr>
+<tr><td><strong>Vonage</strong></td><td>Alternative PSTN provider (<code>transports-vonage.py</code>).</td><td>Vonage voice app + webhook URL.</td></tr>
+<tr><td><strong>WhatsApp</strong></td><td>Voice/'messaging over WhatsApp Business.</td><td>WhatsApp Business API credentials.</td></tr>
+<tr><td><strong>Daily</strong></td><td>WebRTC rooms + dial-in/out; simplest managed path.</td><td><code>DAILY_API_KEY</code>; <code>-t daily</code>.</td></tr>
+<tr><td><strong>LiveKit</strong></td><td>Self-hostable WebRTC/SIP at scale.</td><td>LiveKit server + keys.</td></tr>
+</tbody></table></div>
+<p>DTMF keypad menus (Chapter 2) pair with these for "press 1 for…" flows.</p>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python features/features-wake-phrase.py       # bot ignores you until the wake word
+uv run python features/features-live-translation.py  # speak one language, hear another
+uv run python observability/observability-observer.py
+# phone: ngrok http 7860 ; then  uv run python getting-started/06-voice-agent.py -t twilio -x &lt;host&gt;</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Change the wake phrase to 2–3 clear words. Add <code>enable_metrics=True</code> and read the TTFB output. Wire a DTMF menu (<code>features-dtmf-menu.py</code>) onto a Twilio call.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>Wake phrase never triggers → too long/uncommon for STT. DTMF does nothing → needs a phone transport. Nothing logged → observer not registered. Twilio silent → ngrok host wrong or TwiML app misconfigured.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>Why prefer an observer over a processor for logging, and what's the default phone path?</summary><p>An observer can't alter or stall the frame flow. Twilio-over-websocket (with ngrok) is the most common phone path; Daily is the simplest managed one.</p></details>
+
+<h2 id="files">Example files</h2>
+<h3>Features</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>features-add-tool-change-messages.py</code></td><td>Manual validation harness for the ``add_tool_change_messages`` feature</td></tr><tr><td><code>features-app-resources.py</code></td><td>Example demonstrating ``PipelineWorker(app_resources=...)``</td></tr><tr><td><code>features-before-and-after-events.py</code></td><td>features before and after events</td></tr><tr><td><code>features-concurrent-llm-evaluation.py</code></td><td>features concurrent llm evaluation</td></tr><tr><td><code>features-concurrent-llm-rtvi-ignored-sources.py</code></td><td>RTVIObserver ignored sources example</td></tr><tr><td><code>features-custom-frame-processor.py</code></td><td>features custom frame processor</td></tr><tr><td><code>features-dtmf-menu.py</code></td><td>A keypad-driven phone menu (IVR) bot</td></tr><tr><td><code>features-gpu-container-local-bot.py</code></td><td>features gpu container local bot — on-device</td></tr><tr><td><code>features-live-translation.py</code></td><td>features live translation — with translation</td></tr><tr><td><code>features-pattern-pair-voice-switching.py</code></td><td>Pattern Pair Voice Switching Example with Pipecat</td></tr><tr><td><code>features-service-switcher.py</code></td><td>features service switcher</td></tr><tr><td><code>features-switch-languages.py</code></td><td>features switch languages</td></tr><tr><td><code>features-switch-voices.py</code></td><td>features switch voices</td></tr><tr><td><code>features-text-transforms.py</code></td><td>Voice formatting with individual text transforms</td></tr><tr><td><code>features-user-email-gathering.py</code></td><td>features user email gathering</td></tr><tr><td><code>features-voice-formatter.py</code></td><td>Voice formatting with VoiceFormatter</td></tr><tr><td><code>features-voicemail-detection.py</code></td><td>features voicemail detection</td></tr><tr><td><code>features-wake-phrase.py</code></td><td>features wake phrase</td></tr></tbody></table></div>
+<h3>Observability</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>observability-heartbeats.py</code></td><td>observability heartbeats</td></tr><tr><td><code>observability-observer.py</code></td><td>observability observer</td></tr><tr><td><code>observability-sentry-metrics.py</code></td><td>observability sentry metrics</td></tr></tbody></table></div>
+<h3>Transports</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>transports-daily.py</code></td><td>transports daily</td></tr><tr><td><code>transports-livekit.py</code></td><td>transports livekit</td></tr><tr><td><code>transports-moq.py</code></td><td>MOQ (Media over QUIC) transport example</td></tr><tr><td><code>transports-small-webrtc.py</code></td><td>transports small webrtc</td></tr><tr><td><code>transports-vonage.py</code></td><td>Example of using OpenAI Realtime voice LLM service with Vonage Video Connector transport</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

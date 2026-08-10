@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L16 · Vision, video & avatars — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 16 · Part III — Realtime & multimodal</div>
+      <h1>Vision, video & avatars</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Video frames flow through the pipeline exactly like audio. That one idea unlocks three features: seeing (vision), transforming video, and giving the bot a face.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="idea">Frames carry any media</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="📷 camera|InputImageRawFrame|multimodal LLM|description|🔊 speaks it"
+           data-caption="A camera-enabled transport captures video|frames arrive as InputImageRawFrame / UserImageRawFrame|a multimodal LLM receives the image alongside text|it describes what it sees|TTS speaks the answer — 'you're holding a mug'">
+      </div>
+      <p>A vision model is just an <code>LLMService</code> that accepts image frames. Video <em>processing</em> transforms the track itself with no LLM. Avatars are a video service/transport that renders a talking head from the bot's speech.</p>
+
+      <h2 id="vision">Vision</h2>
+      <pre><code class="language-python">from pipecat.frames.frames import UserImageRequestFrame
+# enable video on the transport, use a multimodal LLM (OpenAI/Anthropic/Gemini),
+# then request the current frame when the user asks about what they're showing:
+await worker.queue_frame(UserImageRequestFrame(user_id))   # attaches the frame to context
+# the vision-capable LLM answers using the image</code></pre>
+      <p>Start with <code>vision/vision-openai.py</code>; <code>vision-moondream.py</code> runs a small local vision model.</p>
+
+      <h2 id="videoproc">Video processing (no AI)</h2>
+      <p>Pure frame work — mirror, filter, swap tracks, or feed GStreamer sources. These processors live in <code>processors/gstreamer/</code> and the <code>video-processing/</code> examples. No model required.</p>
+
+      <h2 id="avatars">Avatars (talking heads)</h2>
+      <p>Tavus, HeyGen, Simli, and LemonSlice render a face driven by the bot's TTS, wired either as a <strong>transport</strong> (the avatar owns the room) or a <strong>video service</strong> (frames added to your pipeline).</p>
+      <pre><code class="language-bash">uv run python vision/vision-openai.py                       # "what am I holding?"
+uv run python video-processing/video-processing-mirror.py   # track transform, no AI
+uv run python video-avatar/video-avatar-tavus-transport.py  # a face (needs a Tavus key)</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p>Vision services under <code>services/*</code> (e.g. <code>moondream</code>) + multimodal LLMs. <code>processors/gstreamer/*</code> for video processing. <code>transports/{tavus,heygen,simli,lemonslice}/</code> for avatars. Frames: <code>ImageRawFrame</code>/<code>InputImageRawFrame</code>/<code>UserImageRawFrame</code>/<code>OutputImageRawFrame</code> in <code>frames/frames.py</code>.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Swap <code>vision-openai.py</code> for <code>vision-moondream.py</code> and compare. (2) Combine vision with a tool (a <code>-video</code> function-calling example) so the bot can see <em>and</em> act. (3) Give Atlas a Tavus face (optional).</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. How do <code>vision/</code> and <code>video-processing/</code> differ?</summary><p>Vision sends frames to an LLM for understanding; video-processing transforms the track itself, usually with no LLM.</p></details>
+      <details><summary>2. Two ways to wire an avatar?</summary><p>As a transport (it owns the room) or as a video service (frames added to your pipeline).</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l17-thinking.html">Lesson 17 — Thinking / reasoning →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

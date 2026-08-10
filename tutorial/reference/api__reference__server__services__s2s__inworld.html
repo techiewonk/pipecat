@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inworld Realtime · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Inworld Realtime</h1>
+<blockquote>InworldRealtimeLLMService provides real-time multimodal conversation using Inworld's Realtime API for voice agents.</blockquote>
+<h2>Overview</h2>
+<p><code>InworldRealtimeLLMService</code> provides real-time, multimodal conversation capabilities using Inworld's Realtime API. It operates as a cascade STT/LLM/TTS pipeline under the hood with built-in semantic voice activity detection (VAD) for turn management, offering low-latency speech-to-speech interactions with integrated LLM processing and function calling.</p>
+<p>Speech synthesis defaults to <strong>Realtime TTS-2</strong> (<code>inworld-tts-2</code>). Realtime TTS-1.5-Max (<code>inworld-tts-1.5-max</code>) and Realtime TTS-1.5-Mini (<code>inworld-tts-1.5-mini</code>) remain available via the <code>tts_model</code> parameter.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Inworld Realtime API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.inworld.realtime.llm.html"&gt;     Pipecat's API methods for Inworld Realtime integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/realtime/realtime-inworld.py"&gt;     Complete Inworld Realtime conversation example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Inworld Realtime Documentation" icon="book" href="https://docs.inworld.ai/api-reference/realtimeAPI/realtime/realtime-websocket"&gt;     Official Inworld Realtime API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Inworld Console" icon="external-link" href="https://studio.inworld.ai/"&gt;     Access Inworld models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Inworld Realtime services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[inworld]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Inworld Account Setup</h3>
+<p>Before using Inworld Realtime services, you need:</p>
+<ol><li><strong>Inworld Account</strong>: Sign up at <a href="https://studio.inworld.ai/">Inworld Studio</a></li><li><strong>API Key</strong>: Generate an Inworld API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to Inworld Realtime models</li><li><strong>Usage Limits</strong>: Configure appropriate usage limits and billing</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>INWORLD_API_KEY</code>: Your Inworld API key for authentication</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Real-time Speech-to-Speech</strong>: Direct audio processing with low latency</li><li><strong>Cascade Pipeline</strong>: Integrated STT → LLM → TTS processing</li><li><strong>Semantic VAD</strong>: Advanced semantic voice activity detection for natural turn-taking</li><li><strong>Multilingual Support</strong>: Support for multiple languages via STT model selection</li><li><strong>Function Calling</strong>: Seamless support for external functions and tool integration</li><li><strong>Multiple Voice Options</strong>: Various voice personalities available</li><li><strong>WebSocket Support</strong>: Real-time bidirectional audio streaming</li><li><strong>Streaming Transcription</strong>: Real-time user speech transcription</li></ul>
+<h2>Configuration</h2>
+<h3>InworldRealtimeLLMService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Inworld API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="llm_model" type="str" default="openai/gpt-4.1-mini"&gt;   LLM model to use (e.g. "openai/gpt-4.1-nano"). Can be any supported model or   an <a href="https://docs.inworld.ai/router/introduction">Inworld Router</a>. Shorthand   for <code>session_properties.model</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="Clive"&gt;   Voice ID for TTS output (e.g. "Sarah", "Clive"). Shorthand for   <code>session_properties.audio.output.voice</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tts_model" type="str" default="inworld-tts-2"&gt;   TTS model to use. Defaults to Realtime TTS-2 (<code>inworld-tts-2</code>). Other options:   Realtime TTS-1.5-Max (<code>inworld-tts-1.5-max</code>), Realtime TTS-1.5-Mini   (<code>inworld-tts-1.5-mini</code>). Shorthand for   <code>session_properties.audio.output.model</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="stt_model" type="str" default="inworld/inworld-stt-1"&gt;   STT model for input transcription (e.g. "inworld/inworld-stt-1"). Defaults to   <code>"inworld/inworld-stt-1"</code>; pass <code>stt_model=</code> to override. Shorthand for   <code>session_properties.audio.input.transcription.model</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.inworld.ai/api/v1/realtime/session"&gt;   WebSocket base URL for the Inworld Realtime API. Override for custom   deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auth_type" type="Literal['basic', 'bearer']" default="basic"&gt;   Authentication type. <code>"basic"</code> for server-side API key auth, <code>"bearer"</code> for   client-side JWT auth. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="InworldRealtimeLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="start_audio_paused" type="bool" default="False"&gt;   Whether to start with audio input paused. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>InworldRealtimeLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>system_instruction</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>System instruction/prompt. *(Inherited from base settings.)*</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Temperature for response generation. *(Inherited from base settings.)*</td></tr><tr><td><code>session_properties</code></td><td><code>SessionProperties</code></td><td><code>NOT_GIVEN</code></td><td>Session-level configuration (voice, audio config, tools, etc.).</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted, letting the service use its own defaults. Only   parameters that are explicitly set are included. &lt;/Note&gt;</p>
+<h3>SessionProperties</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>LLM model to use (e.g. "openai/gpt-4.1-nano").</td></tr><tr><td><code>instructions</code></td><td><code>str</code></td><td><code>None</code></td><td>System instructions for the assistant.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>None</code></td><td>Temperature for response generation.</td></tr><tr><td><code>output_modalities</code></td><td><code>List[str]</code></td><td><code>["audio", "text"]</code></td><td>Output modalities for the assistant.</td></tr><tr><td><code>audio</code></td><td><code>AudioConfiguration</code></td><td><code>None</code></td><td>Configuration for input and output audio formats.</td></tr><tr><td><code>tools</code></td><td><code>List[FunctionTool]</code></td><td><code>None</code></td><td>Available custom function tools.</td></tr></tbody></table></div>
+<h3>AudioConfiguration</h3>
+<p>The <code>audio</code> field in <code>SessionProperties</code> accepts an <code>AudioConfiguration</code> with <code>input</code> and <code>output</code> sub-configurations:</p>
+<p><strong>AudioInput</strong> (<code>audio.input</code>):</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>format</code></td><td><code>AudioFormat</code></td><td><code>None</code></td><td>Input audio format. Supports <code>PCMAudioFormat</code> (configurable rate), <code>PCMUAudioFormat</code> (8kHz), or <code>PCMAAudioFormat</code> (8kHz).</td></tr><tr><td><code>transcription</code></td><td><code>InputTranscription</code></td><td><code>None</code></td><td>Configuration for input audio transcription. Includes <code>model</code> field for STT model selection.</td></tr><tr><td><code>turn_detection</code></td><td><code>TurnDetection</code></td><td><code>None</code></td><td>Turn detection configuration. Supports <code>"semantic_vad"</code> and <code>"server_vad"</code> types.</td></tr></tbody></table></div>
+<p><strong>AudioOutput</strong> (<code>audio.output</code>):</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>format</code></td><td><code>AudioFormat</code></td><td><code>None</code></td><td>Output audio format. Same format options as input.</td></tr><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>TTS model to use (e.g. "inworld-tts-2").</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice ID (e.g. "Sarah", "Clive").</td></tr></tbody></table></div>
+<p>Inworld PCM audio supports sample rates: 8000, 16000, 24000, 32000, 44100, and 48000 Hz.</p>
+<h3>TurnDetection</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>type</code></td><td><code>Literal["server_vad", "semantic_vad"]</code></td><td><code>"semantic_vad"</code></td><td>Detection type. "semantic\_vad" for semantic-based, "server\_vad" for standard VAD.</td></tr><tr><td><code>eagerness</code></td><td><code>str</code></td><td><code>None</code></td><td>How eagerly to detect end of turn. Options: "low", "medium", "high".</td></tr><tr><td><code>create_response</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether to automatically create a response on turn end.</td></tr><tr><td><code>interrupt_response</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether user speech interrupts the current response.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<p>&lt;Tip&gt;   Pair this service with <code>LLMContextAggregatorPair(context,       realtime_service_mode=True)</code>. Realtime mode keeps context-writing correct for   speech-to-speech services and adapts turn handling to the service. See   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services">Realtime (Speech-to-Speech)   Services</a>. &lt;/Tip&gt;</p>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.inworld.realtime.llm import InworldRealtimeLLMService
+
+llm = InworldRealtimeLLMService(
+    api_key=os.getenv("INWORLD_API_KEY"),
+    llm_model="xai/grok-4-1-fast-non-reasoning",
+    voice="Sarah",
+    settings=InworldRealtimeLLMService.Settings(
+        system_instruction=(
+            "You are a helpful and friendly AI assistant powered by Inworld. "
+            "Keep your responses concise and conversational since this is a "
+            "voice interaction."
+        ),
+    ),
+)</code></pre>
+<h3>With Model and Voice Configuration</h3>
+<pre><code>from pipecat.services.inworld.realtime.llm import InworldRealtimeLLMService
+
+llm = InworldRealtimeLLMService(
+    api_key=os.getenv("INWORLD_API_KEY"),
+    llm_model="openai/gpt-4.1-nano",
+    voice="Sarah",
+    tts_model="inworld-tts-2",
+    stt_model="inworld/inworld-stt-1",
+)</code></pre>
+<h3>With Full Session Configuration</h3>
+<pre><code>from pipecat.services.inworld.realtime.llm import InworldRealtimeLLMService
+from pipecat.services.inworld.realtime.events import (
+    SessionProperties,
+    TurnDetection,
+    AudioConfiguration,
+    AudioInput,
+    AudioOutput,
+    PCMAudioFormat,
+    InputTranscription,
+)
+
+session_properties = SessionProperties(
+    model="openai/gpt-4.1-nano",
+    instructions="You are a helpful assistant.",
+    temperature=0.7,
+    audio=AudioConfiguration(
+        input=AudioInput(
+            format=PCMAudioFormat(rate=24000),
+            transcription=InputTranscription(
+                model="inworld/inworld-stt-1"
+            ),
+            turn_detection=TurnDetection(
+                type="semantic_vad",
+                eagerness="low",
+                create_response=True,
+                interrupt_response=True,
+            ),
+        ),
+        output=AudioOutput(
+            format=PCMAudioFormat(rate=24000),
+            model="inworld-tts-2",
+            voice="Sarah",
+        ),
+    ),
+)
+
+llm = InworldRealtimeLLMService(
+    api_key=os.getenv("INWORLD_API_KEY"),
+    settings=InworldRealtimeLLMService.Settings(
+        session_properties=session_properties,
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>For partial updates, prefer the top-level fields (<code>model</code>, <code>system_instruction</code>, <code>temperature</code>). They are synced into <code>session_properties</code> automatically, so you don't need to resend a full <code>SessionProperties</code> config:</p>
+<pre><code>from pipecat.frames.frames import LLMUpdateSettingsFrame
+from pipecat.services.inworld.realtime.llm import InworldRealtimeLLMSettings
+
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=InworldRealtimeLLMSettings(
+            system_instruction="Now speak in Spanish.",
+        )
+    )
+)</code></pre>
+<p>To change nested fields like <code>voice</code>, send a complete <code>SessionProperties</code> (it replaces the stored config wholesale):</p>
+<pre><code>from pipecat.frames.frames import LLMUpdateSettingsFrame
+from pipecat.services.inworld.realtime.llm import InworldRealtimeLLMSettings
+from pipecat.services.inworld.realtime.events import (
+    SessionProperties,
+    AudioConfiguration,
+    AudioOutput,
+    PCMAudioFormat,
+)
+
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=InworldRealtimeLLMSettings(
+            session_properties=SessionProperties(
+                model="openai/gpt-4.1-nano",
+                instructions="Now speak in Spanish.",
+                audio=AudioConfiguration(
+                    output=AudioOutput(
+                        format=PCMAudioFormat(rate=24000),
+                        voice="Sarah",
+                    ),
+                ),
+            ),
+        )
+    )
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Audio format auto-configuration</strong>: If audio format is not specified in <code>session_properties</code>, the service automatically configures PCM input/output using the pipeline's sample rates (defaults to 24000 Hz).</li><li><strong>Semantic VAD by default</strong>: The service uses semantic VAD (<code>"semantic_vad"</code>) by default for more natural turn detection. When VAD is enabled, the server handles speech detection and turn management automatically.</li><li><strong>Cascade architecture</strong>: The service operates as an integrated STT → LLM → TTS pipeline on the server side, simplifying client-side implementation.</li><li><strong>Audio before setup</strong>: Audio is not sent to Inworld until the conversation setup is complete, preventing sample rate mismatches.</li><li><strong>G.711 support</strong>: PCMU and PCMA formats are supported at a fixed 8000 Hz rate, useful for telephony integrations.</li><li><strong>System instruction precedence</strong>: The <code>system_instruction</code> from service settings takes precedence over an initial system message in the LLM context. A warning is logged when both are set.</li><li><strong>Settings replacement</strong>: When providing <code>session_properties</code> in <code>settings</code>, it <strong>replaces</strong> all defaults wholesale — provide a complete <code>SessionProperties</code> configuration in that case. Use the constructor shortcuts (<code>llm_model</code>, <code>voice</code>, <code>tts_model</code>, <code>stt_model</code>) for simpler configuration.</li><li><strong>Function calling limitations</strong>: Functions registered with <code>cancel_on_interruption=False</code> are not reliably supported by Inworld Realtime as of this writing. The service will emit a warning if async tool messages are detected. Use <code>cancel_on_interruption=True</code> (the default) or consider another LLM service if your tool needs async semantics. Streamed intermediate tool results (<code>FunctionCallResultProperties(is_final=False)</code>) are also not supported.</li></ul>
+<h2>Event Handlers</h2>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_item_created</code></td><td>Called when a new conversation item is created in the session</td></tr><tr><td><code>on_conversation_item_updated</code></td><td>Called when a conversation item is updated or completed</td></tr></tbody></table></div>
+<pre><code>@llm.event_handler("on_conversation_item_created")
+async def on_item_created(service, item_id, item):
+    print(f"New conversation item: {item_id}")
+
+@llm.event_handler("on_conversation_item_updated")
+async def on_item_updated(service, item_id, item):
+    print(f"Conversation item updated: {item_id}")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/s2s/inworld">https://docs.pipecat.ai/api-reference/server/services/s2s/inworld</a></p>
+</div></main></div></body></html>

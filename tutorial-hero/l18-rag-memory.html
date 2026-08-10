@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L18 · RAG & memory — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 18 · Part III — Realtime & multimodal</div>
+      <h1>RAG & memory</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">LLMs don't know your private documents and will confidently make things up. Retrieval-Augmented Generation fetches relevant text and drops it into the context — and long-term memory persists facts across sessions.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Retrieve, then answer</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="question|retrieve chunks|add to LLMContext|LLM answers|(optional) cite sources"
+           data-caption="The user asks something about your data|you retrieve matching chunks from a store or file|and add them to the LLMContext as a message|the LLM answers grounded in that text|grounding metadata can attach citations">
+      </div>
+      <div class="box concept">
+        <p class="title">🧠 RAG is smart context-building</p>
+        <p>There's no new pipeline magic — RAG is "fetch relevant text, add it to the messages list before calling the LLM." It builds directly on the <a href="l09-context-aggregators.html">context (Lesson 9)</a>.</p>
+      </div>
+
+      <h2 id="code">The shape</h2>
+      <pre><code class="language-python"># On each user question: retrieve, inject, answer.
+async def on_user_question(text):
+    chunks = retriever.search(text, k=4)                    # your vector store / file search
+    context.add_message({"role": "developer",
+        "content": "Use these facts:\n" + "\n".join(chunks)})
+    await worker.queue_frames([LLMRunFrame()])
+
+# Long-term memory across sessions (Mem0):
+# from pipecat.services.mem0 import Mem0MemoryService  — stores/recalls facts automatically</code></pre>
+      <p>The examples use Gemini grounding and Mem0 to do the fetching; grounding-metadata variants print citations.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/mem0/*</code> (long-term memory) · the <code>rag/</code> examples (<code>rag-gemini.py</code>, <code>rag-mem0.py</code>, <code>rag-gemini-grounding-metadata.py</code>) · context injection from <a href="l09-context-aggregators.html">Lesson 9</a>. Knowledge source: <code>examples/assets/rag-content.txt</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 5</p>
+        <p>Ground Atlas in a small doc set: point a retriever at a text file and inject the top matches before each answer. Now it answers from <em>your</em> data, not just its training.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>rag/rag-gemini.py</code> and ask about the bundled content. (2) Replace the file with your own text. (3) Use <code>rag-gemini-grounding-metadata.py</code> to print citations, and <code>rag-mem0.py</code> to teach a fact and recall it after reconnecting.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. In one sentence, what does RAG add to a plain LLM call?</summary><p>Relevant retrieved text injected into the context so the answer is grounded in your data.</p></details>
+      <details><summary>2. Does RAG need new pipeline machinery?</summary><p>No — it's smarter context building on top of Lesson 9's aggregators.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part III complete. Next: <a href="l19-flows.html">Lesson 19 — Flows →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEN VAD · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>TEN VAD</h1>
+<blockquote>TenVadAnalyzer implements Pipecat's VADAnalyzer interface with the TEN VAD backend for voice activity detection.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="rahulsolanki001" maintainerUrl="https://github.com/rahulsolanki001" repo="https://github.com/rahulsolanki001/pipecat-ten-vad" /&gt;</p>
+<h2>Overview</h2>
+<p><code>TenVadAnalyzer</code> is a Pipecat <code>VADAnalyzer</code> implementation backed by <a href="https://github.com/TEN-framework/ten-vad">TEN VAD</a>, a low-latency, high-performance voice activity detector for real-time voice agents. It analyzes incoming audio and reports voice activity confidence, letting a transport detect when a user starts and stops speaking. It is a drop-in alternative to Pipecat's built-in <code>SileroVADAnalyzer</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/rahulsolanki001/pipecat-ten-vad"&gt;     Source code, examples, and issues for the TEN VAD integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-ten-vad/"&gt;     The <code>pipecat-ten-vad</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="TEN VAD" icon="book" href="https://github.com/TEN-framework/ten-vad"&gt;     The upstream TEN VAD project and supported platforms   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>.</p>
+<p>First install the TEN VAD backend (per the source repository, install it directly from GitHub):</p>
+<pre><code>uv add git+https://github.com/TEN-framework/ten-vad.git</code></pre>
+<p>Then install the integration:</p>
+<pre><code>uv add pipecat-ten-vad</code></pre>
+<h2>Prerequisites</h2>
+<p>No API key is required to use the VAD analyzer itself. You need:</p>
+<ul><li><strong>TEN VAD backend</strong>: Installed from GitHub as shown above.</li><li><strong>16 kHz audio</strong>: TEN VAD requires a <code>16000</code> Hz sample rate.</li></ul>
+<p>&lt;Note&gt;   Supported platforms (per the source repository): Linux x64, macOS (arm64 +   x64), and Windows x64. &lt;/Note&gt;</p>
+<h2>Configuration</h2>
+<p>Constructor parameters for <code>TenVadAnalyzer</code>:</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. Must be <code>16000</code> if provided. Passing any other value   raises a <code>ValueError</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="threshold" type="float" default="0.6"&gt;   Detection threshold (0.0–1.0) used by TEN VAD. Higher values require a   stronger voice signal to trigger. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="VADParams" default="None"&gt;   Pipecat VAD smoothing parameters (e.g. <code>stop_secs</code>). See   <a href="#vadparams"><code>VADParams</code></a> below. &lt;/ParamField&gt;</p>
+<h3>VADParams</h3>
+<p>Standard Pipecat VAD smoothing parameters, passed via the <code>params</code> argument using <code>VADParams(...)</code>. A commonly tuned field:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>stop_secs</code></td><td><code>float</code></td><td><code>0.3</code></td><td>Seconds of silence before end-of-turn is triggered. Lower is more responsive; higher cuts fewer turns short.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<p>Pass <code>TenVadAnalyzer</code> to a transport's <code>vad_analyzer</code>, the same way you would use <code>SileroVADAnalyzer</code>:</p>
+<pre><code>from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.transports.services.daily import DailyParams, DailyTransport
+from pipecat_ten_vad import TenVadAnalyzer
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "My Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        vad_enabled=True,
+        vad_analyzer=TenVadAnalyzer(
+            sample_rate=16000,
+            threshold=0.6,
+            params=VADParams(stop_secs=0.3),
+        ),
+        vad_audio_passthrough=True,
+    ),
+)</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.106. Check the <a href="https://github.com/rahulsolanki001/pipecat-ten-vad">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vad/ten-vad">https://docs.pipecat.ai/api-reference/server/services/vad/ten-vad</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix G · Events reference — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix G · Reference</div>
+      <h1>Events reference</h1>
+      <p class="lead">Every hook you use to react to the pipeline lifecycle. Services, transports, aggregators, workers, and the RTVI processor all expose <strong>event handlers</strong> you attach with a decorator. This gathers the ones used across the course into one lookup.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="how">How to attach a handler</h2>
+      <pre><code class="language-python"># Any emitter (transport, service, aggregator, worker, rtvi) exposes .event_handler(name):
+@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, client):
+    await worker.queue_frames([LLMRunFrame()])       # make the bot greet first
+
+@llm.event_handler("on_function_calls_started")
+async def _(service, function_calls):
+    await tts.queue_frame(TTSSpeakFrame("Let me check on that."))</code></pre>
+
+      <h2 id="transport">Transport events</h2>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Fires when</th></tr></thead><tbody>
+        <tr><td><code>on_client_connected</code></td><td>A user connects — greet, start the conversation. <a href="l02-setup-first-run.html">L2</a></td></tr>
+        <tr><td><code>on_client_disconnected</code></td><td>A user leaves — clean up / cancel the worker.</td></tr>
+      </tbody></table></div>
+
+      <h2 id="service">Service events (STT / TTS / LLM)</h2>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Emitter</th><th>Fires when</th></tr></thead><tbody>
+        <tr><td><code>on_connected</code> / <code>on_disconnected</code> / <code>on_connection_error</code></td><td>STT, TTS</td><td>Provider socket lifecycle. <a href="l08-stt.html">L8</a>, <a href="l13-tts.html">L13</a></td></tr>
+        <tr><td><code>on_tts_request</code></td><td>TTS</td><td>A synthesis request starts (context id + text).</td></tr>
+        <tr><td><code>on_function_calls_started</code></td><td>LLM</td><td>Tool calls begin — say a filler line. <a href="l12-function-calling.html">L12</a></td></tr>
+        <tr><td><code>on_function_calls_cancelled</code></td><td>LLM</td><td>An interruption cancelled in-flight tools.</td></tr>
+        <tr><td><code>on_completion_timeout</code></td><td>LLM</td><td>A completion timed out — retry/fallback.</td></tr>
+      </tbody></table></div>
+
+      <h2 id="turn">Aggregator / turn / mute events</h2>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Fires when</th></tr></thead><tbody>
+        <tr><td><code>on_user_turn_started</code> / <code>on_user_turn_stopped</code></td><td>The user's turn begins / ends. <a href="l10-turn-taking.html">L10</a></td></tr>
+        <tr><td><code>on_user_turn_idle</code></td><td>The user has been silent past the idle timeout. <a href="l20-interruptions-switching.html">L20</a></td></tr>
+        <tr><td><code>on_user_mute_started</code> / <code>on_user_mute_stopped</code></td><td>Server-side muting engaged / released. <a href="l10-turn-taking.html">L10</a></td></tr>
+      </tbody></table></div>
+
+      <h2 id="worker">Worker &amp; pipeline events</h2>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Fires when</th></tr></thead><tbody>
+        <tr><td><code>on_activated</code> / <code>on_deactivated</code></td><td>A worker becomes / stops being the active agent (handoff). <a href="l26-handoff.html">L26</a></td></tr>
+        <tr><td><code>on_job_request</code> / <code>on_job_response</code> / <code>on_job_completed</code></td><td>Job coordination lifecycle. <a href="l27-job-coordination.html">L27</a></td></tr>
+        <tr><td><code>@worker_ready</code></td><td>A worker signals it's up (discovery). <a href="l25-workers-registry.html">L25</a></td></tr>
+        <tr><td><code>on_pipeline_started</code> / <code>on_pipeline_finished</code> / <code>on_pipeline_error</code></td><td>The pipeline worker lifecycle. <a href="l05-pipeline-workers.html">L5</a></td></tr>
+        <tr><td><code>on_heartbeat_timeout</code> / <code>on_idle_timeout</code></td><td>Health / idle watchdogs. <a href="l23-observability.html">L23</a></td></tr>
+        <tr><td><code>on_audio_data</code></td><td><code>AudioBufferProcessor</code> emits captured audio to persist. <a href="l22-transcripts-recording.html">L22</a></td></tr>
+      </tbody></table></div>
+
+      <h2 id="rtvi">RTVI / UI events</h2>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Fires when</th></tr></thead><tbody>
+        <tr><td><code>on_client_ready</code></td><td>The web client finished setup (RTVIProcessor). <a href="l29-uiworker-rtvi.html">L29</a></td></tr>
+        <tr><td><code>on_ui_message</code></td><td>The client sent a UI event / snapshot — routed to a UIWorker.</td></tr>
+        <tr><td><code>@ui_event("name")</code></td><td>A named UI action (field focus, click) reaches the UIWorker.</td></tr>
+      </tbody></table></div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p>Events are registered via <code>BaseObject._register_event_handler</code> and fired through the pipeline. See <code>services/ai_service.py</code>, <code>services/{stt,tts,llm}_service.py</code>, <code>processors/aggregators/llm_response_universal.py</code>, <code>workers/base_worker.py</code>, <code>pipeline/worker.py</code>, and <code>processors/frameworks/rtvi/processor.py</code>. Docs: <code>api-reference/server/events/</code> (overview, service-events, frame-processor-events).</p>
+      </div>
+
+      <p class="lead" style="margin-top:26px">Back to the <a href="index.html">course home →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

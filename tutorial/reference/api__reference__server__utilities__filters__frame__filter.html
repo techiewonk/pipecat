@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FrameFilter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>FrameFilter</h1>
+<blockquote>FrameFilter selectively passes only specified frame types through a Pipecat pipeline, dropping the rest.</blockquote>
+<h2>Overview</h2>
+<p><code>FrameFilter</code> is a processor that filters frames based on their types, only passing through frames that match specified types (plus some system frames like <code>EndFrame</code> and <code>SystemFrame</code>).</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="types" type="Tuple[Type[Frame], ...]" required&gt;   Tuple of frame types that should be passed through the filter &lt;/ParamField&gt;</p>
+<h2>Functionality</h2>
+<p>When a frame passes through the filter, it is checked against the provided types. Only frames that match one of the specified types (or are system frames) will be passed downstream. All other frames are dropped.</p>
+<h2>Output Frames</h2>
+<p>The processor always passes through:</p>
+<ul><li>Frames matching any of the specified types</li><li><code>EndFrame</code> and <code>SystemFrame</code> instances (always allowed, so as to not block the pipeline)</li></ul>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.frames.frames import TextFrame, AudioRawFrame, Frame
+from pipecat.processors.filters import FrameFilter
+from typing import Tuple, Type
+
+# Create a filter that only passes TextFrames and AudioRawFrames
+text_and_audio_filter = FrameFilter(
+    types=(TextFrame, AudioRawFrame)
+)
+
+# Add to pipeline
+pipeline = Pipeline([
+    source,
+    text_and_audio_filter,  # Filters out all other frame types
+    destination
+])</code></pre>
+<h2>Frame Flow</h2>
+<pre><code>graph TD
+    A[Input Frames] --&gt; B[FrameFilter]
+    B --&gt; C{Frame Type Check}
+    C --&gt;|Matches Allowed Types| D[Output Frame]
+    C --&gt;|System Frame| D
+    C --&gt;|Other Frame Types| E[Dropped]</code></pre>
+<h2>Notes</h2>
+<ul><li>Simple but powerful way to restrict which frame types flow through parts of your pipeline</li><li>Always allows system frames to pass through for proper pipeline operation</li><li>Can be used to isolate specific parts of your pipeline from certain frame types</li><li>Efficient implementation with minimal overhead</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/filters/frame-filter">https://docs.pipecat.ai/api-reference/server/utilities/filters/frame-filter</a></p>
+</div></main></div></body></html>

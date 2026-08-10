@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bus Proxy Agents · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Bus Proxy Agents</h1>
+<blockquote>WebSocketProxyClient and the bus proxy API: forward Pipecat bus messages to remote agents for distributed deployments.</blockquote>
+<p>&lt;Note&gt;Requires the websocket extra: <code>uv add "pipecat-ai[websocket]"</code>&lt;/Note&gt;</p>
+<h2>WebSocketProxyClient</h2>
+<p>Forwards bus messages to a remote agent over WebSocket. Connects to a WebSocket URL and forwards messages between a local agent and a remote agent.</p>
+<p>The proxy does not take a <code>bus</code> in its constructor. It receives the shared bus when registered with the runner via <code>add_workers()</code>.</p>
+<pre><code>from pipecat.workers.proxy.websocket.client import WebSocketProxyClient</code></pre>
+<pre><code>proxy = WebSocketProxyClient(
+    "proxy",
+    url="ws://remote-server:8765/ws",
+    remote_worker_name="worker",
+    local_worker_name="voice",
+)
+
+@proxy.event_handler("on_connected")
+async def on_connected(worker, websocket):
+    logger.info("Connected to remote server")
+
+@proxy.event_handler("on_disconnected")
+async def on_disconnected(worker, websocket):
+    logger.info("Disconnected from remote server")
+
+await runner.add_workers(proxy)</code></pre>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="name" type="str" required&gt;   Unique name for this agent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" required&gt;   The WebSocket URL to connect to. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="remote_worker_name" type="str" required&gt;   Name of the agent on the remote server. Only messages targeted at this agent   are forwarded. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="local_worker_name" type="str" required&gt;   Name of the local agent that should receive responses. Only inbound messages   targeted at this agent are accepted. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="forward_messages" type="tuple[type[BusMessage], ...]" default="()"&gt;   Additional message types to forward from the local agent (e.g.   <code>(BusFrameMessage,)</code> for frame routing). These are forwarded based on source   agent name only, regardless of target. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="headers" type="dict[str, str] | None" default="None"&gt;   Optional HTTP headers sent with the WebSocket handshake (e.g. for   authentication). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="MessageSerializer | None" default="None"&gt;   Serializer for bus messages. Defaults to   <a href="/api-reference/server/bus/serializers#jsonmessageserializer"><code>JSONMessageSerializer</code></a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="active" type="bool" default="False"&gt;   Whether the agent starts active. Defaults to <code>False</code> because <code>on_activated</code>   opens the WebSocket connection, which is usually a deliberate action triggered   by an upstream event (e.g. the local client connecting). Pass <code>True</code> to   connect as soon as the agent starts. &lt;/ParamField&gt;</p>
+<h3>Event Handlers</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Arguments</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td><code>(worker, websocket)</code></td><td>Fired when the WebSocket connection is established</td></tr><tr><td><code>on_disconnected</code></td><td><code>(worker, websocket)</code></td><td>Fired when the WebSocket connection is closed</td></tr></tbody></table></div>
+<h2>WebSocketProxyServer</h2>
+<p>Receives bus messages from a remote client over WebSocket. Accepts a FastAPI/Starlette WebSocket connection and forwards messages between the remote client and a local agent.</p>
+<p>Like the client, the server does not take a <code>bus</code> in its constructor; it receives the shared bus when registered with the runner via <code>add_workers()</code>.</p>
+<pre><code>from pipecat.workers.proxy.websocket.server import WebSocketProxyServer</code></pre>
+<pre><code>@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    proxy = WebSocketProxyServer(
+        "gateway",
+        websocket=websocket,
+        worker_name="worker",
+        remote_worker_name="voice",
+    )
+
+    @proxy.event_handler("on_client_connected")
+    async def on_client_connected(worker, websocket):
+        logger.info("Client connected")
+
+    @proxy.event_handler("on_client_disconnected")
+    async def on_client_disconnected(worker, websocket):
+        logger.info("Client disconnected")
+
+    await runner.add_workers(proxy)</code></pre>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="name" type="str" required&gt;   Unique name for this agent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="websocket" type="WebSocket" required&gt;   An accepted FastAPI/Starlette WebSocket connection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="worker_name" type="str" required&gt;   Name of the local agent to route messages to/from. Only messages from this   agent are forwarded to the client. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="remote_worker_name" type="str" required&gt;   Name of the agent on the remote client. Only outbound messages targeted at   this agent are sent. Only inbound messages targeted at the local agent are   accepted. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="forward_messages" type="tuple[type[BusMessage], ...]" default="()"&gt;   Additional message types to forward from the local agent (e.g.   <code>(BusFrameMessage,)</code> for frame routing). These are forwarded based on source   agent name only, regardless of target. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="MessageSerializer | None" default="None"&gt;   Serializer for bus messages. Defaults to   <a href="/api-reference/server/bus/serializers#jsonmessageserializer"><code>JSONMessageSerializer</code></a>. &lt;/ParamField&gt;</p>
+<h3>Event Handlers</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Arguments</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td><code>(worker, websocket)</code></td><td>Fired when the WebSocket client connects and the proxy is ready</td></tr><tr><td><code>on_client_disconnected</code></td><td><code>(worker, websocket)</code></td><td>Fired when the WebSocket client disconnects</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/bus/proxy">https://docs.pipecat.ai/api-reference/server/bus/proxy</a></p>
+</div></main></div></body></html>

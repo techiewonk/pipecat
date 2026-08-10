@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Together AI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Together AI Speech-to-Text</h1>
+<blockquote>TogetherSTTService streams real-time STT via Together AI's OpenAI-compatible WebSocket transcription endpoints.</blockquote>
+<h2>Overview</h2>
+<p><code>TogetherSTTService</code> provides real-time speech recognition using Together AI's WebSocket API with OpenAI-compatible speech-to-text endpoints. It supports streaming transcription with interim results and automatic reconnection.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Together AI STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.together.stt.html"&gt;     Pipecat's API methods for Together AI STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transcription/transcription-together.py"&gt;     Complete transcription example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Together AI Documentation" icon="book" href="https://docs.together.ai/reference/audio-transcriptions-realtime"&gt;     Official Together AI Realtime API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Together AI Platform" icon="microphone" href="https://together.ai/"&gt;     Access models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Together AI STT services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[together]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Together AI Account Setup</h3>
+<p>Before using Together AI STT services, you need:</p>
+<ol><li><strong>Together AI Account</strong>: Sign up at <a href="https://together.ai/">Together AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Selection</strong>: Choose from available transcription models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>TOGETHER_API_KEY</code>: Your Together AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Together AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.together.ai/v1"&gt;   WebSocket base URL for Together AI API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="TogetherSTTService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="1.00"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See   <a href="https://github.com/pipecat-ai/stt-benchmark">https://github.com/pipecat-ai/stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>TogetherSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"openai/whisper-large-v3"</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language for transcription. *(Inherited)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.together import TogetherSTTService
+
+stt = TogetherSTTService(
+    api_key=os.getenv("TOGETHER_API_KEY"),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.together import TogetherSTTService
+from pipecat.transcriptions.language import Language
+
+stt = TogetherSTTService(
+    api_key=os.getenv("TOGETHER_API_KEY"),
+    settings=TogetherSTTService.Settings(
+        model="openai/whisper-large-v3",
+        language=Language.EN,
+    ),
+)</code></pre>
+<h3>In a Voice Pipeline</h3>
+<pre><code>from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.processors.audio.vad_processor import VADProcessor
+from pipecat.services.together import TogetherSTTService
+
+stt = TogetherSTTService(api_key=os.getenv("TOGETHER_API_KEY"))
+vad_processor = VADProcessor(vad_analyzer=SileroVADAnalyzer())
+
+pipeline = Pipeline([
+    transport.input(),
+    vad_processor,
+    stt,
+    # ... rest of pipeline
+])</code></pre>
+<h2>Notes</h2>
+<ul><li>Together AI's STT service uses an OpenAI-compatible WebSocket protocol for real-time transcription.</li><li>The service automatically handles reconnection on connection errors.</li><li>Transcription is committed when <code>VADUserStoppedSpeakingFrame</code> is received.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/together">https://docs.pipecat.ai/api-reference/server/services/stt/together</a></p>
+</div></main></div></body></html>

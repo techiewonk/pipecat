@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Summarization · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Context Summarization</h1>
+<blockquote>Automatically compress older conversation history in long-running Pipecat conversations to manage LLM token usage and cost.</blockquote>
+<h2>Overview</h2>
+<p>In long-running voice AI conversations, context grows with every exchange. This increases token usage, raises costs, and can eventually hit context window limits. Pipecat includes built-in context summarization that automatically compresses older conversation history while preserving recent messages and important context.</p>
+<h2>How It Works</h2>
+<p>Context summarization automatically triggers when <strong>either</strong> condition is met:</p>
+<ul><li><strong>Token limit reached</strong>: Context size exceeds <code>max_context_tokens</code> (estimated using \~4 characters per token)</li><li><strong>Message count reached</strong>: Number of new messages exceeds <code>max_unsummarized_messages</code></li></ul>
+<p>You can disable either threshold by setting it to <code>None</code>, but at least one must remain active. Summarization always generates a summary and cannot be reduced to pure truncation.</p>
+<p>When triggered, the system:</p>
+<ol><li>Sends a <code>LLMContextSummaryRequestFrame</code> to the LLM service</li><li>The LLM generates a concise summary of older messages</li><li>Context is reconstructed as: <code>[system_message (if present)] + [summary] + [recent_messages]</code></li><li>Incomplete function call sequences and recent messages are preserved</li></ol>
+<p>&lt;Note&gt;   Context summarization is asynchronous and happens in the background without   blocking the pipeline. The system uses request IDs to match summary requests   with results and handles interruptions gracefully. &lt;/Note&gt;</p>
+<h2>Enabling Context Summarization</h2>
+<p>Enable summarization by setting <code>enable_auto_context_summarization=True</code> in <code>LLMAssistantAggregatorParams</code>:</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import (
+    LLMAssistantAggregatorParams,
+    LLMContextAggregatorPair,
+)
+
+# Create aggregators with summarization enabled
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    assistant_params=LLMAssistantAggregatorParams(
+        enable_auto_context_summarization=True,
+    ),
+)</code></pre>
+<p>Automatic summarization is <strong>disabled by default</strong> (<code>enable_auto_context_summarization=False</code>). When enabled with the default configuration, summarization triggers at 8000 estimated tokens or after 20 new messages, whichever comes first.</p>
+<h2>Customizing Behavior</h2>
+<p>Use <code>LLMAutoContextSummarizationConfig</code> and <code>LLMContextSummaryConfig</code> to tune the summarization triggers and output:</p>
+<pre><code>from pipecat.utils.context.llm_context_summarization import (
+    LLMAutoContextSummarizationConfig,
+    LLMContextSummaryConfig,
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    assistant_params=LLMAssistantAggregatorParams(
+        enable_auto_context_summarization=True,
+        auto_context_summarization_config=LLMAutoContextSummarizationConfig(
+            max_context_tokens=4000,           # Trigger at 4000 tokens
+            max_unsummarized_messages=10,      # Or trigger after 10 new messages
+            summary_config=LLMContextSummaryConfig(
+                target_context_tokens=3000,    # Target summary size
+                min_messages_after_summary=2,  # Keep last 2 messages uncompressed
+            ),
+        ),
+    ),
+)</code></pre>
+<p>See the <a href="/api-reference/server/utilities/context-summarization">reference page</a> for all available configuration parameters.</p>
+<h2>What Gets Preserved</h2>
+<p>Context summarization intelligently preserves:</p>
+<ul><li><strong>System messages</strong>: If the first message (<code>messages[0]</code>) is a system message, it is preserved as the initial system prompt. Mid-conversation system messages (e.g., idle notifications or context injections) are treated as regular messages and included in the summarization range. When using <a href="/pipecat/learn/context-management#using-system_instruction-recommended"><code>system_instruction</code></a> in LLM Settings instead, the system prompt is not part of the context messages and is automatically prepended by the service on each request, so there is nothing to preserve in the context.</li><li><strong>Recent messages</strong>: The last N messages stay uncompressed (configured by <code>min_messages_after_summary</code>)</li><li><strong>Function call sequences</strong>: Incomplete function call/result pairs are not split during summarization</li><li><strong>Developer messages are NOT preserved</strong>: Developer messages (<code>"role": "developer"</code>) are included in the summarization range like any other message and may be compressed or dropped. If instructions need to survive summarization, use <a href="/pipecat/learn/context-management#using-system_instruction-recommended"><code>system_instruction</code></a> instead.</li></ul>
+<h2>Custom Summarization Prompts</h2>
+<p>You can override the default summarization prompt to control how the LLM generates summaries:</p>
+<pre><code>custom_prompt = """Summarize this conversation concisely.
+Focus on: key decisions, user preferences, and action items.
+Keep the summary under {target_tokens} tokens."""
+
+config = LLMAutoContextSummarizationConfig(
+    summary_config=LLMContextSummaryConfig(
+        summarization_prompt=custom_prompt,
+    ),
+)</code></pre>
+<p>When no custom prompt is provided, Pipecat uses a built-in prompt that instructs the LLM to create a concise summary preserving key information, user preferences, and conversation flow.</p>
+<h2>Dedicated Summarization LLM</h2>
+<p>By default, summarization uses the same LLM service that handles conversation. You can route summarization to a separate, cheaper model by setting the <code>llm</code> field:</p>
+<pre><code>from pipecat.services.google import GoogleLLMService
+
+# Use a fast/cheap model for summarization
+summarization_llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    model="gemini-2.5-flash",
+)
+
+config = LLMAutoContextSummarizationConfig(
+    summary_config=LLMContextSummaryConfig(
+        llm=summarization_llm,
+    ),
+)</code></pre>
+<p>When a dedicated LLM is configured, summarization requests bypass the pipeline entirely and call the dedicated service directly, so the primary conversation LLM is never interrupted.</p>
+<h2>On-Demand Summarization</h2>
+<p>In addition to automatic summarization, you can trigger context summarization on demand by pushing an <code>LLMSummarizeContextFrame</code> into the pipeline. This is useful when you want to give users explicit control over when summarization happens — for example, via a function call tool.</p>
+<pre><code>from pipecat.frames.frames import LLMSummarizeContextFrame
+from pipecat.services.llm_service import FunctionCallParams
+
+async def summarize_conversation(params: FunctionCallParams):
+    """Summarize and compress the conversation history. Call this when the user asks you to summarize the conversation or when you want to free up context space."""
+    await params.result_callback({"status": "summarization_requested"})
+    await params.llm.queue_frame(LLMSummarizeContextFrame())</code></pre>
+<p>Above, <code>summarize_conversation</code> is a <a href="/pipecat/learn/function-calling#1-define-a-tool">direct function</a>. List it in the context's <code>tools</code> so the LLM can invoke it when the user asks to summarize:</p>
+<pre><code>context = LLMContext(messages, tools=[summarize_conversation])</code></pre>
+<p>On-demand summarization works even when <code>enable_auto_context_summarization</code> is <code>False</code> — the summarizer is always created internally to handle manually pushed frames. You can also pass a per-request <code>LLMContextSummaryConfig</code> to override the default settings:</p>
+<pre><code>from pipecat.utils.context.llm_context_summarization import LLMContextSummaryConfig
+
+await llm.queue_frame(
+    LLMSummarizeContextFrame(
+        config=LLMContextSummaryConfig(
+            target_context_tokens=2000,
+            min_messages_after_summary=2,
+        )
+    )
+)</code></pre>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/context-summarization/context-summarization-manual-openai.py">complete example</a> for a full working implementation.</p>
+<h2>Observability</h2>
+<p>The summarizer emits an <code>on_summary_applied</code> event after each successful summarization, providing message count metrics:</p>
+<pre><code>from pipecat.processors.aggregators.llm_context_summarizer import SummaryAppliedEvent
+
+summarizer = assistant_aggregator._summarizer
+if summarizer:
+
+    @summarizer.event_handler("on_summary_applied")
+    async def on_summary_applied(summarizer, event: SummaryAppliedEvent):
+        logger.info(
+            f"Context summarized: {event.original_message_count} messages -&gt; "
+            f"{event.new_message_count} messages "
+            f"({event.summarized_message_count} summarized, "
+            f"{event.preserved_message_count} preserved)"
+        )</code></pre>
+<h2>Next Steps</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Context Summarization Reference" icon="file-lines" iconType="duotone" href="/api-reference/server/utilities/context-summarization"&gt;     Full reference for configuration parameters, events, and classes.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Context Management" icon="book" iconType="duotone" href="/pipecat/learn/context-management"&gt;     Learn how Pipecat manages conversation context in pipelines.   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/fundamentals/context-summarization">https://docs.pipecat.ai/pipecat/fundamentals/context-summarization</a></p>
+</div></main></div></body></html>

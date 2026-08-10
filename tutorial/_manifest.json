@@ -1,0 +1,2410 @@
+[
+{
+"url": "https://docs.pipecat.ai/api-reference",
+"md": "https://docs.pipecat.ai/api-reference.md",
+"slug": "api__reference.html",
+"title": "Api Reference",
+"desc": ""
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/agent",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/agent.md",
+"slug": "api__reference__cli__cloud__agent.html",
+"title": "pipecat cloud agent",
+"desc": "pipecat cloud agent subcommands manage deployed Pipecat Cloud agents: view status and control agent lifecycle from the CLI."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/auth",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/auth.md",
+"slug": "api__reference__cli__cloud__auth.html",
+"title": "pipecat cloud auth",
+"desc": "pipecat cloud auth manages authentication with Pipecat Cloud: login, logout, and checking your current credentials."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/build",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/build.md",
+"slug": "api__reference__cli__cloud__build.html",
+"title": "pipecat cloud build",
+"desc": "pipecat cloud build manages Pipecat Cloud builds: view build logs, check build status, and inspect builds from the CLI."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/deploy",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/deploy.md",
+"slug": "api__reference__cli__cloud__deploy.html",
+"title": "pipecat cloud deploy",
+"desc": "pipecat cloud deploy creates or updates a Pipecat Cloud agent deployment, building a deployment manifest from your options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/docker",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/docker.md",
+"slug": "api__reference__cli__cloud__docker.html",
+"title": "pipecat cloud docker",
+"desc": "pipecat cloud docker builds, tags, and pushes agent Docker images to container registries for Pipecat Cloud deployments."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/organizations",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/organizations.md",
+"slug": "api__reference__cli__cloud__organizations.html",
+"title": "pipecat cloud organizations",
+"desc": "pipecat cloud organizations manages Pipecat Cloud organizations and API keys: list, select, and manage from the CLI."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/regions",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/regions.md",
+"slug": "api__reference__cli__cloud__regions.html",
+"title": "pipecat cloud regions",
+"desc": "pipecat cloud regions lists the regions available for deploying agents and storing secrets in Pipecat Cloud."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/cloud/secrets",
+"md": "https://docs.pipecat.ai/api-reference/cli/cloud/secrets.md",
+"slug": "api__reference__cli__cloud__secrets.html",
+"title": "pipecat cloud secrets",
+"desc": "pipecat cloud secrets manages secret sets for agent deployments: create, update, list, and delete sensitive configuration."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/context-hub",
+"md": "https://docs.pipecat.ai/api-reference/cli/context-hub.md",
+"slug": "api__reference__cli__context__hub.html",
+"title": "pipecat context-hub",
+"desc": "Query the Pipecat Context Hub from the CLI and register it as an MCP server for coding agents with pipecat context-hub install."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/eval",
+"md": "https://docs.pipecat.ai/api-reference/cli/eval.md",
+"slug": "api__reference__cli__eval.html",
+"title": "pipecat eval",
+"desc": "pipecat eval runs scenario-based behavioral evals against a running Pipecat agent, individually or as a suite from the CLI."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/init",
+"md": "https://docs.pipecat.ai/api-reference/cli/init.md",
+"slug": "api__reference__cli__init.html",
+"title": "pipecat init",
+"desc": "pipecat init scaffolds a new Pipecat app from the CLI: the single entry point for starting a project with Pipecat."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/cli/overview",
+"md": "https://docs.pipecat.ai/api-reference/cli/overview.md",
+"slug": "api__reference__cli__overview.html",
+"title": "CLI Overview",
+"desc": "The Pipecat CLI scaffolds new projects, runs behavioral evals, and deploys agents to Pipecat Cloud from your terminal."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/api-reference",
+"md": "https://docs.pipecat.ai/api-reference/client/android/api-reference.md",
+"slug": "api__reference__client__android__api__reference.html",
+"title": "Android SDK Reference",
+"desc": "Complete Kotlin API reference for the Pipecat Android client SDK, hosted at docs-android.rtvi.ai."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/android/overview.md",
+"slug": "api__reference__client__android__overview.html",
+"title": "Android SDK Overview",
+"desc": "The Pipecat Android SDK: a Kotlin client library for building voice and multimodal AI applications on Android."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/transports/daily",
+"md": "https://docs.pipecat.ai/api-reference/client/android/transports/daily.md",
+"slug": "api__reference__client__android__transports__daily.html",
+"title": "Daily WebRTC Transport",
+"desc": "The Daily transport for the Pipecat Android SDK: real-time WebRTC audio and video in Kotlin apps on Daily's infrastructure."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/transports/gemini-websocket",
+"md": "https://docs.pipecat.ai/api-reference/client/android/transports/gemini-websocket.md",
+"slug": "api__reference__client__android__transports__gemini__websocket.html",
+"title": "Gemini Live WebSocket Transport",
+"desc": "The Gemini Live WebSocket transport for the Pipecat Android SDK: connect Kotlin apps directly to Google's Gemini Live service."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/transports/openai-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/android/transports/openai-webrtc.md",
+"slug": "api__reference__client__android__transports__openai__webrtc.html",
+"title": "OpenAI Realtime WebRTC Transport",
+"desc": "The OpenAI Realtime WebRTC transport for the Pipecat Android SDK: connect Kotlin apps directly to the OpenAI Realtime service."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/android/transports/small-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/android/transports/small-webrtc.md",
+"slug": "api__reference__client__android__transports__small__webrtc.html",
+"title": "Small WebRTC Transport",
+"desc": "The Small WebRTC transport for the Android SDK: direct peer-to-peer WebRTC between Kotlin clients and a Pipecat bot."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/cpp/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/cpp/overview.md",
+"slug": "api__reference__client__cpp__overview.html",
+"title": "C++ SDK Overview",
+"desc": "The Pipecat C++ SDK: a native client library for voice and multimodal AI applications on Linux, macOS, and Windows."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/cpp/transport",
+"md": "https://docs.pipecat.ai/api-reference/client/cpp/transport.md",
+"slug": "api__reference__client__cpp__transport.html",
+"title": "Daily WebRTC Transport",
+"desc": "The Daily transport for the Pipecat C++ SDK: real-time WebRTC audio and video in native applications on Daily's infrastructure."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/api-reference",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/api-reference.md",
+"slug": "api__reference__client__ios__api__reference.html",
+"title": "iOS SDK Reference",
+"desc": "Complete Swift API reference for the Pipecat iOS client SDK, hosted at docs-ios.pipecat.ai."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/overview.md",
+"slug": "api__reference__client__ios__overview.html",
+"title": "iOS SDK Overview",
+"desc": "The Pipecat iOS SDK: a Swift client library for building voice and multimodal AI applications on iOS."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/transports/daily",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/transports/daily.md",
+"slug": "api__reference__client__ios__transports__daily.html",
+"title": "Daily WebRTC Transport",
+"desc": "The Daily transport for the Pipecat iOS SDK: real-time WebRTC audio and video in Swift apps on Daily's infrastructure."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/transports/gemini-websocket",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/transports/gemini-websocket.md",
+"slug": "api__reference__client__ios__transports__gemini__websocket.html",
+"title": "Gemini Live WebSocket Transport",
+"desc": "The Gemini Live WebSocket transport for the Pipecat iOS SDK: connect Swift apps directly to Google's Gemini Live service."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/transports/openai-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/transports/openai-webrtc.md",
+"slug": "api__reference__client__ios__transports__openai__webrtc.html",
+"title": "OpenAI Realtime WebRTC Transport",
+"desc": "OpenAIRealTimeWebRTCTransport for the Pipecat iOS SDK: connect Swift apps directly to the OpenAI Realtime API over WebRTC."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/ios/transports/small-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/ios/transports/small-webrtc.md",
+"slug": "api__reference__client__ios__transports__small__webrtc.html",
+"title": "Small WebRTC Transport",
+"desc": "SmallWebRTCTransport for the iOS SDK: peer-to-peer WebRTC between Swift clients and a Pipecat bot, no third-party provider."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/callbacks",
+"md": "https://docs.pipecat.ai/api-reference/client/js/callbacks.md",
+"slug": "api__reference__client__js__callbacks.html",
+"title": "Callbacks and Events",
+"desc": "Handle bot events and state changes in the Pipecat JavaScript client with PipecatClient callbacks and event listeners."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/client-constructor",
+"md": "https://docs.pipecat.ai/api-reference/client/js/client-constructor.md",
+"slug": "api__reference__client__js__client__constructor.html",
+"title": "PipecatClient Constructor",
+"desc": "Construct a PipecatClient from @pipecat-ai/client-js: transport selection, callbacks, and configuration options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/client-methods",
+"md": "https://docs.pipecat.ai/api-reference/client/js/client-methods.md",
+"slug": "api__reference__client__js__client__methods.html",
+"title": "Client Methods",
+"desc": "PipecatClient methods for starting bots, managing sessions, sending messages, and controlling devices in the JavaScript SDK."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/errors",
+"md": "https://docs.pipecat.ai/api-reference/client/js/errors.md",
+"slug": "api__reference__client__js__errors.html",
+"title": "Errors",
+"desc": "Error types thrown by the Pipecat JavaScript client: RTVIError and its subclasses, and how to catch and handle each."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/js/overview.md",
+"slug": "api__reference__client__js__overview.html",
+"title": "JavaScript SDK Overview",
+"desc": "The Pipecat JavaScript client SDK: device and media stream management, bot connectivity, and events for web voice AI apps."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/daily",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/daily.md",
+"slug": "api__reference__client__js__transports__daily.html",
+"title": "Daily WebRTC Transport",
+"desc": "DailyTransport for the Pipecat JavaScript SDK: WebRTC audio and video on Daily's infrastructure, wrapping a Daily-JS call client."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/gemini",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/gemini.md",
+"slug": "api__reference__client__js__transports__gemini.html",
+"title": "Gemini Live WebSocket Transport",
+"desc": "GeminiLiveWebsocketTransport for the JavaScript SDK: connect directly to Google's Gemini Live service over WebSocket."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/openai-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/openai-webrtc.md",
+"slug": "api__reference__client__js__transports__openai__webrtc.html",
+"title": "OpenAI Realtime WebRTC Transport",
+"desc": "OpenAIRealTimeWebRTCTransport for the JavaScript SDK: connect directly to the OpenAI Realtime API over WebRTC."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/small-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/small-webrtc.md",
+"slug": "api__reference__client__js__transports__small__webrtc.html",
+"title": "Small WebRTC Transport",
+"desc": "SmallWebRTCTransport for the JavaScript SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/transport",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/transport.md",
+"slug": "api__reference__client__js__transports__transport.html",
+"title": "Transport Overview",
+"desc": "The Transport base class in the Pipecat JavaScript SDK: device management, connectivity, and messaging every transport implements."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/js/transports/websocket",
+"md": "https://docs.pipecat.ai/api-reference/client/js/transports/websocket.md",
+"slug": "api__reference__client__js__transports__websocket.html",
+"title": "WebSocket Transport",
+"desc": "WebSocketTransport for the JavaScript SDK: a lightweight, purely WebSocket-based connection between clients and a Pipecat bot."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react-native/api-reference",
+"md": "https://docs.pipecat.ai/api-reference/client/react-native/api-reference.md",
+"slug": "api__reference__client__react__native__api__reference.html",
+"title": "React Native SDK Reference",
+"desc": "API reference for the Pipecat React Native SDK, which layers React Native support over the Pipecat JavaScript SDK."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react-native/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/react-native/overview.md",
+"slug": "api__reference__client__react__native__overview.html",
+"title": "React Native SDK Overview",
+"desc": "The Pipecat React Native SDK brings PipecatClient from the JavaScript SDK to React Native voice and multimodal apps."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react-native/transports/daily",
+"md": "https://docs.pipecat.ai/api-reference/client/react-native/transports/daily.md",
+"slug": "api__reference__client__react__native__transports__daily.html",
+"title": "Daily WebRTC Transport",
+"desc": "DailyTransport for the Pipecat React Native SDK: WebRTC audio and video on Daily's infrastructure in native mobile apps."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react-native/transports/small-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/client/react-native/transports/small-webrtc.md",
+"slug": "api__reference__client__react__native__transports__small__webrtc.html",
+"title": "Small WebRTC Transport",
+"desc": "SmallWebRTCTransport for the React Native SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react/components",
+"md": "https://docs.pipecat.ai/api-reference/client/react/components.md",
+"slug": "api__reference__client__react__components.html",
+"title": "Components",
+"desc": "Ready-to-use React components from the Pipecat React SDK: PipecatClientProvider, audio and video rendering, and visualizers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react/hooks",
+"md": "https://docs.pipecat.ai/api-reference/client/react/hooks.md",
+"slug": "api__reference__client__react__hooks.html",
+"title": "Hooks",
+"desc": "React hooks from the Pipecat React SDK for client access, media device management, and bot event handling, like usePipecatClient."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/client/react/overview",
+"md": "https://docs.pipecat.ai/api-reference/client/react/overview.md",
+"slug": "api__reference__client__react__overview.html",
+"title": "React SDK Overview",
+"desc": "The Pipecat React SDK wraps PipecatClient with React components and hooks for building voice and multimodal AI applications."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/context-hub",
+"md": "https://docs.pipecat.ai/api-reference/context-hub.md",
+"slug": "api__reference__context__hub.html",
+"title": "Pipecat Context Hub",
+"desc": "A local index of Pipecat docs, examples, and API source for AI coding tools \u2014 available as a CLI and an MCP server."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/index",
+"md": "https://docs.pipecat.ai/api-reference/index.md",
+"slug": "api__reference__index.html",
+"title": "API Reference",
+"desc": "Reference documentation for every part of Pipecat: the Python server framework, client SDKs, Pipecat Flows, Pipecat Cloud, the CLI, etc."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-create",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-create.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__create.html",
+"title": "Create an Agent",
+"desc": "POST /agents creates a Pipecat Cloud agent from a container image with deployment configuration settings."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-delete",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-delete.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__delete.html",
+"title": "Delete an Agent",
+"desc": "DELETE /agents/{agentName} permanently deletes a Pipecat Cloud agent and its associated resources."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-logs",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-logs.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__logs.html",
+"title": "Retrieve Agent Logs",
+"desc": "GET /agents/{agentName}/logs returns execution logs for a Pipecat Cloud agent, with filtering and pagination options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-session",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-session.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__session.html",
+"title": "Get Session Details",
+"desc": "GET /agents/{agentName}/sessions/{sessionId} returns details for one agent session, including resource metrics."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-sessions",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-sessions.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__get__sessions.html",
+"title": "List All Sessions",
+"desc": "GET /agents/{agentName}/sessions lists sessions for a Pipecat Cloud agent with filtering and pagination options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-all",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-all.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__list__all.html",
+"title": "List All Agents",
+"desc": "GET /agents lists all Pipecat Cloud agents in your organization with their status and configuration."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-one",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-one.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__list__one.html",
+"title": "Get Agent Details",
+"desc": "GET /agents/{agentName} returns details for one Pipecat Cloud agent, including its deployment status and configuration."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-update",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-update.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__agent__update.html",
+"title": "Update an Agent",
+"desc": "POST /agents/{agentName} updates an existing Pipecat Cloud agent's configuration or deploys a new version of its image."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-create",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-create.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__build__create.html",
+"title": "Create Build",
+"desc": "POST /builds creates a new Pipecat Cloud build, or returns a cached build for your uploaded context."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__build__get.html",
+"title": "Get Build",
+"desc": "GET /builds/{buildId} returns the current status and details of a specific Pipecat Cloud build."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get-logs",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-get-logs.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__build__get__logs.html",
+"title": "Get Build Logs",
+"desc": "GET /builds/{buildId}/logs returns the build logs for a specific Pipecat Cloud build."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-list",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-list.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__build__list.html",
+"title": "List Builds",
+"desc": "GET /builds lists all Pipecat Cloud builds for your organization, with optional filters."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-upload-url",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-upload-url.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__build__upload__url.html",
+"title": "Get Upload URL",
+"desc": "POST /builds/upload-url returns a pre-signed URL for uploading your Docker build context to Pipecat Cloud."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/properties-get",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/properties-get.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__properties__get.html",
+"title": "Get Organization Properties",
+"desc": "GET /properties returns the current values of configurable properties for your Pipecat Cloud organization."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/properties-update",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/properties-update.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__properties__update.html",
+"title": "Update Organization Properties",
+"desc": "PATCH /properties updates configurable properties for your Pipecat Cloud organization, such as organization defaults."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/regions-list",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/regions-list.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__regions__list.html",
+"title": "List Regions",
+"desc": "GET /regions lists all available Pipecat Cloud regions for deploying agents and storing secrets."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-create-update",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-create-update.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__secret__create__update.html",
+"title": "Create or Update Secrets",
+"desc": "PUT /secrets/{setName} creates or updates a Pipecat Cloud secret set and its key-value pairs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-delete-secret-set",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-delete-secret-set.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__secret__delete__secret__set.html",
+"title": "Delete Entire Secret Set",
+"desc": "DELETE /secrets/{setName} deletes an entire Pipecat Cloud secret set and all the secrets it contains."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-delete-specific-secret",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-delete-specific-secret.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__secret__delete__specific__secret.html",
+"title": "Delete Specific Secret From Set",
+"desc": "DELETE /secrets/{setName}/{secretKey} removes a single secret from a Pipecat Cloud secret set by its key."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-list-all",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-list-all.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__secret__list__all.html",
+"title": "List All Secret Sets",
+"desc": "GET /secrets lists all secret sets in your Pipecat Cloud organization with their names and metadata."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-list-one",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/secret-list-one.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__secret__list__one.html",
+"title": "Get Secret Set Details",
+"desc": "GET /secrets/{setName} returns the key-value pairs for a specific Pipecat Cloud secret set."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/session-proxy",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/session-proxy.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__session__proxy.html",
+"title": "Session API",
+"desc": "Proxy HTTP requests to endpoints defined in your running Pipecat Cloud bot: GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/start",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/start.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__start.html",
+"title": "Start an Agent Session",
+"desc": "POST /{agentName}/start starts a new session with a deployed Pipecat Cloud agent."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/stop",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/stop.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__endpoint__stop.html",
+"title": "Stop an Agent Session",
+"desc": "DELETE /agents/{agentName}/sessions/{sessionId} stops a running Pipecat Cloud agent session and cleans up its resources."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/overview",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/overview.md",
+"slug": "api__reference__pipecat__cloud__rest__reference__overview.html",
+"title": "Pipecat Cloud REST API",
+"desc": "Base URLs, authentication, error handling, and the OpenAPI specification for the Pipecat Cloud REST API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/examples",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/examples.md",
+"slug": "api__reference__pipecat__cloud__sdk__reference__examples.html",
+"title": "Examples",
+"desc": "Common Pipecat Cloud Python SDK patterns: starting agent sessions, handling session arguments, and managing deployments."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/exceptions",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/exceptions.md",
+"slug": "api__reference__pipecat__cloud__sdk__reference__exceptions.html",
+"title": "Error Handling",
+"desc": "Handle errors from the Pipecat Cloud Python SDK: exception types raised by deployment and session operations, and how to catch them."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/overview",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/overview.md",
+"slug": "api__reference__pipecat__cloud__sdk__reference__overview.html",
+"title": "Pipecat Cloud SDK Overview",
+"desc": "The Pipecat Cloud Python SDK (pipecatcloud): programmatic agent deployment and session management from Python."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/session-arguments",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/session-arguments.md",
+"slug": "api__reference__pipecat__cloud__sdk__reference__session__arguments.html",
+"title": "Session Arguments",
+"desc": "Understand the session arguments Pipecat Cloud passes to your bot entry point at session start, from the Python SDK."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/sessions",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/sessions.md",
+"slug": "api__reference__pipecat__cloud__sdk__reference__sessions.html",
+"title": "Session Management",
+"desc": "Start and manage Pipecat Cloud agent sessions programmatically with the pipecatcloud Python SDK's session APIs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-flows/exceptions",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-flows/exceptions.md",
+"slug": "api__reference__pipecat__flows__exceptions.html",
+"title": "Exceptions",
+"desc": "The Pipecat Flows exception hierarchy: FlowError and subclasses raised during flow execution, and how to handle each."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-flows/flow-manager",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-flows/flow-manager.md",
+"slug": "api__reference__pipecat__flows__flow__manager.html",
+"title": "FlowManager",
+"desc": "FlowManager orchestrates Pipecat Flows conversations: node transitions, function registration, and flow state."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-flows/overview",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-flows/overview.md",
+"slug": "api__reference__pipecat__flows__overview.html",
+"title": "Pipecat Flows API Overview",
+"desc": "Reference documentation for Pipecat Flows: FlowManager, node configuration, actions, and the flows type system."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/pipecat-flows/types",
+"md": "https://docs.pipecat.ai/api-reference/pipecat-flows/types.md",
+"slug": "api__reference__pipecat__flows__types.html",
+"title": "Types",
+"desc": "Type definitions and configuration schemas for Pipecat Flows: NodeConfig, task messages, and flow configuration structures."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/bus/bus",
+"md": "https://docs.pipecat.ai/api-reference/server/bus/bus.md",
+"slug": "api__reference__server__bus__bus.html",
+"title": "Worker Bus",
+"desc": "WorkerBus is the abstract base for inter-agent and runner-agent pub/sub messaging in Pipecat's multi-agent framework."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/bus/messages",
+"md": "https://docs.pipecat.ai/api-reference/server/bus/messages.md",
+"slug": "api__reference__server__bus__messages.html",
+"title": "Bus Messages",
+"desc": "Bus message types for Pipecat multi-agent communication: the pub/sub primitives, organized by priority level."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/bus/proxy",
+"md": "https://docs.pipecat.ai/api-reference/server/bus/proxy.md",
+"slug": "api__reference__server__bus__proxy.html",
+"title": "Bus Proxy Agents",
+"desc": "WebSocketProxyClient and the bus proxy API: forward Pipecat bus messages to remote agents for distributed deployments."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/bus/serializers",
+"md": "https://docs.pipecat.ai/api-reference/server/bus/serializers.md",
+"slug": "api__reference__server__bus__serializers.html",
+"title": "Bus Serializers",
+"desc": "MessageSerializer is the abstract base for Pipecat bus message serialization used by network bus implementations."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/events/frame-processor-events",
+"md": "https://docs.pipecat.ai/api-reference/server/events/frame-processor-events.md",
+"slug": "api__reference__server__events__frame__processor__events.html",
+"title": "FrameProcessor Events",
+"desc": "Handle errors and monitor frame processing with events available on every processor"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/events/overview",
+"md": "https://docs.pipecat.ai/api-reference/server/events/overview.md",
+"slug": "api__reference__server__events__overview.html",
+"title": "Events Overview",
+"desc": "Monitor Pipecat lifecycle changes with the event system: frame processor and service events, and how to subscribe."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/events/service-events",
+"md": "https://docs.pipecat.ai/api-reference/server/events/service-events.md",
+"slug": "api__reference__server__events__service__events.html",
+"title": "Service Events",
+"desc": "Handle connection lifecycle and service-specific events for STT, TTS, and LLM services"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/extensions/ivr",
+"md": "https://docs.pipecat.ai/api-reference/server/extensions/ivr.md",
+"slug": "api__reference__server__extensions__ivr.html",
+"title": "IVRNavigator",
+"desc": "AI-powered Interactive Voice Response system navigation with automatic classification and goal-oriented decision making"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/extensions/pipecat-backchannel",
+"md": "https://docs.pipecat.ai/api-reference/server/extensions/pipecat-backchannel.md",
+"slug": "api__reference__server__extensions__pipecat__backchannel.html",
+"title": "Pipecat Backchannel",
+"desc": "Backchannel implementation that plays short listening sounds while the user is still speaking"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/extensions/voicemail",
+"md": "https://docs.pipecat.ai/api-reference/server/extensions/voicemail.md",
+"slug": "api__reference__server__extensions__voicemail.html",
+"title": "VoicemailDetector",
+"desc": "Technical implementation details and architecture for voicemail detection"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/frames/control-frames",
+"md": "https://docs.pipecat.ai/api-reference/server/frames/control-frames.md",
+"slug": "api__reference__server__frames__control__frames.html",
+"title": "Control Frames",
+"desc": "Reference for ControlFrame types: pipeline lifecycle, response boundaries, service settings, and runtime configuration"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/frames/data-frames",
+"md": "https://docs.pipecat.ai/api-reference/server/frames/data-frames.md",
+"slug": "api__reference__server__frames__data__frames.html",
+"title": "Data Frames",
+"desc": "Reference for DataFrame types: audio, image, text, transcription, and transport messages"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/frames/llm-frames",
+"md": "https://docs.pipecat.ai/api-reference/server/frames/llm-frames.md",
+"slug": "api__reference__server__frames__llm__frames.html",
+"title": "LLM Frames",
+"desc": "LLM frame reference for Pipecat: context frames and the function calling helper dataclasses passed through pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/frames/overview",
+"md": "https://docs.pipecat.ai/api-reference/server/frames/overview.md",
+"slug": "api__reference__server__frames__overview.html",
+"title": "Frames",
+"desc": "Frame categories, processing behavior, and common patterns for Pipecat pipelines"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/frames/system-frames",
+"md": "https://docs.pipecat.ai/api-reference/server/frames/system-frames.md",
+"slug": "api__reference__server__frames__system__frames.html",
+"title": "System Frames",
+"desc": "Reference for SystemFrame types: pipeline lifecycle, interruptions, speaking state, input, and diagnostics"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/introduction",
+"md": "https://docs.pipecat.ai/api-reference/server/introduction.md",
+"slug": "api__reference__server__introduction.html",
+"title": "Pipecat Server API Overview",
+"desc": "API reference for the Pipecat Python framework: pipelines, services, transports, utilities, and the server runtime."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/pipeline/heartbeats",
+"md": "https://docs.pipecat.ai/api-reference/server/pipeline/heartbeats.md",
+"slug": "api__reference__server__pipeline__heartbeats.html",
+"title": "Pipeline Heartbeats",
+"desc": "Monitor Pipecat pipeline health with heartbeat frames that verify frames still flow end to end."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/pipeline/parallel-pipeline",
+"md": "https://docs.pipecat.ai/api-reference/server/pipeline/parallel-pipeline.md",
+"slug": "api__reference__server__pipeline__parallel__pipeline.html",
+"title": "ParallelPipeline",
+"desc": "Run multiple pipeline branches in parallel, with synchronized inputs and outputs for complex flows"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-idle-detection",
+"md": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-idle-detection.md",
+"slug": "api__reference__server__pipeline__pipeline__idle__detection.html",
+"title": "Pipeline Idle Detection",
+"desc": "Detect and handle idle Pipecat pipelines with no bot or user activity, and shut them down automatically."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-params",
+"md": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-params.md",
+"slug": "api__reference__server__pipeline__pipeline__params.html",
+"title": "PipelineParams",
+"desc": "PipelineParams configures Pipecat pipeline execution: audio rates, metrics, heartbeats, and interruption settings."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-worker",
+"md": "https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-worker.md",
+"slug": "api__reference__server__pipeline__pipeline__worker.html",
+"title": "PipelineWorker",
+"desc": "PipelineWorker manages Pipecat pipeline execution and lifecycle inside the multi-agent framework."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/rtvi/google-rtvi-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/rtvi/google-rtvi-observer.md",
+"slug": "api__reference__server__rtvi__google__rtvi__observer.html",
+"title": "Google RTVI Observer",
+"desc": "GoogleRTVIObserver adds support for sending Google search responses to RTVI clients in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/rtvi/introduction",
+"md": "https://docs.pipecat.ai/api-reference/server/rtvi/introduction.md",
+"slug": "api__reference__server__rtvi__introduction.html",
+"title": "RTVI (Real-Time Voice Interaction)",
+"desc": "Build real-time voice and multimodal applications with Pipecat\u2019s RTVI protocol"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-observer.md",
+"slug": "api__reference__server__rtvi__rtvi__observer.html",
+"title": "RTVIObserver",
+"desc": "RTVIObserver converts Pipecat pipeline frames into RTVI protocol messages for connected clients."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-processor",
+"md": "https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-processor.md",
+"slug": "api__reference__server__rtvi__rtvi__processor.html",
+"title": "RTVIProcessor",
+"desc": "RTVIProcessor coordinates RTVI protocol communication between Pipecat pipelines and connected clients."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/finchvox",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/finchvox.md",
+"slug": "api__reference__server__services__analytics__finchvox.html",
+"title": "Finchvox Session Replay",
+"desc": "Finchvox is local session replay for voice AI: unified conversation timelines, audio, and traces for Pipecat debugging."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/future-agi",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/future-agi.md",
+"slug": "api__reference__server__services__analytics__future__agi.html",
+"title": "Future AGI Observability",
+"desc": "traceAI-pipecat adds OpenTelemetry tracing and evaluation instrumentation from Future AGI to Pipecat applications."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/noveum-trace",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/noveum-trace.md",
+"slug": "api__reference__server__services__analytics__noveum__trace.html",
+"title": "Noveum Trace",
+"desc": "Community-maintained observability integration that maps Pipecat pipeline events into Noveum traces and spans"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/openinference",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/openinference.md",
+"slug": "api__reference__server__services__analytics__openinference.html",
+"title": "OpenInference Tracing",
+"desc": "OpenTelemetry-based auto-instrumentation that converts Pipecat traces to OpenInference for viewing in Arize Phoenix or Arize AX"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/roark",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/roark.md",
+"slug": "api__reference__server__services__analytics__roark.html",
+"title": "Roark Call Analytics",
+"desc": "RoarkObserver sends Pipecat call analytics to Roark: call lifecycle, transcripts, tool calls, and recordings from one observer."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/analytics/sentry",
+"md": "https://docs.pipecat.ai/api-reference/server/services/analytics/sentry.md",
+"slug": "api__reference__server__services__analytics__sentry.html",
+"title": "Sentry Metrics",
+"desc": "SentryMetrics extends FrameProcessorMetrics for performance monitoring of Pipecat pipelines with Sentry."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/aic-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/aic-filter.md",
+"slug": "api__reference__server__services__audio__filters__aic__filter.html",
+"title": "AIC Audio Filter",
+"desc": "AICFilter enhances user speech with the ai-coustics SDK, reducing background noise in real-time Pipecat audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/arctan",
+"md": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/arctan.md",
+"slug": "api__reference__server__services__audio__filters__arctan.html",
+"title": "Arctan Audio Filter",
+"desc": "ArctanAudioFilter provides real-time speech enhancement and noise cancellation with Arctan Eigen models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/koala-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/koala-filter.md",
+"slug": "api__reference__server__services__audio__filters__koala__filter.html",
+"title": "Koala Audio Filter",
+"desc": "KoalaFilter reduces background noise in real-time audio using Picovoice Koala noise suppression in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/krisp-viva-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/krisp-viva-filter.md",
+"slug": "api__reference__server__services__audio__filters__krisp__viva__filter.html",
+"title": "Krisp VIVA Audio Filter",
+"desc": "KrispVivaFilter isolates the user's voice in real-time audio using the Krisp VIVA model in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/rnnoise-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/services/audio-filters/rnnoise-filter.md",
+"slug": "api__reference__server__services__audio__filters__rnnoise__filter.html",
+"title": "RNNoise Audio Filter",
+"desc": "RNNoiseFilter suppresses background noise in real-time audio with the RNNoise recurrent neural network."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/community-integrations",
+"md": "https://docs.pipecat.ai/api-reference/server/services/community-integrations.md",
+"slug": "api__reference__server__services__community__integrations.html",
+"title": "Community Integrations",
+"desc": "Community-maintained service integrations for Pipecat: how to find, install, and contribute them."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/image-generation/azure",
+"md": "https://docs.pipecat.ai/api-reference/server/services/image-generation/azure.md",
+"slug": "api__reference__server__services__image__generation__azure.html",
+"title": "Azure OpenAI Image Generation",
+"desc": "AzureImageGenServiceREST generates images with Azure OpenAI's image API from text prompts in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/image-generation/fal",
+"md": "https://docs.pipecat.ai/api-reference/server/services/image-generation/fal.md",
+"slug": "api__reference__server__services__image__generation__fal.html",
+"title": "fal Image Generation",
+"desc": "FalImageGenService generates images from text prompts using fal's fast Stable Diffusion models in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/image-generation/google",
+"md": "https://docs.pipecat.ai/api-reference/server/services/image-generation/google.md",
+"slug": "api__reference__server__services__image__generation__google.html",
+"title": "Google Image Generation",
+"desc": "GoogleImageGenService generates images with Google's Imagen models from text prompts in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/image-generation/openai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/image-generation/openai.md",
+"slug": "api__reference__server__services__image__generation__openai.html",
+"title": "OpenAI Image Generation",
+"desc": "OpenAIImageGenService generates images with OpenAI's DALL-E models from text prompts in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/image-generation/replicate",
+"md": "https://docs.pipecat.ai/api-reference/server/services/image-generation/replicate.md",
+"slug": "api__reference__server__services__image__generation__replicate.html",
+"title": "Replicate Image Generation",
+"desc": "ReplicateImageGenService generates images from text prompts using models hosted on Replicate, within Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/knowledge-retrieval/moss",
+"md": "https://docs.pipecat.ai/api-reference/server/services/knowledge-retrieval/moss.md",
+"slug": "api__reference__server__services__knowledge__retrieval__moss.html",
+"title": "Moss Knowledge Retrieval",
+"desc": "MossRetrievalService injects low-latency semantic search results from Moss into your Pipecat agent's context."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/anannas",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/anannas.md",
+"slug": "api__reference__server__services__llm__anannas.html",
+"title": "Anannas AI LLM",
+"desc": "AnannasLLMService routes chat completions through Anannas AI's unified gateway: 500+ models behind one OpenAI-compatible API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/anthropic",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/anthropic.md",
+"slug": "api__reference__server__services__llm__anthropic.html",
+"title": "Anthropic LLM",
+"desc": "AnthropicLLMService integrates Claude models with streaming responses, function calling, and prompt caching support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/aws",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/aws.md",
+"slug": "api__reference__server__services__llm__aws.html",
+"title": "AWS Bedrock LLM",
+"desc": "AWSBedrockLLMService runs Amazon Bedrock foundation models, including Claude and Amazon Nova, with streaming and function calling."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/azure",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/azure.md",
+"slug": "api__reference__server__services__llm__azure.html",
+"title": "Azure OpenAI LLM",
+"desc": "AzureLLMService reaches Azure OpenAI language models through the OpenAI-compatible interface it inherits from OpenAILLMService."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/baseten",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/baseten.md",
+"slug": "api__reference__server__services__llm__baseten.html",
+"title": "Baseten LLM",
+"desc": "BasetenLLMService connects to Baseten Model APIs and dedicated deployments, inheriting OpenAILLMService's streaming and tools."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/cerebras",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/cerebras.md",
+"slug": "api__reference__server__services__llm__cerebras.html",
+"title": "Cerebras LLM",
+"desc": "CerebrasLLMService accesses Cerebras language models for chat completion via an OpenAI-compatible interface with streaming."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/crusoe",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/crusoe.md",
+"slug": "api__reference__server__services__llm__crusoe.html",
+"title": "Crusoe LLM",
+"desc": "CrusoeLLMService generates chat completions on Crusoe Cloud's Managed Inference API, OpenAI-compatible with streaming support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/deepseek",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/deepseek.md",
+"slug": "api__reference__server__services__llm__deepseek.html",
+"title": "DeepSeek LLM",
+"desc": "DeepSeekLLMService accesses DeepSeek language models through an OpenAI-compatible interface, inheriting from OpenAILLMService."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/fireworks",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/fireworks.md",
+"slug": "api__reference__server__services__llm__fireworks.html",
+"title": "Fireworks AI LLM",
+"desc": "FireworksLLMService accesses Fireworks AI language models with streaming and function calling via an OpenAI-compatible API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/floe",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/floe.md",
+"slug": "api__reference__server__services__llm__floe.html",
+"title": "Floe LLM",
+"desc": "LLM service that routes OpenAI-compatible chat completions through Floe with per-call spend caps"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/google",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/google.md",
+"slug": "api__reference__server__services__llm__google.html",
+"title": "Google Gemini LLM",
+"desc": "GoogleLLMService integrates Google's Gemini models with streaming responses, function calling, and multimodal input support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/google-vertex",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/google-vertex.md",
+"slug": "api__reference__server__services__llm__google__vertex.html",
+"title": "Google Vertex AI LLM",
+"desc": "GoogleVertexLLMService extends GoogleLLMService with Vertex AI authentication for running Gemini models on Google Cloud."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/grok",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/grok.md",
+"slug": "api__reference__server__services__llm__grok.html",
+"title": "Grok LLM",
+"desc": "GrokLLMService accesses xAI's Grok language models through an OpenAI-compatible interface with streaming and function calling."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/groq",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/groq.md",
+"slug": "api__reference__server__services__llm__groq.html",
+"title": "Groq LLM",
+"desc": "GroqLLMService runs chat completions on Groq's high-speed inference API through an OpenAI-compatible interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/inception",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/inception.md",
+"slug": "api__reference__server__services__llm__inception.html",
+"title": "Inception LLM",
+"desc": "InceptionLLMService serves Inception's Mercury-2 diffusion-based reasoning model via an OpenAI-compatible interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/mistral",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/mistral.md",
+"slug": "api__reference__server__services__llm__mistral.html",
+"title": "Mistral LLM",
+"desc": "MistralLLMService accesses Mistral language models through an OpenAI-compatible interface, inheriting OpenAILLMService streaming."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/nebius",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/nebius.md",
+"slug": "api__reference__server__services__llm__nebius.html",
+"title": "Nebius LLM",
+"desc": "NebiusLLMService generates chat completions on Nebius Token Factory's OpenAI-compatible API with streaming responses."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/novita",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/novita.md",
+"slug": "api__reference__server__services__llm__novita.html",
+"title": "Novita AI LLM",
+"desc": "NovitaLLMService connects Pipecat to Novita AI's language model catalog through an OpenAI-compatible streaming interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/nvidia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/nvidia.md",
+"slug": "api__reference__server__services__llm__nvidia.html",
+"title": "NVIDIA NIM LLM",
+"desc": "NvidiaLLMService accesses NVIDIA NIM (NVIDIA Inference Microservice) models via an OpenAI-compatible interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/ollama",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/ollama.md",
+"slug": "api__reference__server__services__llm__ollama.html",
+"title": "Ollama LLM",
+"desc": "OLLamaLLMService runs locally hosted Ollama models with no cloud API, via BaseOpenAILLMService's OpenAI-compatible interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/openai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/openai.md",
+"slug": "api__reference__server__services__llm__openai.html",
+"title": "OpenAI LLM",
+"desc": "OpenAILLMService for GPT chat completions: streaming responses, function calling, vision input, and OpenAI-compatible base URLs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/openai-responses",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/openai-responses.md",
+"slug": "api__reference__server__services__llm__openai__responses.html",
+"title": "OpenAI Responses LLM",
+"desc": "OpenAIResponsesLLMService and OpenAIResponsesHttpLLMService bring OpenAI's Responses API to Pipecat voice pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/openrouter",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/openrouter.md",
+"slug": "api__reference__server__services__llm__openrouter.html",
+"title": "OpenRouter LLM",
+"desc": "OpenRouterLLMService reaches OpenRouter's multi-provider model catalog through an OpenAI-compatible streaming interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/perplexity",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/perplexity.md",
+"slug": "api__reference__server__services__llm__perplexity.html",
+"title": "Perplexity LLM",
+"desc": "PerplexityLLMService accesses Perplexity language models through an OpenAI-compatible interface, inheriting OpenAILLMService."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/qwen",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/qwen.md",
+"slug": "api__reference__server__services__llm__qwen.html",
+"title": "Qwen LLM",
+"desc": "QwenLLMService runs Alibaba Cloud's Qwen models through an OpenAI-compatible interface with streaming chat completions."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/sambanova",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/sambanova.md",
+"slug": "api__reference__server__services__llm__sambanova.html",
+"title": "SambaNova LLM",
+"desc": "SambaNovaLLMService connects to SambaNova language models through an OpenAI-compatible interface with streaming support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/sarvam",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/sarvam.md",
+"slug": "api__reference__server__services__llm__sarvam.html",
+"title": "Sarvam AI LLM",
+"desc": "SarvamLLMService generates chat completions on Sarvam AI's OpenAI-compatible API with streaming and function calling."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/simplismart",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/simplismart.md",
+"slug": "api__reference__server__services__llm__simplismart.html",
+"title": "Simplismart LLM",
+"desc": "SimplismartLLMService generates chat completions with Simplismart's OpenAI-compatible Chat Completions API, extending BaseOpenAILLMService."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/llm/together",
+"md": "https://docs.pipecat.ai/api-reference/server/services/llm/together.md",
+"slug": "api__reference__server__services__llm__together.html",
+"title": "Together AI LLM",
+"desc": "TogetherLLMService accesses Together AI's model catalog, including Meta Llama 3.1 and 3.2, via an OpenAI-compatible interface."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/memory/mem0",
+"md": "https://docs.pipecat.ai/api-reference/server/services/memory/mem0.md",
+"slug": "api__reference__server__services__memory__mem0.html",
+"title": "Mem0 Long-Term Memory",
+"desc": "Mem0MemoryService adds long-term conversation memory to Pipecat agents, recalling context across sessions with Mem0."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/memory/synap",
+"md": "https://docs.pipecat.ai/api-reference/server/services/memory/synap.md",
+"slug": "api__reference__server__services__memory__synap.html",
+"title": "Synap Memory",
+"desc": "The synap-pipecat integration gives Pipecat voice agents persistent, cross-session memory backed by Synap."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/aws",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/aws.md",
+"slug": "api__reference__server__services__s2s__aws.html",
+"title": "AWS Nova Sonic",
+"desc": "AWSNovaSonicLLMService provides real-time speech-to-speech (S2S) conversation with AWS's Nova Sonic model."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live.md",
+"slug": "api__reference__server__services__s2s__gemini__live.html",
+"title": "Gemini Live",
+"desc": "GeminiLiveLLMService connects Pipecat to Google's Gemini Live API for real-time speech-to-speech multimodal conversation."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live-vertex",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/gemini-live-vertex.md",
+"slug": "api__reference__server__services__s2s__gemini__live__vertex.html",
+"title": "Gemini Live Vertex AI",
+"desc": "GeminiLiveVertexLLMService runs Gemini Live speech-to-speech conversation through Vertex AI with Google Cloud authentication."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/grok",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/grok.md",
+"slug": "api__reference__server__services__s2s__grok.html",
+"title": "Grok Realtime",
+"desc": "GrokRealtimeLLMService provides real-time multimodal speech-to-speech conversation using xAI's Grok Realtime API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/inworld",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/inworld.md",
+"slug": "api__reference__server__services__s2s__inworld.html",
+"title": "Inworld Realtime",
+"desc": "InworldRealtimeLLMService provides real-time multimodal conversation using Inworld's Realtime API for voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/openai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/openai.md",
+"slug": "api__reference__server__services__s2s__openai.html",
+"title": "OpenAI Realtime",
+"desc": "OpenAIRealtimeLLMService provides speech-to-speech conversation over the OpenAI Realtime API, replacing separate STT, LLM, and TTS."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/s2s/ultravox",
+"md": "https://docs.pipecat.ai/api-reference/server/services/s2s/ultravox.md",
+"slug": "api__reference__server__services__s2s__ultravox.html",
+"title": "Ultravox Realtime",
+"desc": "UltravoxRealtimeLLMService provides real-time conversational AI with Ultravox Realtime, with agent and one-shot input modes."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/acefone",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/acefone.md",
+"slug": "api__reference__server__services__serializers__acefone.html",
+"title": "Acefone Frame Serializer",
+"desc": "AcefoneFrameSerializer converts between Pipecat frames and Acefone's telephony WebSocket protocol for hosted voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/asterisk",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/asterisk.md",
+"slug": "api__reference__server__services__serializers__asterisk.html",
+"title": "Asterisk Frame Serializer",
+"desc": "AsteriskFrameSerializer converts between Pipecat frames and an Asterisk server's media stream for self-hosted telephony."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/awaazai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/awaazai.md",
+"slug": "api__reference__server__services__serializers__awaazai.html",
+"title": "AwaazAI Frame Serializer",
+"desc": "AwaazAIFrameSerializer converts between Pipecat frames and Awaaz AI's telephony WebSocket streaming protocol."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/bandwidth",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/bandwidth.md",
+"slug": "api__reference__server__services__serializers__bandwidth.html",
+"title": "Bandwidth Frame Serializer",
+"desc": "BandwidthFrameSerializer converts between Pipecat frames and Bandwidth Programmable Voice WebSocket media streams."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/exotel",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/exotel.md",
+"slug": "api__reference__server__services__serializers__exotel.html",
+"title": "Exotel Frame Serializer",
+"desc": "ExotelFrameSerializer integrates Pipecat pipelines with Exotel's WebSocket media streaming protocol for phone calls."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/genesys",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/genesys.md",
+"slug": "api__reference__server__services__serializers__genesys.html",
+"title": "Genesys AudioHook Serializer",
+"desc": "GenesysAudioHookSerializer connects Pipecat to Genesys Cloud Contact Center via the AudioHook WebSocket protocol."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/introduction",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/introduction.md",
+"slug": "api__reference__server__services__serializers__introduction.html",
+"title": "Frame Serializer Overview",
+"desc": "How Pipecat FrameSerializers convert between internal frames and provider wire formats, and how to write a custom serializer."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/plivo",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/plivo.md",
+"slug": "api__reference__server__services__serializers__plivo.html",
+"title": "Plivo Frame Serializer",
+"desc": "PlivoFrameSerializer integrates Pipecat with Plivo's Audio Streaming WebSocket protocol for telephony bots."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/telnyx",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/telnyx.md",
+"slug": "api__reference__server__services__serializers__telnyx.html",
+"title": "Telnyx Frame Serializer",
+"desc": "TelnyxFrameSerializer integrates Pipecat with Telnyx's WebSocket media streaming protocol for telephony bots."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/twilio",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/twilio.md",
+"slug": "api__reference__server__services__serializers__twilio.html",
+"title": "Twilio Frame Serializer",
+"desc": "TwilioFrameSerializer integrates Pipecat with Twilio's Media Streams WebSocket protocol for phone call audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/vonage",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/vonage.md",
+"slug": "api__reference__server__services__serializers__vonage.html",
+"title": "Vonage Frame Serializer",
+"desc": "VonageFrameSerializer integrates Pipecat with the Vonage Video API Audio Connector WebSocket protocol."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/serializers/wavix",
+"md": "https://docs.pipecat.ai/api-reference/server/services/serializers/wavix.md",
+"slug": "api__reference__server__services__serializers__wavix.html",
+"title": "Wavix Frame Serializer",
+"desc": "WavixFrameSerializer converts audio between Pipecat frames and the Wavix WebSocket media streaming protocol."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/assemblyai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/assemblyai.md",
+"slug": "api__reference__server__services__stt__assemblyai.html",
+"title": "AssemblyAI Speech-to-Text",
+"desc": "Real-time STT with AssemblyAISTTService: WebSocket streaming, interim results, and end-of-turn detection for voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/aws",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/aws.md",
+"slug": "api__reference__server__services__stt__aws.html",
+"title": "AWS Transcribe Speech-to-Text",
+"desc": "AWSTranscribeSTTService streams real-time STT over Amazon Transcribe's WebSocket API, with interim results and multi-language support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/azure",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/azure.md",
+"slug": "api__reference__server__services__stt__azure.html",
+"title": "Azure Speech-to-Text",
+"desc": "AzureSTTService runs continuous real-time STT on the Azure Cognitive Services Speech SDK, with custom endpoints and broad language support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/cartesia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/cartesia.md",
+"slug": "api__reference__server__services__stt__cartesia.html",
+"title": "Cartesia Speech-to-Text",
+"desc": "Real-time STT with CartesiaSTTService and turn-aware CartesiaTurnsSTTService over Cartesia's streaming transcription API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/deepgram",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/deepgram.md",
+"slug": "api__reference__server__services__stt__deepgram.html",
+"title": "Deepgram Speech-to-Text",
+"desc": "Streaming STT with DeepgramSTTService and DeepgramFluxSTTService: Nova models, Flux turn detection, and SageMaker variants."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/elevenlabs",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/elevenlabs.md",
+"slug": "api__reference__server__services__stt__elevenlabs.html",
+"title": "ElevenLabs Speech-to-Text",
+"desc": "Speech recognition with ElevenLabsRealtimeSTTService (live WebSocket streaming) and ElevenLabsSTTService for file-based STT."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/fal",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/fal.md",
+"slug": "api__reference__server__services__stt__fal.html",
+"title": "Fal Wizper Speech-to-Text",
+"desc": "FalSTTService transcribes speech segments with Fal's Wizper API, using VAD-segmented audio to cut STT cost and latency."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/floe",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/floe.md",
+"slug": "api__reference__server__services__stt__floe.html",
+"title": "Floe Speech-to-Text",
+"desc": "Streaming speech-to-text service over Floe's transcription WebSocket with per-call spend caps"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/funasr",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/funasr.md",
+"slug": "api__reference__server__services__stt__funasr.html",
+"title": "FunASR Speech-to-Text",
+"desc": "Offline STT with FunASRSTTService running SenseVoice models locally on CPU or GPU: multilingual, with strong Chinese support."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/gladia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/gladia.md",
+"slug": "api__reference__server__services__stt__gladia.html",
+"title": "Gladia Speech-to-Text",
+"desc": "GladiaSTTService streams real-time STT over Gladia's WebSocket API: 99+ languages, custom vocabulary, translation, and sentiment."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/gnani",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/gnani.md",
+"slug": "api__reference__server__services__stt__gnani.html",
+"title": "Gnani Speech-to-Text",
+"desc": "STT for 10+ Indian languages with GnaniSTTService (WebSocket streaming) and GnaniHttpSTTService (REST) on the Gnani platform."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/google",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/google.md",
+"slug": "api__reference__server__services__stt__google.html",
+"title": "Google Speech-to-Text",
+"desc": "GoogleSTTService provides real-time STT on Google Cloud Speech-to-Text V2, with 125+ languages, model selection, and VAD."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/gradium",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/gradium.md",
+"slug": "api__reference__server__services__stt__gradium.html",
+"title": "Gradium Speech-to-Text",
+"desc": "GradiumSTTService streams real-time STT over Gradium's WebSocket API with multilingual transcription and semantic VAD."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/groq",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/groq.md",
+"slug": "api__reference__server__services__stt__groq.html",
+"title": "Groq Whisper Speech-to-Text",
+"desc": "GroqSTTService runs VAD-segmented STT on Groq's hosted Whisper API, pairing Whisper accuracy with ultra-fast inference."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/hakim",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/hakim.md",
+"slug": "api__reference__server__services__stt__hakim.html",
+"title": "Hakim Speech-to-Text",
+"desc": "HakimSTTService provides Arabic-first realtime STT over a persistent WebSocket connection to Hakim's transcription API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/mistral",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/mistral.md",
+"slug": "api__reference__server__services__stt__mistral.html",
+"title": "Mistral Speech-to-Text",
+"desc": "MistralSTTService streams real-time STT through Mistral's Voxtral Realtime API via the Mistral SDK's RealtimeConnection."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/moonshine",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/moonshine.md",
+"slug": "api__reference__server__services__stt__moonshine.html",
+"title": "Moonshine Speech-to-Text",
+"desc": "Offline STT with MoonshineSTTService: small, fast Moonshine ASR models running locally on CPU via ONNX Runtime, no GPU or API key."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/nvidia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/nvidia.md",
+"slug": "api__reference__server__services__stt__nvidia.html",
+"title": "NVIDIA Nemotron Speech-to-Text",
+"desc": "Real-time STT with NvidiaSTTService, NvidiaSegmentedSTTService, and a SageMaker variant, running NVIDIA Nemotron Speech models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/openai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/openai.md",
+"slug": "api__reference__server__services__stt__openai.html",
+"title": "OpenAI Speech-to-Text",
+"desc": "STT with OpenAIRealtimeSTTService for live streaming and OpenAISTTService for segmented transcription of OpenAI speech models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/quickdial",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/quickdial.md",
+"slug": "api__reference__server__services__stt__quickdial.html",
+"title": "Quickdial Speech-to-Text",
+"desc": "QuickdialSTTService extends SegmentedSTTService to transcribe speech with Quickdial's whisper.cpp-powered STT API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/ringg",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/ringg.md",
+"slug": "api__reference__server__services__stt__ringg.html",
+"title": "Ringg AI Speech-to-Text",
+"desc": "RinggSTTService streams STT through the official ringglabs Python SDK, which manages the WebSocket connection and event parsing."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/sarvam",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/sarvam.md",
+"slug": "api__reference__server__services__stt__sarvam.html",
+"title": "Sarvam AI Speech-to-Text",
+"desc": "SarvamSTTService streams real-time STT for Indian languages over Sarvam AI's WebSocket API, with VAD-based segmentation."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/simplismart",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/simplismart.md",
+"slug": "api__reference__server__services__stt__simplismart.html",
+"title": "Simplismart Speech-to-Text",
+"desc": "SimplismartSTTService POSTs WAV audio segments to Simplismart's HTTP /predict endpoint for segmented STT transcription."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/slng",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/slng.md",
+"slug": "api__reference__server__services__stt__slng.html",
+"title": "SLNG Speech-to-Text",
+"desc": "SlngSTTService streams real-time STT over a persistent WebSocket to SLNG, a unified voice AI gateway routing multiple providers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/smallest",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/smallest.md",
+"slug": "api__reference__server__services__stt__smallest.html",
+"title": "Smallest AI Speech-to-Text",
+"desc": "SmallestSTTService provides real-time streaming STT through Smallest AI's Pulse model over the Waves WebSocket API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/soniox",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/soniox.md",
+"slug": "api__reference__server__services__stt__soniox.html",
+"title": "Soniox Speech-to-Text",
+"desc": "SonioxSTTService streams real-time STT over Soniox's WebSocket API: 60+ languages, custom context, and mixed-language audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/speechmatics",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/speechmatics.md",
+"slug": "api__reference__server__services__stt__speechmatics.html",
+"title": "Speechmatics Speech-to-Text",
+"desc": "SpeechmaticsSTTService delivers real-time STT with partial and final results, speaker diarization, and end-of-utterance detection."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/together",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/together.md",
+"slug": "api__reference__server__services__stt__together.html",
+"title": "Together AI Speech-to-Text",
+"desc": "TogetherSTTService streams real-time STT via Together AI's OpenAI-compatible WebSocket transcription endpoints."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/upliftai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/upliftai.md",
+"slug": "api__reference__server__services__stt__upliftai.html",
+"title": "Uplift AI Speech-to-Text",
+"desc": "UpliftAISTTService transcribes Urdu-optimized speech using Uplift AI's Scribe STT API with VAD-segmented audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/whisper",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/whisper.md",
+"slug": "api__reference__server__services__stt__whisper.html",
+"title": "Whisper Speech-to-Text",
+"desc": "Offline STT with WhisperSTTService: OpenAI Whisper models running locally, with multiple sizes and hardware acceleration."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/stt/xai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/stt/xai.md",
+"slug": "api__reference__server__services__stt__xai.html",
+"title": "xAI Speech-to-Text",
+"desc": "XAISTTService streams real-time STT over xAI's WebSocket API with interim results, configurable endpointing, and multichannel audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/supported-services",
+"md": "https://docs.pipecat.ai/api-reference/server/services/supported-services.md",
+"slug": "api__reference__server__services__supported__services.html",
+"title": "Supported Services",
+"desc": "The full catalog of AI services integrated with Pipecat: STT, TTS, LLM, transports, and more, with setup requirements."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/translation/pinch",
+"md": "https://docs.pipecat.ai/api-reference/server/services/translation/pinch.md",
+"slug": "api__reference__server__services__translation__pinch.html",
+"title": "Pinch Translation",
+"desc": "PinchTranslatorService provides real-time speech-to-speech translation in Pipecat pipelines, powered by Pinch."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/beyond-presence",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/beyond-presence.md",
+"slug": "api__reference__server__services__transport__beyond__presence.html",
+"title": "Beyond Presence Transport",
+"desc": "BeyTransport generates real-time Beyond Presence video avatars for Pipecat agents, built on Daily's WebRTC infrastructure."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/daily",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/daily.md",
+"slug": "api__reference__server__services__transport__daily.html",
+"title": "Daily WebRTC Transport",
+"desc": "DailyTransport connects Pipecat pipelines to Daily's hosted WebRTC infrastructure for real-time audio and video sessions."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/fastapi-websocket",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/fastapi-websocket.md",
+"slug": "api__reference__server__services__transport__fastapi__websocket.html",
+"title": "FastAPI WebSocket Transport",
+"desc": "FastAPIWebsocketTransport serves Pipecat sessions over WebSockets in FastAPI apps, pairing with telephony FrameSerializers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/heygen",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/heygen.md",
+"slug": "api__reference__server__services__transport__heygen.html",
+"title": "HeyGen Transport",
+"desc": "HeyGenTransport joins your Pipecat bot to the same virtual room as a HeyGen avatar for interactive avatar sessions."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/lemonslice",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/lemonslice.md",
+"slug": "api__reference__server__services__transport__lemonslice.html",
+"title": "LemonSlice Transport",
+"desc": "LemonSliceTransport joins your Pipecat bot to a room with a LemonSlice avatar, layered on the Daily transport."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/livekit",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/livekit.md",
+"slug": "api__reference__server__services__transport__livekit.html",
+"title": "LiveKit Transport",
+"desc": "LiveKitTransport provides real-time audio communication for Pipecat pipelines over LiveKit's WebRTC infrastructure."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/small-webrtc",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/small-webrtc.md",
+"slug": "api__reference__server__services__transport__small__webrtc.html",
+"title": "Small WebRTC Transport",
+"desc": "SmallWebRTCTransport makes serverless peer-to-peer WebRTC connections between a client and your Pipecat bot, no provider needed."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/tavus",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/tavus.md",
+"slug": "api__reference__server__services__transport__tavus.html",
+"title": "Tavus Transport",
+"desc": "TavusTransport joins your Pipecat bot to the same virtual room as a Tavus avatar for conversational video sessions."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/transport-params",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/transport-params.md",
+"slug": "api__reference__server__services__transport__transport__params.html",
+"title": "TransportParams",
+"desc": "TransportParams is the base configuration class shared by all Pipecat transports: audio, video, and VAD settings."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/vonage",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/vonage.md",
+"slug": "api__reference__server__services__transport__vonage.html",
+"title": "Vonage Video Connector Transport",
+"desc": "VonageVideoConnectorTransport provides real-time WebRTC audio and video for Pipecat using the Vonage Video API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/websocket-server",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/websocket-server.md",
+"slug": "api__reference__server__services__transport__websocket__server.html",
+"title": "WebSocket Transports",
+"desc": "WebsocketServerTransport and WebsocketClientTransport connect Pipecat to clients over plain WebSockets for real-time audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/transport/whatsapp",
+"md": "https://docs.pipecat.ai/api-reference/server/services/transport/whatsapp.md",
+"slug": "api__reference__server__services__transport__whatsapp.html",
+"title": "WhatsApp Transport",
+"desc": "WhatsAppTransport connects Pipecat bots to WhatsApp voice calls via the WhatsApp Business API and SmallWebRTCTransport."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/asyncai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/asyncai.md",
+"slug": "api__reference__server__services__tts__asyncai.html",
+"title": "AsyncAI Text-to-Speech",
+"desc": "TTS with AsyncAITTSService for real-time WebSocket streaming with interruption support, and AsyncAIHttpTTSService for HTTP synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/aws",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/aws.md",
+"slug": "api__reference__server__services__tts__aws.html",
+"title": "AWS Polly Text-to-Speech",
+"desc": "AWSPollyTTSService synthesizes TTS through Amazon Polly's standard, neural, and generative engines with configurable voice options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/azure",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/azure.md",
+"slug": "api__reference__server__services__tts__azure.html",
+"title": "Azure Text-to-Speech",
+"desc": "TTS on Azure Cognitive Services: AzureTTSService for real-time WebSocket streaming and AzureHttpTTSService for simpler HTTP synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/camb",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/camb.md",
+"slug": "api__reference__server__services__tts__camb.html",
+"title": "Camb AI Text-to-Speech",
+"desc": "CambTTSService streams high-quality TTS using Camb AI's MARS model family, with multiple model and voice options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/cartesia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/cartesia.md",
+"slug": "api__reference__server__services__tts__cartesia.html",
+"title": "Cartesia Text-to-Speech",
+"desc": "Low-latency TTS with CartesiaTTSService (WebSocket streaming, word timestamps) and CartesiaHttpTTSService for batch synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/deepdub",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/deepdub.md",
+"slug": "api__reference__server__services__tts__deepdub.html",
+"title": "Deepdub Text-to-Speech",
+"desc": "DeepdubTTSService streams real-time TTS over Deepdub AI's WebSocket API, extending InterruptibleTTSService for interruption handling."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/deepgram",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/deepgram.md",
+"slug": "api__reference__server__services__tts__deepgram.html",
+"title": "Deepgram Text-to-Speech",
+"desc": "Aura TTS with DeepgramTTSService, DeepgramHttpTTSService, DeepgramFluxTTSService, and a SageMaker variant for hosted inference."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/elevenlabs",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/elevenlabs.md",
+"slug": "api__reference__server__services__tts__elevenlabs.html",
+"title": "ElevenLabs Text-to-Speech",
+"desc": "TTS with ElevenLabsTTSService (WebSocket streaming, word-level timestamps) and ElevenLabsHttpTTSService for HTTP synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/fish",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/fish.md",
+"slug": "api__reference__server__services__tts__fish.html",
+"title": "Fish Audio Text-to-Speech",
+"desc": "FishAudioTTSService streams real-time TTS through Fish Audio's WebSocket API with custom voice models and prosody control."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/floe",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/floe.md",
+"slug": "api__reference__server__services__tts__floe.html",
+"title": "Floe Text-to-Speech",
+"desc": "Text-to-speech service that routes OpenAI-compatible speech synthesis through Floe with per-call spend caps"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/gnani",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/gnani.md",
+"slug": "api__reference__server__services__tts__gnani.html",
+"title": "Gnani Text-to-Speech",
+"desc": "TTS for 10+ Indian languages with GnaniTTSService (WebSocket), GnaniSSETTSService (SSE), and GnaniHttpTTSService (REST)."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/google",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/google.md",
+"slug": "api__reference__server__services__tts__google.html",
+"title": "Google Text-to-Speech",
+"desc": "Google Cloud TTS with GoogleTTSService (low-latency streaming), GoogleHttpTTSService, and GeminiTTSService for Gemini TTS models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/gradium",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/gradium.md",
+"slug": "api__reference__server__services__tts__gradium.html",
+"title": "Gradium Text-to-Speech",
+"desc": "GradiumTTSService streams expressive TTS over Gradium's WebSocket API with instant voice cloning and low-latency inference."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/groq",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/groq.md",
+"slug": "api__reference__server__services__tts__groq.html",
+"title": "Groq Text-to-Speech",
+"desc": "GroqTTSService delivers fast TTS from Groq's API with multiple voice options at a fixed 48kHz sample rate for voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/hakim",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/hakim.md",
+"slug": "api__reference__server__services__tts__hakim.html",
+"title": "Hakim Text-to-Speech",
+"desc": "HakimTTSService synthesizes Arabic-first realtime TTS, subclassing InterruptibleTTSService for interruption handling."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/hume",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/hume.md",
+"slug": "api__reference__server__services__tts__hume.html",
+"title": "Hume Text-to-Speech",
+"desc": "HumeTTSService generates expressive TTS with Hume AI's Octave models: context-aware pitch, speed, emotion, and word timestamps."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/inworld",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/inworld.md",
+"slug": "api__reference__server__services__tts__inworld.html",
+"title": "Inworld Text-to-Speech",
+"desc": "TTS with InworldTTSService (real-time WebSocket) and InworldHttpTTSService, running Inworld AI's TTS-2 and TTS-1.5 models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/kokoro",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/kokoro.md",
+"slug": "api__reference__server__services__tts__kokoro.html",
+"title": "Kokoro Text-to-Speech",
+"desc": "Local offline TTS with KokoroTTSService and the kokoro-onnx engine: on-device synthesis with no external API calls."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/lmnt",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/lmnt.md",
+"slug": "api__reference__server__services__tts__lmnt.html",
+"title": "LMNT Text-to-Speech",
+"desc": "LMNTTTSService streams TTS through LMNT's WebSocket API, optimized for ultra-low-latency conversational voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/lokutor",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/lokutor.md",
+"slug": "api__reference__server__services__tts__lokutor.html",
+"title": "Lokutor Text-to-Speech",
+"desc": "LokutorTTSService generates TTS over a persistent WebSocket connection to Lokutor's CPU-only speech synthesis API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/minimax",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/minimax.md",
+"slug": "api__reference__server__services__tts__minimax.html",
+"title": "MiniMax Text-to-Speech",
+"desc": "TTS with MiniMaxTTSService and MiniMaxHttpTTSService on MiniMax's T2A API: streaming, emotional voice control, and voice options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/mistral",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/mistral.md",
+"slug": "api__reference__server__services__tts__mistral.html",
+"title": "Mistral Text-to-Speech",
+"desc": "MistralTTSService synthesizes speech with Mistral's Voxtral TTS API, streaming PCM audio over HTTP Server-Sent Events."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/murf",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/murf.md",
+"slug": "api__reference__server__services__tts__murf.html",
+"title": "Murf AI Text-to-Speech",
+"desc": "MurfTTSService streams real-time TTS from Murf AI's WebSocket API with voice customization and styling options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/neuphonic",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/neuphonic.md",
+"slug": "api__reference__server__services__tts__neuphonic.html",
+"title": "Neuphonic Text-to-Speech",
+"desc": "TTS with NeuphonicTTSService (real-time WebSocket streaming with interruptions) and NeuphonicHttpTTSService for HTTP synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/nvidia",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/nvidia.md",
+"slug": "api__reference__server__services__tts__nvidia.html",
+"title": "NVIDIA Nemotron Text-to-Speech",
+"desc": "TTS with NvidiaTTSService plus SageMaker variants, running NVIDIA Nemotron Speech models for real-time synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/openai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/openai.md",
+"slug": "api__reference__server__services__tts__openai.html",
+"title": "OpenAI Text-to-Speech",
+"desc": "OpenAITTSService provides TTS through OpenAI's speech API, supporting both traditional and GPT-4o family voice models."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/piper",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/piper.md",
+"slug": "api__reference__server__services__tts__piper.html",
+"title": "Piper Text-to-Speech",
+"desc": "PiperTTSService and PiperHttpTTSService synthesize neural TTS from a self-hosted Piper server: private, no external API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/pocket-tts",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/pocket-tts.md",
+"slug": "api__reference__server__services__tts__pocket__tts.html",
+"title": "Pocket TTS",
+"desc": "PocketTTSService runs kyutai-labs' pocket-tts streaming model for local, CPU-only TTS with no external API or GPU."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/quickdial",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/quickdial.md",
+"slug": "api__reference__server__services__tts__quickdial.html",
+"title": "Quickdial Text-to-Speech",
+"desc": "QuickdialTTSService generates speech from Quickdial's real-time TTS API, extending Pipecat's base TTSService."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/resembleai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/resembleai.md",
+"slug": "api__reference__server__services__tts__resembleai.html",
+"title": "Resemble AI Text-to-Speech",
+"desc": "ResembleAITTSService streams TTS over Resemble AI's WebSocket API with word-level timestamps and audio context management."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/respeecher",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/respeecher.md",
+"slug": "api__reference__server__services__tts__respeecher.html",
+"title": "Respeecher Text-to-Speech",
+"desc": "RespeecherTTSService streams real-time TTS audio over a WebSocket connection to Respeecher's voice synthesis API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/rime",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/rime.md",
+"slug": "api__reference__server__services__tts__rime.html",
+"title": "Rime Text-to-Speech",
+"desc": "TTS with RimeTTSService (WebSocket streaming with word timing and interruptions) and RimeHttpTTSService for batch synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/rumik",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/rumik.md",
+"slug": "api__reference__server__services__tts__rumik.html",
+"title": "Rumik AI Text-to-Speech",
+"desc": "pipecat-rumik provides RumikTTSService (WebSocket streaming) and RumikHttpTTSService for TTS with Rumik AI's APIs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/sarvam",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/sarvam.md",
+"slug": "api__reference__server__services__tts__sarvam.html",
+"title": "Sarvam AI Text-to-Speech",
+"desc": "TTS for Indian languages with SarvamTTSService and SarvamHttpTTSService, with extensive voice customization on Sarvam AI's API."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/simplismart",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/simplismart.md",
+"slug": "api__reference__server__services__tts__simplismart.html",
+"title": "Simplismart Text-to-Speech",
+"desc": "SimplismartHttpTTSService streams raw PCM TTS audio from Simplismart's /tts API endpoint for low-latency synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/slng",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/slng.md",
+"slug": "api__reference__server__services__tts__slng.html",
+"title": "SLNG Text-to-Speech",
+"desc": "SlngTTSService and SlngHttpTTSService synthesize TTS through SLNG, a unified voice AI gateway routing multiple providers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/smallest",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/smallest.md",
+"slug": "api__reference__server__services__tts__smallest.html",
+"title": "Smallest AI Text-to-Speech",
+"desc": "SmallestTTSService streams real-time TTS through Smallest AI's Waves WebSocket API with configurable voice parameters."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/soniox",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/soniox.md",
+"slug": "api__reference__server__services__tts__soniox.html",
+"title": "Soniox Text-to-Speech",
+"desc": "SonioxTTSService streams text incrementally to Soniox's WebSocket TTS endpoint for real-time speech synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/speechmatics",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/speechmatics.md",
+"slug": "api__reference__server__services__tts__speechmatics.html",
+"title": "Speechmatics Text-to-Speech",
+"desc": "SpeechmaticsTTSService provides production-grade low-latency TTS, streaming 16kHz mono audio tuned for telephony voice agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/supertonic",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/supertonic.md",
+"slug": "api__reference__server__services__tts__supertonic.html",
+"title": "Supertonic Text-to-Speech",
+"desc": "SupertonicTTSService wraps the official Supertonic Python SDK as a Pipecat-compatible TTSService for speech synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/together",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/together.md",
+"slug": "api__reference__server__services__tts__together.html",
+"title": "Together AI Text-to-Speech",
+"desc": "TogetherTTSService streams real-time TTS over Together AI's WebSocket API with configurable voice and model options."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/tts-cache",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/tts-cache.md",
+"slug": "api__reference__server__services__tts__tts__cache.html",
+"title": "Pipecat TTS Cache",
+"desc": "TTSCacheMixin transparently wraps any Pipecat TTS service, caching repeated phrases to cut API costs and response latency."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/typecast",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/typecast.md",
+"slug": "api__reference__server__services__tts__typecast.html",
+"title": "Typecast Text-to-Speech",
+"desc": "TypecastTTSService synthesizes expressive TTS with Typecast's neural voices, with emotion control and audio customization."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/upliftai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/upliftai.md",
+"slug": "api__reference__server__services__tts__upliftai.html",
+"title": "Uplift AI Text-to-Speech",
+"desc": "UpliftHttpTTSService converts text to speech with Uplift AI's HTTP TTS API for high-quality, low-latency synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/voiceai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/voiceai.md",
+"slug": "api__reference__server__services__tts__voiceai.html",
+"title": "Voice.ai Text-to-Speech",
+"desc": "VoiceAiTTSService streams TTS through Voice.ai's Multi-Context WebSocket API over a single persistent connection."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/xai",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/xai.md",
+"slug": "api__reference__server__services__tts__xai.html",
+"title": "xAI Text-to-Speech",
+"desc": "TTS in 20 languages with XAITTSService (WebSocket streaming) and XAIHttpTTSService on xAI's speech synthesis APIs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/xtts",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/xtts.md",
+"slug": "api__reference__server__services__tts__xtts.html",
+"title": "Coqui XTTS Text-to-Speech",
+"desc": "XTTSTTSService provides multilingual TTS with voice cloning through a locally hosted Coqui XTTS streaming server."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/tts/xtts-vllm",
+"md": "https://docs.pipecat.ai/api-reference/server/services/tts/xtts-vllm.md",
+"slug": "api__reference__server__services__tts__xtts__vllm.html",
+"title": "XTTS-vLLM Text-to-Speech",
+"desc": "XTTSVLLMTTSService streams TTS from a self-hosted XTTSv2 + vLLM streaming server for low-latency open-model synthesis."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vad/aic-quail-vad-analyzer",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vad/aic-quail-vad-analyzer.md",
+"slug": "api__reference__server__services__vad__aic__quail__vad__analyzer.html",
+"title": "AIC Quail VAD",
+"desc": "AICQuailVADAnalyzer is a standalone voice activity detection (VAD) analyzer powered by ai-coustics Quail."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vad/fire-vad",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vad/fire-vad.md",
+"slug": "api__reference__server__services__vad__fire__vad.html",
+"title": "FireRed VAD",
+"desc": "FireVadAnalyzer provides streaming voice activity detection (VAD) for Pipecat using the FireRedVAD model."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vad/krisp-viva-vad-analyzer",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vad/krisp-viva-vad-analyzer.md",
+"slug": "api__reference__server__services__vad__krisp__viva__vad__analyzer.html",
+"title": "Krisp VIVA VAD",
+"desc": "KrispVivaVadAnalyzer detects voice activity (VAD) using the Krisp VIVA SDK for accurate speech boundaries."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vad/silero-vad-analyzer",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vad/silero-vad-analyzer.md",
+"slug": "api__reference__server__services__vad__silero__vad__analyzer.html",
+"title": "Silero VAD",
+"desc": "SileroVADAnalyzer detects voice activity with the Silero VAD ONNX model for speech detection in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vad/ten-vad",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vad/ten-vad.md",
+"slug": "api__reference__server__services__vad__ten__vad.html",
+"title": "TEN VAD",
+"desc": "TenVadAnalyzer implements Pipecat's VADAnalyzer interface with the TEN VAD backend for voice activity detection."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/video/anam",
+"md": "https://docs.pipecat.ai/api-reference/server/services/video/anam.md",
+"slug": "api__reference__server__services__video__anam.html",
+"title": "Anam Video Avatar",
+"desc": "AnamVideoService generates real-time interactive Anam video avatars synchronized with your Pipecat agent's audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/video/heygen",
+"md": "https://docs.pipecat.ai/api-reference/server/services/video/heygen.md",
+"slug": "api__reference__server__services__video__heygen.html",
+"title": "HeyGen Video Avatar",
+"desc": "HeyGenVideoService drives HeyGen LiveAvatar interactive video avatars from your Pipecat agent's speech output."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/video/protoface",
+"md": "https://docs.pipecat.ai/api-reference/server/services/video/protoface.md",
+"slug": "api__reference__server__services__video__protoface.html",
+"title": "Protoface Video Avatar",
+"desc": "ProtofaceVideoService renders Pipecat TTS output through a real-time Protoface video avatar for conversational AI."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/video/simli",
+"md": "https://docs.pipecat.ai/api-reference/server/services/video/simli.md",
+"slug": "api__reference__server__services__video__simli.html",
+"title": "Simli Video Avatar",
+"desc": "SimliVideoService creates real-time Simli AI avatar video over WebRTC, animated by your Pipecat agent's audio."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/video/tavus",
+"md": "https://docs.pipecat.ai/api-reference/server/services/video/tavus.md",
+"slug": "api__reference__server__services__video__tavus.html",
+"title": "Tavus Video Avatar",
+"desc": "TavusVideoService generates Tavus AI avatar video that speaks your Pipecat agent's TTS output in real time."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vision/moondream",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vision/moondream.md",
+"slug": "api__reference__server__services__vision__moondream.html",
+"title": "Moondream Vision",
+"desc": "MoondreamService runs local image analysis and visual question answering with the Moondream vision model."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/services/vision/smolvlm",
+"md": "https://docs.pipecat.ai/api-reference/server/services/vision/smolvlm.md",
+"slug": "api__reference__server__services__vision__smolvlm.html",
+"title": "SmolVLM Vision",
+"desc": "SmolVlmService runs HuggingFace SmolVLM vision-language models locally for image analysis in Pipecat pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/audio/audio-buffer-processor",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/audio/audio-buffer-processor.md",
+"slug": "api__reference__server__utilities__audio__audio__buffer__processor.html",
+"title": "AudioBufferProcessor",
+"desc": "Process and buffer audio frames from conversations with flexible event handling"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/audio/soundfile-mixer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/audio/soundfile-mixer.md",
+"slug": "api__reference__server__utilities__audio__soundfile__mixer.html",
+"title": "SoundfileMixer",
+"desc": "SoundfileMixer combines real-time Pipecat audio with sound files for background audio and effects."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/context-summarization",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/context-summarization.md",
+"slug": "api__reference__server__utilities__context__summarization.html",
+"title": "LLMContextSummarizer",
+"desc": "Reference for LLMContextSummarizer, LLMAutoContextSummarizationConfig, LLMContextSummaryConfig, and SummaryAppliedEvent."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/daily/rest-helper",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/daily/rest-helper.md",
+"slug": "api__reference__server__utilities__daily__rest__helper.html",
+"title": "DailyRESTHelper",
+"desc": "Classes and methods for interacting with the Daily API to manage rooms and tokens"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/dtmf-aggregator",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/dtmf-aggregator.md",
+"slug": "api__reference__server__utilities__dtmf__aggregator.html",
+"title": "DTMFAggregator",
+"desc": "Aggregates DTMF (phone keypad) input into meaningful sequences for LLM processing"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/frame-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/frame-filter.md",
+"slug": "api__reference__server__utilities__filters__frame__filter.html",
+"title": "FrameFilter",
+"desc": "FrameFilter selectively passes only specified frame types through a Pipecat pipeline, dropping the rest."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/function-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/function-filter.md",
+"slug": "api__reference__server__utilities__filters__function__filter.html",
+"title": "FunctionFilter",
+"desc": "FunctionFilter filters frames in a Pipecat pipeline using a custom filter function for flexible frame control."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/identify-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/identify-filter.md",
+"slug": "api__reference__server__utilities__filters__identify__filter.html",
+"title": "IdentityFilter",
+"desc": "IdentityFilter passes all frames through unchanged, a no-op Pipecat processor useful for testing pipelines."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/null-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/null-filter.md",
+"slug": "api__reference__server__utilities__filters__null__filter.html",
+"title": "NullFilter",
+"desc": "NullFilter blocks every frame except system frames, useful for muting a Pipecat pipeline branch."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-check-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-check-filter.md",
+"slug": "api__reference__server__utilities__filters__wake__check__filter.html",
+"title": "WakeCheckFilter",
+"desc": "Processor that passes frames only after detecting wake phrases in transcriptions"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-notifier-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-notifier-filter.md",
+"slug": "api__reference__server__utilities__filters__wake__notifier__filter.html",
+"title": "WakeNotifierFilter",
+"desc": "Processor that triggers a notifier when specified frame types pass a custom filter"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/frame/llm-text-processor",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/frame/llm-text-processor.md",
+"slug": "api__reference__server__utilities__frame__llm__text__processor.html",
+"title": "LLMTextProcessor",
+"desc": "A processor for aggregating LLMTextFrames into logical units before passing them to downstream services"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/frame/producer-consumer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/frame/producer-consumer.md",
+"slug": "api__reference__server__utilities__frame__producer__consumer.html",
+"title": "Producer & Consumer Processors",
+"desc": "Route frames between different parts of a pipeline, allowing selective frame sharing across parallel branches or within complex pipelines"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/mcp/mcp",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/mcp/mcp.md",
+"slug": "api__reference__server__utilities__mcp__mcp.html",
+"title": "MCPClient",
+"desc": "MCPClient connects Pipecat bots to MCP (Model Context Protocol) servers and registers their tools with your LLM."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/debug-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/debug-observer.md",
+"slug": "api__reference__server__utilities__observers__debug__observer.html",
+"title": "Debug Log Observer",
+"desc": "DebugLogObserver logs every frame flowing through a Pipecat pipeline with configurable filtering by frame type."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/llm-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/llm-observer.md",
+"slug": "api__reference__server__utilities__observers__llm__observer.html",
+"title": "LLM Log Observer",
+"desc": "LLMLogObserver logs LLM activity in a Pipecat pipeline: context frames, responses, and function calls."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/observer-pattern",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/observer-pattern.md",
+"slug": "api__reference__server__utilities__observers__observer__pattern.html",
+"title": "Observer Pattern",
+"desc": "The Pipecat observer pattern: watch frames flow through a pipeline without modifying them, and write your own observers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/startup-timing-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/startup-timing-observer.md",
+"slug": "api__reference__server__utilities__observers__startup__timing__observer.html",
+"title": "Startup Timing Observer",
+"desc": "Measure processor startup times and transport readiness during pipeline initialization"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/transcription-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/transcription-observer.md",
+"slug": "api__reference__server__utilities__observers__transcription__observer.html",
+"title": "Transcription Log Observer",
+"desc": "TranscriptionLogObserver logs speech-to-text transcription activity in a Pipecat pipeline for STT debugging."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/turn-tracking-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/turn-tracking-observer.md",
+"slug": "api__reference__server__utilities__observers__turn__tracking__observer.html",
+"title": "Turn Tracking Observer",
+"desc": "TurnTrackingObserver tracks conversation turns in a Pipecat pipeline and emits turn started and ended events."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/observers/user-bot-latency-observer",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/observers/user-bot-latency-observer.md",
+"slug": "api__reference__server__utilities__observers__user__bot__latency__observer.html",
+"title": "User-Bot Latency Observer",
+"desc": "Measure response time between user speech and bot responses in Pipecat"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/opentelemetry",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/opentelemetry.md",
+"slug": "api__reference__server__utilities__opentelemetry.html",
+"title": "OpenTelemetry Tracing",
+"desc": "Monitor and analyze your Pipecat conversational pipelines using OpenTelemetry"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/runner/guide",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/runner/guide.md",
+"slug": "api__reference__server__utilities__runner__guide.html",
+"title": "Development Runner",
+"desc": "Unified runner for building voice AI bots with Daily, WebRTC, and telephony transports"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/runner/transport-utils",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/runner/transport-utils.md",
+"slug": "api__reference__server__utilities__runner__transport__utils.html",
+"title": "Transport Utilities",
+"desc": "Configuration and helper utilities for Daily, LiveKit, telephony, and WebRTC transports"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/llm-switcher",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/llm-switcher.md",
+"slug": "api__reference__server__utilities__service__switchers__llm__switcher.html",
+"title": "LLMSwitcher",
+"desc": "Dynamically switch between different LLM services with support for ad-hoc inference and unified function registration"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/service-switcher",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/service-switcher.md",
+"slug": "api__reference__server__utilities__service__switchers__service__switcher.html",
+"title": "ServiceSwitcher",
+"desc": "Dynamically switch between different service instances at runtime using configurable strategies"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/text/markdown-text-filter",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/text/markdown-text-filter.md",
+"slug": "api__reference__server__utilities__text__markdown__text__filter.html",
+"title": "MarkdownTextFilter",
+"desc": "Converts Markdown-formatted text to TTS-friendly plain text while preserving structure"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/text/overview",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/text/overview.md",
+"slug": "api__reference__server__utilities__text__overview.html",
+"title": "Text Aggregators and Filters",
+"desc": "An overview of text aggregators and filters available in the server utilities"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/text/pattern-pair-aggregator",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/text/pattern-pair-aggregator.md",
+"slug": "api__reference__server__utilities__text__pattern__pair__aggregator.html",
+"title": "PatternPairAggregator",
+"desc": "Text aggregator that identifies and processes content between pattern pairs in streaming text"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/krisp-viva-turn",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/krisp-viva-turn.md",
+"slug": "api__reference__server__utilities__turn__detection__krisp__viva__turn.html",
+"title": "Krisp VIVA Turn",
+"desc": "Turn detection with the Krisp VIVA SDK in Pipecat as an alternative to VAD-based end-of-turn detection."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/smart-turn-overview",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/smart-turn-overview.md",
+"slug": "api__reference__server__utilities__turn__detection__smart__turn__overview.html",
+"title": "Smart Turn Overview",
+"desc": "Advanced conversational turn detection powered by the smart-turn model"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/external-turn-management",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/external-turn-management.md",
+"slug": "api__reference__server__utilities__turn__management__external__turn__management.html",
+"title": "External Turn Management",
+"desc": "Handle turn detection externally using UserTurnProcessor or external services"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/filter-incomplete-turns",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/filter-incomplete-turns.md",
+"slug": "api__reference__server__utilities__turn__management__filter__incomplete__turns.html",
+"title": "Filter Incomplete User Turns",
+"desc": "Use LLM-based detection to suppress responses when users are cut off mid-thought"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/transcriptions",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/transcriptions.md",
+"slug": "api__reference__server__utilities__turn__management__transcriptions.html",
+"title": "Transcriptions",
+"desc": "Collect user and assistant transcripts in Pipecat with turn-management transcription events and aggregators."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/turn-events",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/turn-events.md",
+"slug": "api__reference__server__utilities__turn__management__turn__events.html",
+"title": "Turn Events",
+"desc": "Handle user and assistant turn lifecycle events for transcriptions and turn tracking"
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-mute-strategies",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-mute-strategies.md",
+"slug": "api__reference__server__utilities__turn__management__user__mute__strategies.html",
+"title": "User Mute Strategies",
+"desc": "Control when Pipecat suppresses user input: mute strategies during bot speech and other pipeline operations."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-turn-strategies",
+"md": "https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-turn-strategies.md",
+"slug": "api__reference__server__utilities__turn__management__user__turn__strategies.html",
+"title": "User Turn Strategies",
+"desc": "Configure how Pipecat detects and manages user turns: turn start and stop strategies for conversational timing."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/base-worker",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/base-worker.md",
+"slug": "api__reference__server__workers__base__worker.html",
+"title": "BaseWorker",
+"desc": "BaseWorker is the core agent class in Pipecat's multi-agent framework: lifecycle, bus access, and messaging."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/exceptions",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/exceptions.md",
+"slug": "api__reference__server__workers__exceptions.html",
+"title": "Exceptions",
+"desc": "Error types for Pipecat job coordination: JobError and the exceptions raised by JobContext-based single-agent jobs."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/llm-context-worker",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/llm-context-worker.md",
+"slug": "api__reference__server__workers__llm__context__worker.html",
+"title": "LLMContextWorker",
+"desc": "LLMContextWorker extends LLMWorker with a built-in conversation context and aggregators for stateful agents."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/llm-worker",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/llm-worker.md",
+"slug": "api__reference__server__workers__llm__worker.html",
+"title": "LLMWorker",
+"desc": "LLMWorker is a Pipecat agent with a built-in LLM pipeline and automatic tool registration for multi-agent systems."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/runner",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/runner.md",
+"slug": "api__reference__server__workers__runner.html",
+"title": "WorkerRunner",
+"desc": "WorkerRunner orchestrates the lifecycle of Pipecat multi-agent systems: starting, supervising, and stopping workers."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/types",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/types.md",
+"slug": "api__reference__server__workers__types.html",
+"title": "Types",
+"desc": "Shared types for Pipecat workers and job coordination: JobStatus, job context enums, and data classes."
+},
+{
+"url": "https://docs.pipecat.ai/api-reference/server/workers/ui-worker",
+"md": "https://docs.pipecat.ai/api-reference/server/workers/ui-worker.md",
+"slug": "api__reference__server__workers__ui__worker.html",
+"title": "UIWorker",
+"desc": "LLM agent that observes and drives a client GUI over the RTVI UI channel"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat-flows",
+"md": "https://docs.pipecat.ai/pipecat-flows.md",
+"slug": "pipecat__flows.html",
+"title": "Pipecat Flows",
+"desc": ""
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/agent-bus",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/agent-bus.md",
+"slug": "pipecat__fundamentals__agent__bus.html",
+"title": "The Worker Bus",
+"desc": "How Pipecat workers communicate through the shared message bus: publish, subscribe, and message flow between agents."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/context-summarization",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/context-summarization.md",
+"slug": "pipecat__fundamentals__context__summarization.html",
+"title": "Context Summarization",
+"desc": "Automatically compress older conversation history in long-running Pipecat conversations to manage LLM token usage and cost."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/custom-frame-processor",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/custom-frame-processor.md",
+"slug": "pipecat__fundamentals__custom__frame__processor.html",
+"title": "Custom FrameProcessor",
+"desc": "Write a custom Pipecat FrameProcessor: handle frames, push new ones downstream, and slot into a pipeline."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/detecting-user-idle",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/detecting-user-idle.md",
+"slug": "pipecat__fundamentals__detecting__user__idle.html",
+"title": "Detecting Idle Users",
+"desc": "Learn how to detect and respond when users are inactive in conversations"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/interruptions",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/interruptions.md",
+"slug": "pipecat__fundamentals__interruptions.html",
+"title": "Interruptions",
+"desc": "How Pipecat stops the bot when the user speaks, what happens to in-flight LLM and TTS output, and how to control it."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/fundamentals/metrics",
+"md": "https://docs.pipecat.ai/pipecat/fundamentals/metrics.md",
+"slug": "pipecat__fundamentals__metrics.html",
+"title": "Metrics",
+"desc": "Monitor Pipecat performance metrics: TTFB, processing time, and LLM and TTS usage across pipeline services."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/get-started/introduction",
+"md": "https://docs.pipecat.ai/pipecat/get-started/introduction.md",
+"slug": "pipecat__get__started__introduction.html",
+"title": "Introduction to Pipecat",
+"desc": "Start here with the Pipecat framework: what it is, how pipelines orchestrate AI services, and where to go next."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/agent-handoff",
+"md": "https://docs.pipecat.ai/pipecat/learn/agent-handoff.md",
+"slug": "pipecat__learn__agent__handoff.html",
+"title": "Agent Handoff",
+"desc": "Transfer control between agents with activation, deactivation, and handoff."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/context-management",
+"md": "https://docs.pipecat.ai/pipecat/learn/context-management.md",
+"slug": "pipecat__learn__context__management.html",
+"title": "Context Management",
+"desc": "Work with Pipecat's LLM context and context aggregators: how conversation history is built and shared in a pipeline."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/distributed-agents",
+"md": "https://docs.pipecat.ai/pipecat/learn/distributed-agents.md",
+"slug": "pipecat__learn__distributed__agents.html",
+"title": "Distributed Agents",
+"desc": "Run Pipecat agents across processes and machines connected to the same bus for distributed multi-agent deployments."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/function-calling",
+"md": "https://docs.pipecat.ai/pipecat/learn/function-calling.md",
+"slug": "pipecat__learn__function__calling.html",
+"title": "Function Calling",
+"desc": "Enable LLMs to interact with external services and APIs in your voice AI pipeline"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/job-coordination",
+"md": "https://docs.pipecat.ai/pipecat/learn/job-coordination.md",
+"slug": "pipecat__learn__job__coordination.html",
+"title": "Job Coordination",
+"desc": "Dispatch work from one Pipecat agent to others and collect results with job coordination in the multi-agent framework."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/llm",
+"md": "https://docs.pipecat.ai/pipecat/learn/llm.md",
+"slug": "pipecat__learn__llm.html",
+"title": "LLM Inference",
+"desc": "Learn how to configure language models to generate intelligent responses in your voice AI pipeline"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/pipeline",
+"md": "https://docs.pipecat.ai/pipecat/learn/pipeline.md",
+"slug": "pipecat__learn__pipeline.html",
+"title": "Pipeline & Frame Processing",
+"desc": "Learn how Pipecat's pipeline architecture orchestrates frame processing for voice AI applications"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/proxy-agents",
+"md": "https://docs.pipecat.ai/pipecat/learn/proxy-agents.md",
+"slug": "pipecat__learn__proxy__agents.html",
+"title": "Proxy Agents",
+"desc": "Connect Pipecat agents running on different buses with proxy agents, extending multi-agent pipelines across processes."
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/speech-input",
+"md": "https://docs.pipecat.ai/pipecat/learn/speech-input.md",
+"slug": "pipecat__learn__speech__input.html",
+"title": "Speech Input & Turn Detection",
+"desc": "Learn how Pipecat detects user turns using VAD, transcriptions, and turn detection models"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/speech-to-text",
+"md": "https://docs.pipecat.ai/pipecat/learn/speech-to-text.md",
+"slug": "pipecat__learn__speech__to__text.html",
+"title": "Speech to Text",
+"desc": "Learn how to configure speech recognition to convert user audio into text in your Pipecat pipeline"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/text-to-speech",
+"md": "https://docs.pipecat.ai/pipecat/learn/text-to-speech.md",
+"slug": "pipecat__learn__text__to__speech.html",
+"title": "Text to Speech",
+"desc": "Learn how to configure speech synthesis to convert text into natural-sounding audio in your voice AI pipeline"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/transports",
+"md": "https://docs.pipecat.ai/pipecat/learn/transports.md",
+"slug": "pipecat__learn__transports.html",
+"title": "Transports",
+"desc": "Learn about the different ways users can connect to your Pipecat voice AI bot"
+},
+{
+"url": "https://docs.pipecat.ai/pipecat/learn/ui-worker",
+"md": "https://docs.pipecat.ai/pipecat/learn/ui-worker.md",
+"slug": "pipecat__learn__ui__worker.html",
+"title": "Controlling the UI",
+"desc": "Bridge a voice agent and a client GUI with a UIWorker over a two-way RTVI interface."
+}
+]

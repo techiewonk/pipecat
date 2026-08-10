@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS Nova Sonic · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AWS Nova Sonic</h1>
+<blockquote>AWSNovaSonicLLMService provides real-time speech-to-speech (S2S) conversation with AWS's Nova Sonic model.</blockquote>
+<h2>Overview</h2>
+<p><code>AWSNovaSonicLLMService</code> enables natural, real-time conversations with AWS Nova Sonic. It provides built-in audio transcription, voice activity detection, and context management for creating interactive AI experiences with bidirectional audio streaming, text generation, and function calling capabilities.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="AWS Nova Sonic API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.aws.nova_sonic.llm.html"&gt;     Pipecat's API methods for AWS Nova Sonic integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/realtime/realtime-aws-nova-sonic.py"&gt;     Complete AWS Nova Sonic conversation example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Bedrock Documentation" icon="book" href="https://docs.aws.amazon.com/bedrock/"&gt;     Official AWS Bedrock and Nova Sonic documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Console" icon="external-link" href="https://console.aws.amazon.com/bedrock/"&gt;     Access AWS Bedrock and manage Nova Sonic models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use AWS Nova Sonic services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[aws-nova-sonic]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>AWS Account Setup</h3>
+<p>Before using AWS Nova Sonic services, you need:</p>
+<ol><li><strong>AWS Account</strong>: Set up at <a href="https://console.aws.amazon.com/">AWS Console</a></li><li><strong>Bedrock Access</strong>: Enable AWS Bedrock service in your region</li><li><strong>Model Access</strong>: Request access to Nova Sonic models in Bedrock</li><li><strong>IAM Credentials</strong>: Configure AWS access keys with Bedrock permissions</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>AWS_SECRET_ACCESS_KEY</code>: Your AWS secret access key</li><li><code>AWS_ACCESS_KEY_ID</code>: Your AWS access key ID</li><li><code>AWS_REGION</code>: AWS region where Bedrock is available</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Real-time Speech-to-Speech</strong>: Direct audio input to audio output processing</li><li><strong>Built-in Transcription</strong>: Automatic speech-to-text with real-time streaming</li><li><strong>Voice Activity Detection</strong>: Automatic detection of speech start/stop</li><li><strong>Function Calling</strong>: Support for external function and API integration</li><li><strong>Multiple Voices</strong>: Choose from matthew, tiffany, and amy voice options</li></ul>
+<h2>Configuration</h2>
+<h3>AWSNovaSonicLLMService</h3>
+<p>&lt;ParamField path="secret_access_key" type="str" required&gt;   AWS secret access key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="access_key_id" type="str" required&gt;   AWS access key ID for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_token" type="str" default="None"&gt;   AWS session token for temporary credentials (e.g., when using AWS STS). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" required&gt;   AWS region where the service is hosted. Supported regions for Nova 2 Sonic   (default): <code>"us-east-1"</code>, <code>"us-west-2"</code>, <code>"ap-northeast-1"</code>. Supported regions   for Nova Sonic (older model): <code>"us-east-1"</code>, <code>"ap-northeast-1"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="amazon.nova-2-sonic-v1:0" deprecated&gt;   Model identifier. Use <code>"amazon.nova-2-sonic-v1:0"</code> for the latest model or   <code>"amazon.nova-sonic-v1:0"</code> for the older model.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=AWSNovaSonicLLMService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="matthew" deprecated&gt;   Voice ID for speech synthesis. Some voices are designed for specific   languages. See <a href="https://docs.aws.amazon.com/nova/latest/nova2-userguide/sonic-language-support.html">AWS Nova 2 Sonic voice   support</a>   for available voices.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=AWSNovaSonicLLMService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="Params" default="Params()" deprecated&gt;   Model parameters for audio configuration and inference. See <a href="#settings">Settings</a>   below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=AWSNovaSonicLLMService.Settings(...)</code> for inference settings and <code>audio_config=AudioConfig(...)</code> for audio configuration.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_config" type="AudioConfig" default="None"&gt;   Audio configuration (sample rates, sample sizes, channel counts). If not   provided, defaults are used (16kHz input, 24kHz output, 16-bit, mono). See   <a href="#audioconfig">AudioConfig</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AWSNovaSonicLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="system_instruction" type="str" default="None" deprecated&gt;   System-level instruction for the model.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=AWSNovaSonicLLMService.Settings(system_instruction=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools" type="ToolsSchema | List[FunctionSchema | DirectFunction]" default="None"&gt;   Available tools for the model: a <code>ToolsSchema</code>, or a plain list of direct   functions and/or <code>FunctionSchema</code> objects. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_continuation" type="SessionContinuationParams" default="None"&gt;   Configuration for automatic session continuation. When enabled (the default),   sessions are seamlessly rotated before the AWS time limit (\~8 minutes) with no   user-perceptible interruption. See   <a href="#sessioncontinuationparams">SessionContinuationParams</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AWSNovaSonicLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>system_instruction</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>System instruction/prompt. *(Inherited from base settings.)*</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Sampling temperature for text generation. *(Inherited from base settings.)*</td></tr><tr><td><code>max_tokens</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Maximum number of tokens to generate. *(Inherited from base settings.)*</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Nucleus sampling parameter. *(Inherited from base settings.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Voice ID for speech synthesis.</td></tr><tr><td><code>endpointing_sensitivity</code></td><td>`str \</td><td>None`</td><td><code>NOT_GIVEN</code></td><td>Controls how quickly Nova Sonic decides the user has stopped speaking. Values: <code>"LOW"</code>, <code>"MEDIUM"</code>, or <code>"HIGH"</code>. Only supported with Nova 2 Sonic (default model).</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted, letting the service use its own defaults (e.g.   <code>"amazon.nova-2-sonic-v1:0"</code> for model, <code>"matthew"</code> for voice, <code>0.7</code> for   temperature, <code>1024</code> for max\_tokens). Only parameters that are explicitly set   are included. &lt;/Note&gt;</p>
+<h3>AudioConfig</h3>
+<p>Audio configuration passed via the <code>audio_config</code> constructor argument.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>input_sample_rate</code></td><td><code>int</code></td><td><code>16000</code></td><td>Audio input sample rate in Hz.</td></tr><tr><td><code>input_sample_size</code></td><td><code>int</code></td><td><code>16</code></td><td>Audio input sample size in bits.</td></tr><tr><td><code>input_channel_count</code></td><td><code>int</code></td><td><code>1</code></td><td>Number of input audio channels.</td></tr><tr><td><code>output_sample_rate</code></td><td><code>int</code></td><td><code>24000</code></td><td>Audio output sample rate in Hz.</td></tr><tr><td><code>output_sample_size</code></td><td><code>int</code></td><td><code>16</code></td><td>Audio output sample size in bits.</td></tr><tr><td><code>output_channel_count</code></td><td><code>int</code></td><td><code>1</code></td><td>Number of output audio channels.</td></tr></tbody></table></div>
+<h3>SessionContinuationParams</h3>
+<p>Configuration for automatic session continuation, passed via the <code>session_continuation</code> constructor argument. Nova Sonic sessions have an AWS-imposed time limit (\~8 minutes). When enabled, session continuation proactively creates a new session in the background before the limit is reached, buffers user audio during the transition, and seamlessly hands off — preserving conversation context with no user-perceptible gap.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>enabled</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether automatic session continuation is enabled.</td></tr><tr><td><code>transition_threshold_seconds</code></td><td><code>float</code></td><td><code>360.0</code></td><td>How many seconds into a session to begin monitoring for a transition opportunity. The transition will occur when the assistant next starts speaking after this threshold.</td></tr><tr><td><code>audio_buffer_duration_seconds</code></td><td><code>float</code></td><td><code>3.0</code></td><td>Duration of the rolling audio buffer (in seconds) that captures user audio during the transition window. This audio is replayed into the new session so no user input is lost.</td></tr><tr><td><code>audio_start_timeout_seconds</code></td><td><code>float</code></td><td><code>80.0</code></td><td>Maximum time to wait for the assistant to start speaking after the threshold is reached. If no assistant audio arrives within this window, the transition is forced. Set to <code>0</code> to disable the timeout (wait indefinitely).</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<p>&lt;Tip&gt;   Pair this service with <code>LLMContextAggregatorPair(context,       realtime_service_mode=True)</code>. Realtime mode keeps context-writing correct for   speech-to-speech services and adapts turn handling to the service. See   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services">Realtime (Speech-to-Speech)   Services</a>. &lt;/Tip&gt;</p>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.aws.nova_sonic import AWSNovaSonicLLMService
+
+llm = AWSNovaSonicLLMService(
+    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region=os.getenv("AWS_REGION"),
+    settings=AWSNovaSonicLLMService.Settings(
+        voice="matthew",
+        system_instruction="You are a helpful assistant.",
+    ),
+)</code></pre>
+<h3>With Settings</h3>
+<pre><code>from pipecat.services.aws.nova_sonic import AWSNovaSonicLLMService, AudioConfig
+
+llm = AWSNovaSonicLLMService(
+    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region="us-east-1",
+    audio_config=AudioConfig(
+        input_sample_rate=16000,
+        output_sample_rate=24000,
+    ),
+    settings=AWSNovaSonicLLMService.Settings(
+        model="amazon.nova-2-sonic-v1:0",
+        voice="tiffany",
+        system_instruction="You are a helpful assistant.",
+        temperature=0.5,
+        max_tokens=2048,
+        endpointing_sensitivity="MEDIUM",
+    ),
+)</code></pre>
+<h3>With Function Calling</h3>
+<pre><code>from pipecat.services.aws.nova_sonic import AWSNovaSonicLLMService
+
+llm = AWSNovaSonicLLMService(
+    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region="us-east-1",
+    settings=AWSNovaSonicLLMService.Settings(
+        voice="matthew",
+        system_instruction="You are a helpful assistant that can check the weather.",
+    ),
+    tools=tools,  # ToolsSchema instance
+)
+
+@llm.function("get_weather")
+async def get_weather(function_name, tool_call_id, args, llm, context, result_callback):
+    location = args.get("location", "unknown")
+    await result_callback({"temperature": 72, "condition": "sunny", "location": location})</code></pre>
+<h3>With Session Continuation</h3>
+<pre><code>from pipecat.services.aws.nova_sonic import AWSNovaSonicLLMService
+from pipecat.services.aws.nova_sonic.session_continuation import SessionContinuationParams
+
+llm = AWSNovaSonicLLMService(
+    secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region="us-east-1",
+    settings=AWSNovaSonicLLMService.Settings(
+        voice="tiffany",
+        system_instruction="You are a helpful assistant.",
+    ),
+    # Session continuation is enabled by default. You can customize the behavior:
+    session_continuation=SessionContinuationParams(
+        enabled=True,
+        transition_threshold_seconds=360,  # Start transition after 6 minutes
+        audio_buffer_duration_seconds=3.0,  # Buffer 3 seconds of audio during transition
+        audio_start_timeout_seconds=80.0,  # Force transition if no response within 80s
+    ),
+)
+
+# To disable session continuation:
+# session_continuation=SessionContinuationParams(enabled=False)</code></pre>
+<p>&lt;Tip&gt;   The <code>Params</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use <code>Settings</code>   / <code>settings=</code> for inference settings and <code>AudioConfig</code> / <code>audio_config=</code> for   audio configuration instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Model versions</strong>: Nova 2 Sonic (<code>amazon.nova-2-sonic-v1:0</code>) is the default and recommended model. The older Nova Sonic (<code>amazon.nova-sonic-v1:0</code>) has fewer features and requires an assistant response trigger mechanism.</li><li><strong>Session continuation</strong>: Enabled by default to handle AWS's \~8-minute session limit. The service automatically rotates sessions in the background with no user-perceptible interruption, preserving conversation context and buffering user audio during the transition. You can tune the threshold or disable it via <code>session_continuation</code> parameter.</li><li><strong>Endpointing sensitivity</strong>: Only supported with Nova 2 Sonic. Controls how quickly the model decides the user has stopped speaking -- <code>"HIGH"</code> causes the model to respond most quickly.</li><li><strong>Transcription frames</strong>: User speech transcription frames are always emitted upstream. Assistant text transcripts are delivered in real-time using speculative text events, providing text synchronized with audio output for responsive client UIs.</li><li><strong>Connection resilience</strong>: If a connection error occurs while the service wants to stay connected, it automatically resets the conversation and reconnects.</li><li><strong>System instruction precedence</strong>: The <code>system_instruction</code> from service settings takes precedence over an initial system message in the LLM context. A warning is logged when both are set. Tools provided in the LLM context take precedence over those provided at initialization time.</li><li><strong>Audio format</strong>: Uses LPCM (Linear PCM) audio format for both input and output. Input defaults to 16kHz and output defaults to 24kHz.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/s2s/aws">https://docs.pipecat.ai/api-reference/server/services/s2s/aws</a></p>
+</div></main></div></body></html>

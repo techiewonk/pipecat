@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebSocket Transports · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>WebSocket Transports</h1>
+<blockquote>WebsocketServerTransport and WebsocketClientTransport connect Pipecat to clients over plain WebSockets for real-time audio.</blockquote>
+<h2>Overview</h2>
+<p>WebSocket transports provide both client and server WebSocket implementations for real-time bidirectional communication. These transports support audio streaming, frame serialization, and connection management, making them ideal for prototyping and lightweight client-server applications where WebRTC might be overkill.</p>
+<p>&lt;Warning&gt;   WebSocket transports are best suited for prototyping and controlled network environments.</p>
+<p>  For production client-server applications, we recommend WebRTC-based transports for more robust network handling, NAT traversal, and media optimization. &lt;/Warning&gt;</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="WebSocket Client API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.websocket.client.html"&gt;     Client transport methods and configuration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebSocket Server API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.websocket.server.html"&gt;     Server transport methods and configuration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/websocket"&gt;     Complete client and server WebSocket examples   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebSocket Protocol" icon="book" href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"&gt;     WebSocket protocol documentation and guides   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use WebSocket transports, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[websocket]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>WebSocket Application Setup</h3>
+<p>Before using WebSocket transports, you need:</p>
+<ol><li><strong>Server Implementation</strong>: Set up WebSocket server using your preferred framework</li><li><strong>Client Implementation</strong>: Configure WebSocket client for browser or application use</li><li><strong>Audio Configuration</strong>: Set up audio streaming parameters and formats</li><li><strong>Connection Management</strong>: Handle WebSocket lifecycle and error recovery</li></ol>
+<h3>Configuration Options</h3>
+<ul><li><strong>Transport Type</strong>: Choose between client or server WebSocket transport</li><li><strong>Audio Parameters</strong>: Configure sample rates, channels, and audio formats</li><li><strong>Frame Serialization</strong>: Set up custom frame serializers if needed</li><li><strong>Connection Handling</strong>: Configure reconnection and error handling strategies</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Bidirectional Communication</strong>: Real-time audio and data streaming</li><li><strong>Simple Protocol</strong>: Lightweight WebSocket-based communication</li><li><strong>Flexible Serialization</strong>: Support for custom frame formats and audio codecs</li><li><strong>Cross-Platform</strong>: Works with any WebSocket-compatible client or server</li></ul>
+<h2>Configuration</h2>
+<h3>WebsocketServerTransport</h3>
+<p>&lt;ParamField path="params" type="WebsocketServerParams" required&gt;   Transport configuration parameters. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="host" type="str" default="localhost"&gt;   Host address to bind the WebSocket server to. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="port" type="int" default="8765"&gt;   Port number to bind the WebSocket server to. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h3>WebsocketServerParams</h3>
+<p>Inherits from <code>TransportParams</code> with additional WebSocket-specific parameters.</p>
+<p>&lt;ParamField path="add_wav_header" type="bool" default="False"&gt;   Whether to add WAV headers to outgoing audio frames. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="FrameSerializer" default="None"&gt;   Frame serializer for encoding/decoding WebSocket messages. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_timeout" type="int" default="None"&gt;   Timeout in seconds for client sessions. When set, triggers   <code>on_session_timeout</code> if the session exceeds this duration. <code>None</code> disables the   timeout. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="allowed_origins" type="list[str]" default="[]"&gt;   List of allowed origins for WebSocket connections. Empty list allows all   origins. When set, connections with a missing or disallowed <code>Origin</code> header   are rejected before the WebSocket handshake completes. Defaults to   <code>PIPECAT_ALLOWED_ORIGINS</code> environment variable (comma-separated). &lt;/ParamField&gt;</p>
+<h3>WebsocketClientTransport</h3>
+<p>&lt;ParamField path="uri" type="str" required&gt;   The WebSocket URI to connect to. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="WebsocketClientParams" default="WebsocketClientParams()"&gt;   Client transport configuration parameters. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h3>WebsocketClientParams</h3>
+<p>Inherits from <code>TransportParams</code> with additional WebSocket-specific parameters.</p>
+<p>&lt;ParamField path="add_wav_header" type="bool" default="True"&gt;   Whether to add WAV headers to outgoing audio frames. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="additional_headers" type="dict[str, str]" default="None"&gt;   Optional additional HTTP headers to include in the WebSocket handshake. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="FrameSerializer" default="None"&gt;   Frame serializer for encoding/decoding WebSocket messages. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>WebSocket transports provide simple client-server communication for audio streaming and real-time interaction. They are ideal for prototyping and controlled network environments.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat-examples/tree/main/websocket">complete examples</a> for full implementations including:</p>
+<ul><li>WebSocket server setup and configuration</li><li>Client-side WebSocket integration</li><li>Audio streaming and frame handling</li><li>Connection management and error recovery</li></ul>
+<h2>Event Handlers</h2>
+<p>WebSocket transports provide event handlers for client connection lifecycle and session management. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>WebsocketServerTransport Events</h3>
+<h4>Events Summary</h4>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client WebSocket connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client WebSocket disconnected</td></tr><tr><td><code>on_session_timeout</code></td><td>Session timed out</td></tr><tr><td><code>on_websocket_ready</code></td><td>WebSocket server is ready to accept connections</td></tr></tbody></table></div>
+<h4>on\_client\_connected</h4>
+<p>Fired when a client connects to the WebSocket server.</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, websocket):
+    print("Client connected")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>WebsocketServerTransport</code></td><td>The transport instance</td></tr><tr><td><code>websocket</code></td><td><code>WebSocketServerProtocol</code></td><td>The WebSocket connection object</td></tr></tbody></table></div>
+<h4>on\_client\_disconnected</h4>
+<p>Fired when a client disconnects from the WebSocket server.</p>
+<pre><code>@transport.event_handler("on_client_disconnected")
+async def on_client_disconnected(transport, websocket):
+    print("Client disconnected")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>WebsocketServerTransport</code></td><td>The transport instance</td></tr><tr><td><code>websocket</code></td><td><code>WebSocketServerProtocol</code></td><td>The WebSocket connection object</td></tr></tbody></table></div>
+<h4>on\_session\_timeout</h4>
+<p>Fired when a client session exceeds the configured <code>session_timeout</code> duration. Only fires if <code>session_timeout</code> is set in the params.</p>
+<pre><code>@transport.event_handler("on_session_timeout")
+async def on_session_timeout(transport, websocket):
+    print("Session timed out")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>WebsocketServerTransport</code></td><td>The transport instance</td></tr><tr><td><code>websocket</code></td><td><code>WebSocketServerProtocol</code></td><td>The WebSocket connection object</td></tr></tbody></table></div>
+<h4>on\_websocket\_ready</h4>
+<p>Fired when the WebSocket server has started and is ready to accept client connections.</p>
+<pre><code>@transport.event_handler("on_websocket_ready")
+async def on_websocket_ready(transport):
+    print("WebSocket server ready")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>WebsocketServerTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<h3>WebsocketClientTransport Events</h3>
+<h4>Events Summary</h4>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to WebSocket server</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from WebSocket server</td></tr></tbody></table></div>
+<pre><code>@transport.event_handler("on_connected")
+async def on_connected(transport, websocket):
+    print("Connected to server")
+
+@transport.event_handler("on_disconnected")
+async def on_disconnected(transport, websocket):
+    print("Disconnected from server")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>WebsocketClientTransport</code></td><td>The transport instance</td></tr><tr><td><code>websocket</code></td><td><code>WebSocketClientProtocol</code></td><td>The WebSocket connection object</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The WebSocket server only supports one client connection at a time. If a new   client connects while one is already connected, the existing connection will   be closed. &lt;/Note&gt;</p>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/websocket-server">https://docs.pipecat.ai/api-reference/server/services/transport/websocket-server</a></p>
+</div></main></div></body></html>

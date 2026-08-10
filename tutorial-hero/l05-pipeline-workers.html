@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L5 · Pipeline, workers & runner — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 5 · Part I — Principles</div>
+      <h1>Pipeline, workers & runner</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Three objects turn a list of processors into a running agent: the <code>Pipeline</code> links them, the <code>PipelineWorker</code> runs them, and the <code>WorkerRunner</code> supervises. Understand these and you understand how <em>everything</em> boots — including multi-agent.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="assembly">From list to running agent</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="Pipeline([...])|PipelineSource|linked processors|PipelineSink|PipelineWorker|WorkerRunner"
+           data-caption="You give Pipeline an ordered list of processors|It wraps them with a Source at the front|and links each to the next (prev.link(curr))|and a Sink at the back|A PipelineWorker runs that pipeline as one agent|The WorkerRunner starts & supervises the worker(s)">
+      </div>
+      <p>A <code>Pipeline</code> builds a <code>PipelineSource</code> and <code>PipelineSink</code> around your list, then calls <code>_link_processors()</code> which chains them with <code>prev.link(curr)</code>. That's the whole "magic" of assembly — a linked list of <code>FrameProcessor</code>s.</p>
+
+      <h2 id="lifecycle">Lifecycle is just frames</h2>
+      <p>Starting and stopping are ordinary frames on the system lane: a <code>StartFrame</code> flows down to initialize every service, an <code>EndFrame</code> shuts down cleanly, a <code>CancelFrame</code> aborts. You rarely send these yourself — the worker and runner do.</p>
+
+      <h2 id="code">The minimal agent, by hand</h2>
+      <pre><code class="language-python">from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.worker import PipelineWorker, PipelineParams
+from pipecat.workers.runner import WorkerRunner
+
+async def run_bot(transport, runner_args):
+    stt, llm, tts = build_services()                       # from later lessons
+    user_agg, assistant_agg = LLMContextAggregatorPair(LLMContext(),
+        user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer())).pair()
+
+    pipeline = Pipeline([                                   # ORDER = data flow
+        transport.input(), stt, user_agg, llm, tts, transport.output(), assistant_agg,
+    ])
+    worker = PipelineWorker(pipeline, params=PipelineParams(
+        enable_metrics=True, enable_usage_metrics=True))    # config knobs
+
+    @transport.event_handler("on_client_connected")
+    async def _(transport, client):
+        await worker.queue_frames([LLMRunFrame()])          # make the bot speak first
+
+    runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+    await runner.add_workers(worker)                        # one worker now… many later
+    await runner.run()</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Why <code>WorkerRunner</code> and not just "run the pipeline"?</p>
+        <p>The runner owns the <strong>bus</strong> and can supervise <em>many</em> workers. Today you pass one; in <a href="l24-bus.html">Part V</a> you pass several and they coordinate — the single-agent case is just <code>add_workers(one)</code>. This is why Pipecat is "multi-agent ready" by default.</p>
+      </div>
+
+      <h2 id="parallel">Branching: parallel pipelines</h2>
+      <p>Need two paths from the same frames (e.g. English and Spanish TTS)? A <code>ParallelPipeline</code> runs branches that each receive all upstream frames; <code>SyncParallelPipeline</code> waits for branches to align.</p>
+      <pre><code class="language-python">from pipecat.pipeline.parallel_pipeline import ParallelPipeline
+pipeline = Pipeline([
+    transport.input(), stt, user_agg, llm,
+    ParallelPipeline(
+        [FunctionFilter(is_english), english_tts],
+        [FunctionFilter(is_spanish), spanish_tts],
+    ),
+    transport.output(), assistant_agg,
+])</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>pipeline/pipeline.py</code> — <code>PipelineSource</code> (21), <code>PipelineSink</code> (55), <code>Pipeline</code> (91), <code>_link_processors</code> (207). <code>pipeline/worker.py</code> — <code>PipelineWorker</code>, <code>PipelineParams</code> (deprecated aliases <code>PipelineTask</code>/<code>PipelineTaskParams</code>). <code>workers/runner.py</code> — <code>WorkerRunner.add_workers/run</code>. Also <code>pipeline/parallel_pipeline.py</code>, <code>sync_parallel_pipeline.py</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 1</p>
+        <p>Wrap your <code>atlas.py</code> greeting in a proper <code>run_bot</code> with an explicit <code>WorkerRunner</code>, exactly like above (minus the services, which arrive in Part II). You now own the boot sequence.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Add <code>enable_metrics=True</code> and read the timing the worker logs. (2) Insert a <code>FrameSpy</code> (Lesson 3) right before <code>transport.output()</code> and watch <code>TTSAudioRawFrame</code>s. (3) Read <code>pipeline/pipeline.py</code>'s <code>_link_processors</code> — it's ~4 lines.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does <code>Pipeline</code> actually do to your list?</summary><p>Wraps it in a Source/Sink and links each processor to the next with <code>prev.link(curr)</code> — a linked chain.</p></details>
+      <details><summary>2. What's the difference between a <code>PipelineWorker</code> and the <code>WorkerRunner</code>?</summary><p>The worker runs one pipeline (one agent); the runner owns the bus and supervises one or many workers.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part I complete. Next: <a href="l06-transports.html">Lesson 6 — Transports →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

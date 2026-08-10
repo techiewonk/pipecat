@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ServiceSwitcher · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>ServiceSwitcher</h1>
+<blockquote>Dynamically switch between different service instances at runtime using configurable strategies</blockquote>
+<h2>Overview</h2>
+<p><code>ServiceSwitcher</code> is a specialized parallel pipeline that enables dynamic switching between multiple service instances at runtime. This is useful when you need to change between different STT providers, TTS providers, or other frame processors based on user preferences, costs, performance requirements, or other runtime conditions.</p>
+<p>The switcher uses a strategy pattern to determine which service is active. Two built-in strategies are provided: manual switching for explicit control, and automatic failover for handling service errors.</p>
+<h2>How It Works</h2>
+<p><code>ServiceSwitcher</code> wraps multiple services in a parallel pipeline where only the active service processes frames. Each service is "sandwiched" between two filters that check if it's the currently active service before allowing frames to pass through. When you switch services, the filters update to redirect frame flow to the newly active service.</p>
+<h2>Constructor</h2>
+<pre><code>from pipecat.pipeline.service_switcher import ServiceSwitcher
+
+# Uses ServiceSwitcherStrategyManual by default
+switcher = ServiceSwitcher(services=[stt_service1, stt_service2])
+
+# Or explicitly specify a strategy
+from pipecat.pipeline.service_switcher import ServiceSwitcherStrategyFailover
+switcher = ServiceSwitcher(
+    services=[stt_service1, stt_service2],
+    strategy_type=ServiceSwitcherStrategyFailover
+)</code></pre>
+<p>&lt;ParamField path="services" type="List[FrameProcessor]" required&gt;   List of service instances to switch between. Can be any frame processors (STT,   TTS, or custom processors). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="strategy_type" type="Type[ServiceSwitcherStrategy]" default="ServiceSwitcherStrategyManual"&gt;   The strategy class to use for switching logic. Pass the class itself, not an   instance. Defaults to <code>ServiceSwitcherStrategyManual</code>. &lt;/ParamField&gt;</p>
+<h2>Switching Strategies</h2>
+<h3>ServiceSwitcherStrategyManual</h3>
+<p>The manual strategy allows explicit control over which service is active by pushing <code>ManuallySwitchServiceFrame</code> frames into the pipeline.</p>
+<p><strong>Initial State</strong>: The first service in the list is active by default.</p>
+<p><strong>Switching</strong>: Push a <code>ManuallySwitchServiceFrame</code> with the desired service instance.</p>
+<h3>ServiceSwitcherStrategyFailover</h3>
+<p>The failover strategy automatically switches to the next available service when the active service reports a non-fatal error. This enables automatic recovery from service failures without manual intervention.</p>
+<p><strong>Initial State</strong>: The first service in the list is active by default.</p>
+<p><strong>Automatic Failover</strong>: When the active service pushes a non-fatal <code>ErrorFrame</code>, the strategy automatically switches to the next service in the list (wrapping around to the first service if needed).</p>
+<p><strong>Recovery</strong>: The failed service remains in the list and can be switched back to manually or via application logic in the <code>on_service_switched</code> event handler. This allows implementing custom recovery policies.</p>
+<pre><code>from pipecat.pipeline.service_switcher import ServiceSwitcher, ServiceSwitcherStrategyFailover
+
+switcher = ServiceSwitcher(
+    services=[primary_stt, backup_stt],
+    strategy_type=ServiceSwitcherStrategyFailover
+)
+
+@switcher.strategy.event_handler("on_service_switched")
+async def on_switched(strategy, service):
+    # Application decides when/how to recover the failed service
+    print(f"Switched to: {service.name}")</code></pre>
+<h3>Custom Strategies</h3>
+<p>You can create your own switching strategy by subclassing <code>ServiceSwitcherStrategy</code> and implementing the <code>handle_frame</code> and/or <code>handle_error</code> methods.</p>
+<ul><li><strong><code>handle_frame(frame, direction)</code></strong>: Called for control frames (like <code>ManuallySwitchServiceFrame</code>). Should return the newly active service if a switch occurred, or <code>None</code> otherwise.</li><li><strong><code>handle_error(error)</code></strong>: Called when the active service reports a non-fatal error. Override this to implement custom error-handling logic. Should return the newly active service if a switch occurred, or <code>None</code> otherwise.</li></ul>
+<p>Additionally, if you want to maintain either manual switching or automatic failover as an option when writing a custom strategy, your new strategy should inherit from <code>ServiceSwitcherStrategyManual</code> or <code>ServiceSwitcherStrategyFailover</code>, respectively.</p>
+<h2>Usage Examples</h2>
+<h3>Switching Between TTS Services</h3>
+<pre><code>from pipecat.frames.frames import ManuallySwitchServiceFrame
+from pipecat.pipeline.service_switcher import ServiceSwitcher
+from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
+from pipecat.services.cartesia.tts import CartesiaTTSService
+
+# Create TTS services
+elevenlabs = ElevenLabsTTSService(api_key=os.getenv("ELEVENLABS_API_KEY"), voice_id=os.getenv("ELEVENLABS_VOICE_ID"))
+cartesia = CartesiaTTSService(api_key=os.getenv("CARTESIA_API_KEY"), voice_id=os.getenv("CARTESIA_VOICE_ID"))
+
+# Create switcher with both services (uses ServiceSwitcherStrategyManual by default)
+tts_switcher = ServiceSwitcher(services=[elevenlabs, cartesia])
+
+# Use in pipeline
+pipeline = Pipeline([
+    transport.input(),
+    stt,
+    context_aggregator.user(),
+    llm,
+    tts_switcher,
+    transport.output(),
+    context_aggregator.assistant()
+])
+
+# Later, switch to Cartesia
+await worker.queue_frame(ManuallySwitchServiceFrame(service=cartesia))</code></pre>
+<h2>Event Handlers</h2>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_service_switched</code></td><td>Active service was switched</td></tr></tbody></table></div>
+<pre><code>@switcher.event_handler("on_service_switched")
+async def on_service_switched(switcher, service):
+    print(f"Switched to: {service.name}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>switcher</code></td><td><code>ServiceSwitcherStrategy</code></td><td>The switcher instance</td></tr><tr><td><code>service</code></td><td><code>FrameProcessor</code></td><td>The newly active service</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/service-switcher">https://docs.pipecat.ai/api-reference/server/utilities/service-switchers/service-switcher</a></p>
+</div></main></div></body></html>

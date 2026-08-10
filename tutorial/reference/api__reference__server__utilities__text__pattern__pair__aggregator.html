@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PatternPairAggregator · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>PatternPairAggregator</h1>
+<blockquote>Text aggregator that identifies and processes content between pattern pairs in streaming text</blockquote>
+<h2>Overview</h2>
+<p><code>PatternPairAggregator</code> is a specialized text aggregator that buffers streaming text until it can identify complete pattern pairs (like XML tags, markdown formatting, or custom delimiters). It processes the content between these patterns using a set of pre-defined actions (remove, keep, or aggregate) and returns text outside those patterns at sentence boundaries. The aggregator supports registering callback functions that are invoked when specific pattern pairs are matched, allowing for custom processing when matches occur. Note: These callbacks do not support modifying the text being aggregated; they are intended for side effects like logging or updating state.</p>
+<p>This aggregator is particularly useful for applications like voice switching, structured content processing, and extracting metadata from LLM outputs, ensuring that patterns spanning multiple text chunks are correctly identified or categorizing text based on embedded markers for downstream services and processing to treat different segments appropriately. For example: identifying URL patterns, code blocks, or special formatting in LLM responses that may need special speech handling in the TTS or client-side handling via RTVI.</p>
+<p>&lt;Tip&gt;   Want to see it in action? Check out the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/features/features-pattern-pair-voice-switching.py">voice switching   demo</a>   or the <a href="https://github.com/pipecat-ai/pipecat-examples/blob/main/code-helper">bot output   demo</a>. &lt;/Tip&gt;</p>
+<h2>Constructor</h2>
+<pre><code>pattern_aggregator = PatternPairAggregator()</code></pre>
+<p>No parameters are required for initialization. The aggregator starts with an empty buffer and no registered patterns.</p>
+<h2>Methods</h2>
+<h3>add\_pattern</h3>
+<pre><code>pattern_aggregator.add_pattern(
+  type,
+  start_pattern,
+  end_pattern,
+  action
+)</code></pre>
+<p>Registers a new pattern pair to detect in the text.</p>
+<p>&lt;ParamField path="type" type="str" required&gt;   Unique identifier for this pattern pair that should also represent what the   text between the tags represents (e.g., "voice", "xml", "credit\_card", etc.).   This value will be returned as part of both PatternMatch provided to callbacks   and the Aggregation object returned from <code>aggregate()</code>.</p>
+<p>  &lt;Warning&gt;     This type may not be set to "sentence" or "word" as those are reserved for     standard aggregations.   &lt;/Warning&gt;</p>
+<p>  &lt;Tip&gt;     Choose descriptive and unique type names to avoid confusion when handling     multiple patterns. This type will also be referenced in the TTS for     optionally skipping these types or providing custom text transformations     before speaking these types. It's also optionally referenced in RTVI for     similar purposes of not sending certain types or transforming them before     sending to the client.   &lt;/Tip&gt; &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="start_pattern" type="str" required&gt;   Pattern that marks the beginning of content &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="end_pattern" type="str" required&gt;   Pattern that marks the end of content &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="action" type="MatchAction" default="MatchAction.REMOVE"&gt;   What to do with the matched pattern and its content:</p>
+<ul><li><code>MatchAction.REMOVE</code>: The text along with its delimiters will be removed from</li></ul>
+<p>    the streaming text. Sentence aggregation will continue on as if this text did not     exist.</p>
+<ul><li><code>MatchAction.KEEP</code>: The delimiters will be removed, but the content between them</li></ul>
+<p>    will be kept. Sentence aggregation will continue on with the internal text included.     This is helpful if you want to keep the content but be notified when it occurs via     a callback.</p>
+<ul><li><code>MatchAction.AGGREGATE</code>: Aggregate the matched pattern and its content as a separate</li></ul>
+<p>    aggregation. The matched content will be returned in an <code>Aggregation</code> object with     the specified type when the pattern is completed. When the start of this pattern is     detected, any buffered text up to that point will be returned as a standard "sentence"     aggregation. &lt;/ParamField&gt;</p>
+<p>&lt;ResponseField name="Returns"&gt;Self for method chaining&lt;/ResponseField&gt;</p>
+<h3>on\_pattern\_match</h3>
+<pre><code>pattern_aggregator.on_pattern_match(type, handler)</code></pre>
+<p>Registers a handler function to be called when a specific pattern pair is matched.</p>
+<p>&lt;ParamField path="type" type="str" required&gt;   The pattern pair type to listen for (as defined in <code>add_pattern</code>) &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="handler" type="Callable[[PatternMatch], Awaitable[None]]" required&gt;   Function to call when the pattern is matched. The function should accept a   PatternMatch object. &lt;/ParamField&gt;</p>
+<p>&lt;ResponseField name="Returns"&gt;Self for method chaining&lt;/ResponseField&gt;</p>
+<h2>Pattern Match Object</h2>
+<p>When a pattern is matched, the handler function receives a <code>PatternMatch</code> object which is a subclass of the <code>Aggregation</code> object. It contains the following fields:</p>
+<p>&lt;ResponseField name="type" type="str"&gt;   The identifier and descriptor of the matched pattern pair. This field is part   of the <code>Aggregation</code> base class. &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="text" type="str"&gt;   The text content between the start and end patterns. This field is part of the   <code>Aggregation</code> base class. &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="full_match" type="str"&gt;   The complete text including start and end patterns. &lt;/ResponseField&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Removing Tagged Content</h3>
+<p>To drop content from the text stream entirely, register a pattern with <code>MatchAction.REMOVE</code>. The tags and everything between them are removed before reaching downstream processors — nothing is spoken by TTS and nothing lands in the conversation context. This is useful when your prompt elicits inline tags whose content is not meant for the user, such as reasoning tags (e.g., <code>&lt;thinking&gt;...&lt;/thinking&gt;</code>) or annotations intended for other processors:</p>
+<pre><code>from pipecat.processors.aggregators.llm_text_processor import LLMTextProcessor
+from pipecat.utils.text.pattern_pair_aggregator import MatchAction, PatternPairAggregator
+
+pattern_aggregator = PatternPairAggregator()
+pattern_aggregator.add_pattern(
+    type="thinking",
+    start_pattern="&lt;thinking&gt;",
+    end_pattern="&lt;/thinking&gt;",
+    action=MatchAction.REMOVE,
+)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# add the llm_text_processor to your pipeline after the llm and before the tts
+# llm -&gt; llm_text_processor -&gt; tts</code></pre>
+<p>Because this filters the text stream itself, it works with any LLM provider and any custom inline tag.</p>
+<h3>Voice Switching in TTS</h3>
+<p>This example demonstrates finding custom <code>&lt;voice&gt;</code> tags in streaming text to switch voices dynamically in a TTS service like Cartesia. It removes the tags and the content between them, such that the content is treated as if it does not exist. It will not be spoken by the TTS, it will not be added to the context, and it will not be sent to clients via RTVI. Instead, it simply triggers a voice switch side effect.</p>
+<pre><code># Define voice IDs
+VOICE_IDS = {
+    "narrator": "c45bc5ec-dc68-4feb-8829-6e6b2748095d",
+    "female": "71a7ad14-091c-4e8e-a314-022ece01c121",
+    "male": "7cf0e2b1-8daf-4fe4-89ad-f6039398f359",
+}
+
+# Initialize TTS service, starting with default narrator voice
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    voice_id=VOICE_IDS["narrator"],
+)
+
+# Create pattern aggregator
+pattern_aggregator = PatternPairAggregator()
+
+# Add pattern for voice tags
+pattern_aggregator.add_pattern(
+    type="voice",
+    start_pattern="&lt;voice&gt;",
+    end_pattern="&lt;/voice&gt;",
+    action=MatchAction.REMOVE
+)
+
+# Register handler for voice switching
+def on_voice_tag(match: PatternMatch):
+    voice_name = match.content.strip().lower()
+    if voice_name in VOICE_IDS:
+        voice_id = VOICE_IDS[voice_name]
+        tts.set_voice(voice_id)
+        logger.info(f"Switched to {voice_name} voice")
+
+pattern_aggregator.on_pattern_match("voice", on_voice_tag)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# add the llm_text_processor to your pipeline after the llm and before the tts
+# llm -&gt; llm_text_processor -&gt; tts</code></pre>
+<h3>Extracting Structured Data from LLM Outputs</h3>
+<p>This example shows how to extract JSON data blocks from LLM outputs, aggregating them separately to be removed from the spoken text, but not from the context or client display.</p>
+<pre><code># Create pattern aggregator
+pattern_aggregator = PatternPairAggregator()
+
+# Add pattern for JSON data
+pattern_aggregator.add_pattern(
+    type="json",
+    start_pattern="```json",
+    end_pattern="```",
+    action=MatchAction.AGGREGATE
+)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# Initialize TTS service, and don't speak JSON data
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    skip_aggregator_types=["json"],
+)
+
+# add the llm_text_processor to your pipeline after the llm and before the tts
+# llm -&gt; llm_text_processor -&gt; tts</code></pre>
+<h3>Handling Special Values in LLM Output</h3>
+<p>This example demonstrates how to identify and process custom tags in LLM output that denote special content, such as credit cards that should be handled differently by downstream services. In this case, the TTS should spell it out, while RTVI should obfuscate the number.</p>
+<pre><code>from pipecat.utils.text.pattern_pair_aggregator import MatchAction, PatternPairAggregator
+
+# Create pattern aggregator
+pattern_aggregator = PatternPairAggregator()
+
+# Add patterns for different parts of an explanation
+pattern_aggregator.add_pattern(
+    type="credit_card",
+    start_pattern="&lt;card&gt;",
+    end_pattern="&lt;/card&gt;",
+    action=MatchAction.AGGREGATE
+)
+
+# Set the aggregator on an LLMTextProcessor
+llm_text_processor = LLMTextProcessor(text_aggregator=pattern_aggregator)
+
+# Text-to-Speech service
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+)
+
+# Text transformers for TTS
+# This will insert Cartesia's spell tags around the provided text.
+async def spell_out_text(text: str, type: str) -&gt; str:
+    return CartesiaTTSService.SPELL(text)
+
+# Setup the text transformers in TTS to spell out credit card numbers.
+# The string below matches the type defined in the PatternPairAggregator
+# above so that whenever those segments are encountered, this transform
+# is applied
+tts.add_text_transformer(spell_out_text, "credit_card")
+
+# RTVI is automatically enabled. Use rtvi_observer_params to add
+# a text transformer that obfuscates credit card numbers in client output.
+from pipecat.processors.frameworks.rtvi import RTVIObserverParams
+
+def obfuscate_credit_card(text: str, type: str) -&gt; str:
+    return "XXXX-XXXX-XXXX-" + text[-4:]
+
+worker = PipelineWorker(
+    pipeline,  # llm -&gt; llm_text_processor -&gt; tts
+    rtvi_observer_params=RTVIObserverParams(
+        bot_output_transforms=[("credit_card", obfuscate_credit_card)],
+    ),
+)</code></pre>
+<h2>How It Works</h2>
+<pre><code>flowchart TD
+  A[New Text] --&gt; B[Add to Buffer]
+  B --&gt; C{Start &amp; End Patterns Found?}
+    C --&gt; |Yes| C1[Call Handlers]
+    C1 --&gt; D{Pattern Action?}
+      D --&gt; E{{AGGREGATE}}
+        E --&gt; E1[Reset buffer with trailing text]
+        E1 --&gt; E2[RETURN contents as Aggregation with specified type]
+      D --&gt; F{{REMOVE}}
+        F --&gt; F1[Remove pattern from buffer]
+        F1 --&gt; S{End of Sentence?}
+      D --&gt; G{{KEEP}}
+        G --&gt; S
+    C --&gt; |No| H{Start Pattern Found?}
+      H --&gt; |No| S
+      H --&gt; |Yes| I{Pattern Action == AGGREGATE?}
+        I --&gt; |Yes| I1[Reset buffer to pattern start]
+        I1 --&gt; I2[RETURN prior buffer as Aggregation of type 'sentence']
+    S --&gt; |Yes| S1[return Aggregation of type 'sentence']
+    S --&gt; | No| S2[return None]</code></pre>
+<h2>Notes</h2>
+<ul><li>Patterns are processed in the order they appear in the text</li><li>Handlers are called when complete patterns are found</li><li>Patterns can span multiple sentences of text, but be aware that encoding many "reasoning" tokens may slow down the LLM response</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/text/pattern-pair-aggregator">https://docs.pipecat.ai/api-reference/server/utilities/text/pattern-pair-aggregator</a></p>
+</div></main></div></body></html>

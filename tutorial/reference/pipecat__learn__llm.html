@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Inference · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LLM Inference</h1>
+<blockquote>Learn how to configure language models to generate intelligent responses in your voice AI pipeline</blockquote>
+<p><strong>LLM services</strong> are responsible for chat completions and tool calling based on the provided context (conversation history). The LLM responds by streaming tokens via <code>LLMTextFrame</code>s, which are used by subsequent processors to create audio output for the bot.</p>
+<h2>Pipeline Placement</h2>
+<p>The LLM instance should be placed after the user context aggregator and before any downstream services that depend on the LLM's output stream:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    stt,                           # Creates TranscriptionFrames
+    context_aggregator.user(),     # Processes user context → creates LLMContextFrame
+    llm,                           # Processes context → streams LLMTextFrames
+    tts,                           # Processes LLMTextFrames → creates TTSAudioRawFrames
+    transport.output(),
+    context_aggregator.assistant(),
+])</code></pre>
+<p><strong>Frame flow:</strong></p>
+<ul><li><strong>Input</strong>: Receives <code>LLMContextFrame</code> containing conversation history</li><li><strong>Processing</strong>:</li><li>Analyzes context and generates streaming response</li><li>Handles function calls if tools are available</li><li>Tracks token usage for metrics</li><li><strong>Output</strong>:</li><li>Denotes the start of the streaming response by pushing an <code>LLMFullResponseStartFrame</code></li><li>Streams <code>LLMTextFrame</code>s containing response tokens to downstream processors (enables real-time TTS processing)</li><li>Ends with an <code>LLMFullResponseEndFrame</code> to mark the completion of the response</li><li>Output frames can be configured to <a href="/pipecat/learn/text-to-speech#skipping-tts-output">skip TTS</a> via <code>LLMConfigureOutputFrame(skip_tts=True)</code>, allowing text to flow through the pipeline without being spoken</li><li><strong>Function calls:</strong></li><li><code>FunctionCallsStartedFrame</code>: Indicates function execution beginning</li><li><code>FunctionCallInProgressFrame</code>: Indicates a function is currently executing</li><li><code>FunctionCallResultFrame</code>: Contains results from executed functions</li></ul>
+<h2>Supported LLM Services</h2>
+<p>Pipecat supports a wide range of LLM providers to fit different needs, performance requirements, and budgets:</p>
+<h3>Text-Based LLMs</h3>
+<p>Most LLM services are built on the OpenAI chat completion specification for compatibility:</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="OpenAI" icon="openai"&gt;     GPT models with the original chat completion API   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Anthropic" icon="anthropic"&gt;     Claude models with advanced reasoning capabilities   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Gemini" icon="google"&gt;     Multimodal capabilities with competitive performance   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Bedrock" icon="aws"&gt;     Enterprise-grade hosting for various foundation models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p><strong>Compatible APIs</strong>: Any OpenAI-spec compatible service can be used via the <code>base_url</code> parameter.</p>
+<h3>Speech-to-Speech Models</h3>
+<p>For lower latency, some providers offer direct speech-to-speech models:</p>
+<ul><li><strong>OpenAI Realtime</strong>: Direct speech input/output with GPT models</li><li><strong>Gemini Live</strong>: Real-time speech conversations with Gemini</li><li><strong>AWS Nova Sonic</strong>: Speech-optimized models on Bedrock</li></ul>
+<p>For a complete list of supported LLM services, see the Supported Services page:</p>
+<p>&lt;Card title="Supported LLM Services" icon="list" href="/api-reference/server/services/supported-services#large-language-models"&gt;   View the complete list of supported language model providers &lt;/Card&gt;</p>
+<h2>LLM Service Architecture</h2>
+<h3>BaseOpenAILLMService</h3>
+<p>Many LLM services use the OpenAI chat completion specification. Pipecat provides a <code>BaseOpenAILLMService</code> that most providers extend, enabling easy switching between compatible services:</p>
+<pre><code>from pipecat.services.openai.llm import OpenAILLMService
+
+# Native OpenAI
+llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"))
+
+# OpenAI-compatible service via base_url
+llm = OpenAILLMService(
+    api_key=os.getenv("OTHER_API_KEY"),
+    base_url="https://api.other-provider.com/v1"  # Custom endpoint
+)</code></pre>
+<p>This architecture allows you to quickly plug in different LLM services without changing your pipeline code.</p>
+<h2>LLM Configuration</h2>
+<h3>Service-Specific Configuration</h3>
+<p>Each LLM service has its own configuration options. For example, configuring OpenAI with various parameters:</p>
+<pre><code>from pipecat.services.openai.llm import OpenAILLMService
+
+llm = OpenAILLMService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    settings=OpenAILLMService.Settings(
+        model="gpt-4.1",
+        system_instruction="You are a helpful voice assistant.",
+        temperature=0.7,            # Response creativity (0.0-2.0)
+        max_completion_tokens=150,  # Maximum response length
+        frequency_penalty=0.5,      # Reduce repetition (0.0-2.0)
+        presence_penalty=0.5,       # Encourage topic diversity (0.0-2.0)
+    ),
+)</code></pre>
+<p><code>system_instruction</code> defines the bot's personality and core behavior. For task-specific instructions (response format constraints, domain rules, workflow steps), use developer messages in context instead. See <a href="/pipecat/learn/context-management#system-instruction-developer-messages-and-system-messages">Context Management</a> for how these interact.</p>
+<p>For detailed configuration options specific to each provider:</p>
+<p>&lt;Card title="Individual LLM Services" icon="settings" href="/api-reference/server/services/supported-services#large-language-models"&gt;   Explore configuration options for each supported LLM provider &lt;/Card&gt;</p>
+<h3>Base Class Configuration</h3>
+<p>All LLM services inherit from the <code>LLMService</code> base class with shared configuration options:</p>
+<pre><code>llm = YourLLMService(
+    # Service-specific options...
+    run_in_parallel=True,  # Whether function calls run in parallel (default: True)
+)</code></pre>
+<p><strong>Key options:</strong></p>
+<ul><li><strong><code>run_in_parallel</code></strong>: Controls whether function calls execute simultaneously or sequentially</li><li><code>True</code> (default): Faster execution when multiple functions are called</li><li><code>False</code>: Sequential execution for dependent function calls</li></ul>
+<h2>Event Handlers</h2>
+<p>LLM services provide event handlers for monitoring completion lifecycle:</p>
+<pre><code>@llm.event_handler("on_completion_timeout")
+async def on_completion_timeout(service):
+    logger.warning("LLM completion timed out")
+    # Handle timeout (retry, fallback, etc.)
+
+@llm.event_handler("on_function_calls_started")
+async def on_function_calls_started(service, function_calls):
+    logger.info(f"Starting {len(function_calls)} function calls")
+    # Optionally notify user that bot is "thinking"
+    await tts.queue_frame(TTSSpeakFrame("Let me check on that."))</code></pre>
+<p><strong>Available events:</strong></p>
+<ul><li><strong><code>on_completion_timeout</code></strong>: Triggered when LLM requests timeout</li><li><strong><code>on_function_calls_started</code></strong>: Triggered when function calls are initiated</li></ul>
+<p>These handlers enable you to provide user feedback and implement error recovery strategies.</p>
+<h2>Function Calling</h2>
+<p>LLMs can call external functions to access real-time data and perform actions beyond their training data. This enables capabilities like checking weather, querying databases, or controlling external APIs.</p>
+<p>Function calls and their results are automatically stored in the conversation context by the context aggregator.</p>
+<p>&lt;Card title="Function Calling" icon="code" href="/pipecat/learn/function-calling"&gt;   Learn how to enable LLMs to interact with external services and APIs &lt;/Card&gt;</p>
+<h2>Key Takeaways</h2>
+<ul><li><strong>Pipeline placement matters</strong> - LLM goes after user context, before TTS</li><li><strong>Token streaming enables real-time responses</strong> - no waiting for complete generation</li><li><strong>OpenAI compatibility</strong> enables easy provider switching</li><li><strong>Function calling extends capabilities</strong> beyond training data</li><li><strong>Configuration affects behavior</strong> - tune temperature, penalties, and limits</li><li><strong>Services are modular</strong> - swap providers without changing pipeline code</li></ul>
+<h2>What's Next</h2>
+<p>Now that you understand LLM configuration, let's explore how function calling enables your bot to interact with external services and real-time data.</p>
+<p>&lt;Card title="Function Calling" icon="arrow-right" href="/pipecat/learn/function-calling"&gt;   Learn how to enable LLMs to interact with external services and APIs &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/llm">https://docs.pipecat.ai/pipecat/learn/llm</a></p>
+</div></main></div></body></html>

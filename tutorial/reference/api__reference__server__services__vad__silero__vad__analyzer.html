@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silero VAD · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Silero VAD</h1>
+<blockquote>SileroVADAnalyzer detects voice activity with the Silero VAD ONNX model for speech detection in Pipecat pipelines.</blockquote>
+<h2>Overview</h2>
+<p><code>SileroVADAnalyzer</code> is a Voice Activity Detection (VAD) analyzer that uses the Silero VAD ONNX model to detect speech in audio streams. It provides high-accuracy speech detection with efficient processing using ONNX runtime.</p>
+<h2>Installation</h2>
+<p>The Silero VAD analyzer is now included as a core dependency:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. Must be either 8000 or 16000. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="VADParams" default="VADParams()"&gt;   Voice Activity Detection parameters object</p>
+<p>  &lt;Expandable title="properties"&gt;     &lt;ParamField path="confidence" type="float" default="0.7"&gt;       Confidence threshold for speech detection. Higher values make detection more strict. Must be between 0 and 1.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="start_secs" type="float" default="0.2"&gt;       Time in seconds that speech must be detected before transitioning to SPEAKING state.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="stop_secs" type="float" default="0.2"&gt;       Time in seconds of silence required before transitioning back to QUIET state.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="min_volume" type="float" default="0.6"&gt;       Minimum audio volume threshold for speech detection. Must be between 0 and 1.     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<h2>Usage Example</h2>
+<pre><code>context = LLMContext(messages)
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=SileroVADAnalyzer(params=VADParams(stop_secs=0.2)),
+    ),
+)</code></pre>
+<h2>Technical Details</h2>
+<h3>Sample Rate Requirements</h3>
+<p>The analyzer supports two sample rates:</p>
+<ul><li>8000 Hz (256 samples per frame)</li><li>16000 Hz (512 samples per frame)</li></ul>
+<p>Model Management</p>
+<ul><li>Uses ONNX runtime for efficient inference</li><li>Automatically resets model state every 5 seconds to manage memory</li><li>Runs on CPU by default for consistent performance</li><li>Includes built-in model file</li></ul>
+<h2>Notes</h2>
+<ul><li>High-accuracy speech detection</li><li>Efficient ONNX-based processing</li><li>Automatic memory management</li><li>Thread-safe for pipeline processing</li><li>Built-in model file included</li><li>CPU-optimized inference</li><li>Supports 8kHz and 16kHz audio</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vad/silero-vad-analyzer">https://docs.pipecat.ai/api-reference/server/services/vad/silero-vad-analyzer</a></p>
+</div></main></div></body></html>

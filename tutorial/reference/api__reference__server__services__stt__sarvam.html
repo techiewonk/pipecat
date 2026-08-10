@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sarvam AI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Sarvam AI Speech-to-Text</h1>
+<blockquote>SarvamSTTService streams real-time STT for Indian languages over Sarvam AI's WebSocket API, with VAD-based segmentation.</blockquote>
+<h2>Overview</h2>
+<p><code>SarvamSTTService</code> provides real-time speech recognition using Sarvam AI's WebSocket API, supporting Indian language transcription with Voice Activity Detection (VAD) and multiple audio formats for high-accuracy speech recognition.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Sarvam STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.sarvam.stt.html"&gt;     Pipecat's API methods for Sarvam STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-sarvam.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sarvam Documentation" icon="book" href="https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/speech-to-text/overview"&gt;     Official Sarvam AI STT documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sarvam AI Platform" icon="microphone" href="https://dashboard.sarvam.ai/"&gt;     Access API keys and speech models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Sarvam services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[sarvam]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Sarvam AI Account Setup</h3>
+<p>Before using Sarvam STT services, you need:</p>
+<ol><li><strong>Sarvam AI Account</strong>: Sign up at <a href="https://dashboard.sarvam.ai/">Sarvam AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Access to Saarika (STT) or Saaras (STT-Translate) models, including the <code>saaras:v3</code> model with support for multiple modes (transcribe, translate, verbatim, translit, codemix)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SARVAM_API_KEY</code>: Your Sarvam AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>SarvamSTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Sarvam API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="saaras:v3" deprecated&gt;   Sarvam model to use. Allowed values: <code>"saarika:v2.5"</code> (standard STT),   <code>"saaras:v2.5"</code> (STT-Translate, auto-detects language), <code>"saaras:v3"</code>   (advanced, supports mode and fine-grained VAD). *Deprecated in v0.0.105. Use   <code>settings=SarvamSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. Defaults to 16000 if not specified. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mode" type="Literal['transcribe', 'translate', 'verbatim', 'translit', 'codemix']" default="None"&gt;   Mode of operation. Only applicable to models that support it (e.g.,   <code>saaras:v3</code>). Defaults to the model's default mode. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_audio_codec" type="str" default="wav"&gt;   Audio codec/format of the input file. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="SarvamSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for Sarvam STT service. *Deprecated in v0.0.105. Use   <code>settings=SarvamSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SarvamSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="keepalive_timeout" type="float" default="None"&gt;   Seconds of no audio before sending silence to keep the connection alive.   <code>None</code> disables keepalive. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="SARVAM_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="keepalive_interval" type="float" default="5.0"&gt;   Seconds between idle checks when keepalive is enabled. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SarvamSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Target language for transcription. *(Inherited from base STT settings.)* Behavior varies by model: <code>saarika:v2.5</code> defaults to "unknown" (auto-detect), <code>saaras:v2.5</code> ignores this (auto-detects), <code>saaras:v3</code> defaults to "en-IN".</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>None</code></td><td>Optional prompt to guide transcription/translation style. Only applicable to <code>saaras:v2.5</code>.</td></tr><tr><td><code>vad_signals</code></td><td><code>bool</code></td><td><code>None</code></td><td>Enable VAD signals in responses. When enabled, the service broadcasts <code>UserStartedSpeakingFrame</code> and <code>UserStoppedSpeakingFrame</code> from the server.</td></tr><tr><td><code>high_vad_sensitivity</code></td><td><code>bool</code></td><td><code>None</code></td><td>Enable high VAD sensitivity for more responsive speech detection.</td></tr><tr><td><code>positive_speech_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>VAD probability threshold (0.0-1.0) above which a frame is considered speech. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>negative_speech_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>VAD probability threshold (0.0-1.0) below which a frame is considered silence. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>min_speech_frames</code></td><td><code>int</code></td><td><code>None</code></td><td>Minimum consecutive speech frames to start a speech segment. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>first_turn_min_speech_frames</code></td><td><code>int</code></td><td><code>None</code></td><td>Minimum speech frames for the first user turn. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>negative_frames_count</code></td><td><code>int</code></td><td><code>None</code></td><td>Number of silence frames within the window to end a speech segment. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>negative_frames_window</code></td><td><code>int</code></td><td><code>None</code></td><td>Sliding window size (in frames) for counting negative frames. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>start_speech_volume_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>Volume level (dB) below which audio is too quiet to be speech. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>interrupt_min_speech_frames</code></td><td><code>int</code></td><td><code>None</code></td><td>Minimum speech frames to register a barge-in/interruption. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>pre_speech_pad_frames</code></td><td><code>int</code></td><td><code>None</code></td><td>Number of audio frames to prepend before detected speech onset. Only for <code>saaras:v3</code>.</td></tr><tr><td><code>num_initial_ignored_frames</code></td><td><code>int</code></td><td><code>None</code></td><td>Number of leading audio frames to skip at connection start. Only for <code>saaras:v3</code>.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.sarvam.stt import SarvamSTTService
+
+stt = SarvamSTTService(
+    api_key=os.getenv("SARVAM_API_KEY"),
+)</code></pre>
+<h3>With Language and Model Configuration</h3>
+<pre><code>from pipecat.services.sarvam.stt import SarvamSTTService
+from pipecat.transcriptions.language import Language
+
+stt = SarvamSTTService(
+    api_key=os.getenv("SARVAM_API_KEY"),
+    mode="transcribe",
+    settings=SarvamSTTService.Settings(
+        model="saaras:v3",
+        language=Language.HI_IN,
+        prompt="Transcribe Hindi conversation about technology.",
+    ),
+)</code></pre>
+<h3>With Server-Side VAD</h3>
+<pre><code>from pipecat.services.sarvam.stt import SarvamSTTService
+
+stt = SarvamSTTService(
+    api_key=os.getenv("SARVAM_API_KEY"),
+    settings=SarvamSTTService.Settings(
+        vad_signals=True,
+        high_vad_sensitivity=True,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Default model changed</strong>: As of this update, the default model is <code>saaras:v3</code> (previously <code>saarika:v2.5</code>). Applications that relied on the previous default should set <code>settings=SarvamSTTService.Settings(model="saarika:v2.5")</code> explicitly.</li><li><strong>Supported languages</strong>: Bengali (bn-IN), Gujarati (gu-IN), Hindi (hi-IN), Kannada (kn-IN), Malayalam (ml-IN), Marathi (mr-IN), Tamil (ta-IN), Telugu (te-IN), Punjabi (pa-IN), Odia (od-IN), English (en-IN), and Assamese (as-IN).</li><li><strong>Model-specific parameter validation</strong>: The service validates that parameters are compatible with the selected model. For example, <code>prompt</code> is only supported with <code>saaras:v2.5</code>, <code>language</code> is not supported with <code>saaras:v2.5</code> (which auto-detects language), and the fine-grained VAD parameters are only supported with <code>saaras:v3</code>.</li><li><strong>Fine-grained VAD tuning (saaras:v3 only)</strong>: The <code>saaras:v3</code> model supports server-side VAD with 10 tuning parameters for speech detection thresholds, frame-count controls, pre-speech padding, interruption sensitivity, and initial-frame skipping. These parameters are only available with the <code>saaras:v3</code> model.</li><li><strong>VAD modes</strong>: When <code>vad_signals=False</code> (default), the service relies on Pipecat's local VAD and flushes the server buffer on <code>VADUserStoppedSpeakingFrame</code>. When <code>vad_signals=True</code>, the service uses Sarvam's server-side VAD and broadcasts speaking frames from the server.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>In addition to the standard <a href="/api-reference/server/events/service-events">service connection events</a> (<code>on_connected</code>, <code>on_disconnected</code>, <code>on_connection_error</code>), Sarvam STT provides:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_speech_started</code></td><td>Speech detected in the audio stream</td></tr><tr><td><code>on_speech_stopped</code></td><td>Speech stopped</td></tr><tr><td><code>on_utterance_end</code></td><td>End of utterance detected</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_speech_started")
+async def on_speech_started(service):
+    print("User started speaking")
+
+@stt.event_handler("on_utterance_end")
+async def on_utterance_end(service):
+    print("Utterance ended")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/sarvam">https://docs.pipecat.ai/api-reference/server/services/stt/sarvam</a></p>
+</div></main></div></body></html>

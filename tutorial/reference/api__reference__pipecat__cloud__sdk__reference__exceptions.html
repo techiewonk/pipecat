@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Error Handling · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Error Handling</h1>
+<blockquote>Handle errors from the Pipecat Cloud Python SDK: exception types raised by deployment and session operations, and how to catch them.</blockquote>
+<p>The Pipecat Cloud SDK defines several exception classes to help you handle different error conditions.</p>
+<h2>Base Exception Class</h2>
+<h3>Error</h3>
+<p>Base class for all Pipecat Cloud exceptions.</p>
+<pre><code>from pipecatcloud.exception import Error
+
+try:
+    # SDK operation
+except Error as e:
+    print(f"A Pipecat Cloud error occurred: {e}")</code></pre>
+<h2>Session Errors</h2>
+<h3>AgentStartError</h3>
+<p>Raised when an agent fails to start.</p>
+<pre><code>from pipecatcloud.exception import AgentStartError
+
+try:
+    response = await session.start()
+except AgentStartError as e:
+    print(f"Failed to start agent: {e}")
+    if e.error_code == "429":
+        print("Agent pool at capacity. Try again later.")
+    elif e.error_code == "404":
+        print("Agent not found.")</code></pre>
+<h4>Properties</h4>
+<p>&lt;ParamField path="message" type="string"&gt;   Error message with details about the failure. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="error_code" type="string"&gt;   Error code that can be used for conditional handling of different error types. &lt;/ParamField&gt;</p>
+<h3>AgentNotHealthyError</h3>
+<p>Raised when attempting to interact with an agent that is not in a ready state.</p>
+<pre><code>from pipecatcloud.exception import AgentNotHealthyError
+
+try:
+    response = await session.start()
+except AgentNotHealthyError as e:
+    print(f"Agent is not ready: {e}")
+    print("Check agent status with: pipecat cloud agent status my-agent")</code></pre>
+<h4>Properties</h4>
+<p>&lt;ParamField path="message" type="string"&gt;   Error message with details about the agent's status. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="error_code" type="string"&gt;   Error code identifying the specific issue with the agent. &lt;/ParamField&gt;</p>
+<h2>Authentication Errors</h2>
+<h3>AuthError</h3>
+<p>Raised when authentication fails or token has expired.</p>
+<pre><code>from pipecatcloud.exception import AuthError
+
+try:
+    # Operation requiring authentication
+except AuthError:
+    print("Your session has expired. Please log in again.")
+    # Prompt user to reauthenticate</code></pre>
+<h4>Properties</h4>
+<p>&lt;ParamField path="message" type="string" default="'Unauthorized / token expired. Please run <code>pipecat cloud auth login</code> to login again.'"&gt;   Message explaining the authentication failure. &lt;/ParamField&gt;</p>
+<h2>Configuration Errors</h2>
+<h3>ConfigError</h3>
+<p>Raised when there are issues with configuration storage or retrieval.</p>
+<pre><code>from pipecatcloud.exception import ConfigError
+
+try:
+    # Operation requiring config
+except ConfigError as e:
+    print(f"Configuration error: {e.message}")
+    # Guide user to fix configuration</code></pre>
+<h4>Properties</h4>
+<p>&lt;ParamField path="message" type="string" default="'Failed to update configuration'"&gt;   Message explaining the configuration issue. &lt;/ParamField&gt;</p>
+<h3>ConfigFileError</h3>
+<p>Raised when the configuration file is malformed.</p>
+<pre><code>from pipecatcloud.exception import ConfigFileError
+
+try:
+    # Operation requiring config file
+except ConfigFileError:
+    print("Your configuration file is invalid or corrupted.")
+    print("Try recreating it with: pipecat cloud auth login")</code></pre>
+<h3>InvalidError</h3>
+<p>Raised when an invalid operation is attempted.</p>
+<pre><code>from pipecatcloud.exception import InvalidError
+
+try:
+    # Potentially invalid operation
+except InvalidError as e:
+    print(f"Invalid operation: {e}")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/exceptions">https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/exceptions</a></p>
+</div></main></div></body></html>

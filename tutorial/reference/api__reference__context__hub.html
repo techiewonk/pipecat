@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat Context Hub · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipecat Context Hub</h1>
+<blockquote>A local index of Pipecat docs, examples, and API source for AI coding tools — available as a CLI and an MCP server.</blockquote>
+<p><a href="https://github.com/pipecat-ai/pipecat-context-hub">Pipecat Context Hub</a> indexes Pipecat documentation, code examples, and framework API source into a local vector database on your machine. It's built for coding workflows: queries return the actual source and snippets your AI tool needs to write working code, not synthesized prose.</p>
+<p>Pipecat's docs, examples, and API surface change often and span several repositories, so a model working from training data goes stale fast. The hub keeps a fresh local index you query directly. You can also point it at your own repositories (public or private) to index private code alongside the framework.</p>
+<p>Every tool runs two ways: as a one-shot CLI command and as an MCP server. Use the CLI for a quick lookup. Add the MCP server when a session needs repeated, exploratory queries.</p>
+<p>&lt;Note&gt;   This is a tool for *your* coding agent, not something your bot uses at   runtime. For a bot that connects to MCP servers, see   <a href="/api-reference/server/utilities/mcp/mcp"><code>MCPClient</code></a> and the   <code>pipecat-ai[mcp]</code> extra. &lt;/Note&gt;</p>
+<h2>Setup</h2>
+<p>The hub is published to PyPI as <code>pipecat-ai-context-hub</code>. Co-install it with the Pipecat CLI, then let it configure your coding agent and build the index in one step:</p>
+<pre><code>uv tool install "pipecat-ai[cli]" --with pipecat-ai-context-hub
+pipecat context-hub install</code></pre>
+<p><code>install</code> registers the MCP server with each coding agent it finds, echoing each command it runs, then builds the index — a few minutes the first time, since it downloads local embedding models. Every hub command is then available as <code>pipecat context-hub &lt;command&gt;</code>; see the <a href="/api-reference/cli/context-hub"><code>pipecat context-hub</code> reference</a> for the full flag surface.</p>
+<p>&lt;Warning&gt;   <code>--with</code> replaces the tool environment rather than adding to it. If you also   use <code>pipecat cloud</code>, name both plugins: <code>uv tool install "pipecat-ai[cli]"   --with pipecatcloud --with pipecat-ai-context-hub</code>. &lt;/Warning&gt;</p>
+<p>If the index gets corrupted, force a rebuild:</p>
+<pre><code>pipecat context-hub refresh --force</code></pre>
+<p>If your project targets an older Pipecat version, pin the hub to it so results match what you're running:</p>
+<pre><code>pipecat context-hub refresh --framework-version v0.0.96</code></pre>
+<h3>Without the Pipecat CLI</h3>
+<p>The hub runs standalone too. <a href="https://docs.astral.sh/uv/"><code>uvx</code></a>, uv's one-shot runner, fetches and runs it on demand with nothing installed:</p>
+<pre><code>uvx pipecat-ai-context-hub refresh   # build local index (~2 min first run)</code></pre>
+<p>Every command on this page works either way — <code>pipecat context-hub refresh</code> and <code>uvx pipecat-ai-context-hub refresh</code> are the same command.</p>
+<p>&lt;Tip&gt;   To install it once instead of fetching on demand, run <code>uv tool install       pipecat-ai-context-hub</code>. This puts the command on your <code>PATH</code>, so you drop the   <code>uvx</code> prefix and call it directly, using the shorter <code>pipecat-context-hub</code>   name. &lt;/Tip&gt;</p>
+<h3>Which install to choose</h3>
+<p>The two installs expose different things, because a command is only visible inside the environment its package was installed into:</p>
+<ul><li><strong>Co-installed with the CLI</strong> (<code>--with</code>) gives you <code>pipecat context-hub</code>, but does not put <code>pipecat-context-hub</code> on your <code>PATH</code>.</li><li><strong>Installed on its own</strong> (<code>uv tool install pipecat-ai-context-hub</code>) gives you <code>pipecat-context-hub</code> on your <code>PATH</code>, but not <code>pipecat context-hub</code>.</li></ul>
+<p>Doing both works and gives you both names, at the cost of a second copy on disk — the hub's retrieval stack is around 1 GB, and the two environments share very little. Pick one unless you have a reason not to.</p>
+<h2>Custom sources</h2>
+<p>Point the hub at your own repositories with <code>PIPECAT_HUB_EXTRA_REPOS</code>, a comma-separated list of GitHub <code>org/repo</code> slugs. These are indexed alongside the default Pipecat repos, so your private code is searchable next to the framework. Set the variable, then run <code>refresh</code>:</p>
+<pre><code>PIPECAT_HUB_EXTRA_REPOS="your-org/your-repo,your-org/another-repo" \
+  uvx pipecat-ai-context-hub refresh</code></pre>
+<p>The hub also reads a <code>.env</code> file from the directory you run the command in, so you can keep the list there instead of exporting it each time:</p>
+<pre><code># .env
+PIPECAT_HUB_EXTRA_REPOS="your-org/your-repo,your-org/another-repo"</code></pre>
+<p>Slugs that duplicate a default repo are deduped automatically, so it's harmless to leave them in. Your custom repos then surface through the same <code>search_*</code> and <code>get_*</code> tools as the framework.</p>
+<p>&lt;Note&gt;   Only Python (<code>.py</code>/<code>.pyi</code>), TypeScript (<code>.ts</code>/<code>.tsx</code>), and RST (<code>docs/**.rst</code>)   files are parsed into the searchable index. Other languages (for example   Swift, Kotlin, or C++ SDKs) are cloned but won't surface in <code>search_api</code> or   <code>get_code_snippet</code>. &lt;/Note&gt;</p>
+<p>&lt;Tip&gt;   The hub clones with standard git, so private repos index fine as long as your   local git is already authenticated to GitHub — via an SSH key or a git   credential helper. The hub itself adds no token configuration. See the repo's   <a href="https://github.com/pipecat-ai/pipecat-context-hub/blob/main/.env.example"><code>.env.example</code></a>   for ready-made repo bundles. &lt;/Tip&gt;</p>
+<h2>Tools</h2>
+<div class="tablewrap"><table><thead><tr><th>Tool</th><th>Use it to</th></tr></thead><tbody><tr><td><code>search_docs</code></td><td>Find guides and conceptual docs ("how do I ...?")</td></tr><tr><td><code>search_examples</code></td><td>Find working example code by task or component</td></tr><tr><td><code>search_api</code></td><td>Find class definitions, method signatures, frame types, and inheritance</td></tr><tr><td><code>get_doc</code></td><td>Fetch a full doc page by ID or path</td></tr><tr><td><code>get_example</code></td><td>Fetch the full source files for an example</td></tr><tr><td><code>get_code_snippet</code></td><td>Fetch targeted code by symbol, intent, or file and line range</td></tr><tr><td><code>check_deprecation</code></td><td>Check whether an import path is deprecated or removed (can evaluate lifecycle at a specific version)</td></tr><tr><td><code>get_hub_status</code></td><td>Report index health, freshness, and the indexed Pipecat version</td></tr></tbody></table></div>
+<p>The three <code>search_*</code> tools return a ranked list of hits, each with a relevance <code>score</code>. Each response also carries an evidence report with an overall <code>confidence</code>, a <code>low_confidence</code> flag, and suggested follow-up queries. The agent triages that list, picks the best fit, then calls a <code>get_*</code> tool to pull the full content. The coding agent can pass your <code>pipecat_version</code> to score and filter results for compatibility with the version you target. The remaining two tools stand alone: <code>check_deprecation</code> reports a symbol's lifecycle, and <code>get_hub_status</code> reports index health.</p>
+<p>To make your coding agent reach for these tools automatically, add the <a href="https://github.com/pipecat-ai/pipecat-context-hub/blob/main/docs/README.md#add-claudemd-instructions-recommended">recommended CLAUDE.md / AGENTS.md instructions</a> to your project.</p>
+<h2>CLI lookups</h2>
+<p>Every tool is also a one-shot CLI command, so you can query the index from a shell with no MCP setup. Reach for this when you need a single answer fast, like a deprecation check, an API signature, or an index health check. Each command prints the tool's JSON to stdout:</p>
+<pre><code>pipecat context-hub check-deprecation PipelineTask      # is this symbol deprecated?
+pipecat context-hub search-api "WebsocketServerParams"  # find an API signature
+pipecat context-hub status                              # index health / freshness</code></pre>
+<p>Or, without the Pipecat CLI, the same commands under <code>uvx pipecat-ai-context-hub</code>. The <a href="/api-reference/cli/context-hub"><code>pipecat context-hub</code> reference</a> documents every command and flag.</p>
+<h2>MCP server</h2>
+<p>For a longer build or debugging session where the model probes the index repeatedly, add the hub as an MCP server instead of shelling out per query. It keeps the index warm for the whole session and exposes the same tools to your coding tool directly.</p>
+<p><code>pipecat context-hub install</code> does this for you wherever the client ships its own CLI, and prints the config to paste where it doesn't:</p>
+<pre><code>pipecat context-hub install                     # every detected client, then build the index
+pipecat context-hub install --client cursor     # print the config for one client
+pipecat context-hub install --print-config      # show what would be registered, change nothing</code></pre>
+<p>To register by hand instead:</p>
+<p>&lt;Tabs&gt;   &lt;Tab title="Claude Code"&gt;     ``<code>bash theme={null}     claude mcp add pipecat-context-hub -- uvx pipecat-ai-context-hub serve     </code>``   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="Codex"&gt;     ``<code>bash theme={null}     codex mcp add pipecat-context-hub -- uvx pipecat-ai-context-hub serve     </code>``   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="Cursor"&gt;     Add to your Cursor MCP config:</p>
+<pre><code>    {
+      "mcpServers": {
+        "pipecat-context-hub": {
+          "command": "uvx",
+          "args": ["pipecat-ai-context-hub", "serve"]
+        }
+      }
+    }</code></pre>
+<p>  &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="VS Code"&gt;     Add to <code>.vscode/mcp.json</code>:</p>
+<pre><code>    {
+      "servers": {
+        "pipecat-context-hub": {
+          "command": "uvx",
+          "args": ["pipecat-ai-context-hub", "serve"]
+        }
+      }
+    }</code></pre>
+<p>  &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<p>A newly added MCP server loads when your coding tool starts a session, so add it before opening the session you want to use it in.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat-context-hub">repo docs</a> for additional configuration options.</p>
+<h2>Keeping the index current</h2>
+<p>A stale index is invisible: your agent answers just as confidently from month-old APIs, and you find out when the generated code doesn't match the version you're running. So the Pipecat CLI checks on the way past and prints a one-line notice on stderr when something needs attention:</p>
+<pre><code>⚠ Pipecat Context Hub index is 42 days old — run `pipecat context-hub refresh` so coding agents don't cite stale APIs.
+⚠ Pipecat Context Hub index was built for pipecat-ai 1.2.0, but this project uses 1.6.0 — run `pipecat context-hub refresh` so coding agents match your version.</code></pre>
+<p>The version comparison is deliberately quiet. It compares only major and minor, so a patch or dev release never triggers it, and it stays silent when your project has an editable Pipecat checkout or when the index is *ahead* of your project — an index built from <code>main</code> legitimately runs ahead of a released version.</p>
+<p>The notice is silent when no index exists, so it never appears for people who don't use the hub. Two environment variables tune it:</p>
+<ul><li><code>PIPECAT_HUB_STALE_AFTER_DAYS</code> — index age in days before it's called stale. Defaults to <code>7</code>; <code>0</code> disables the age check.</li><li><code>PIPECAT_HUB_CHECK=0</code> — turn the notice off entirely.</li></ul>
+<h2>Next steps</h2>
+<p>&lt;Card title="Build with a Coding Agent" icon="sparkles" href="/pipecat/get-started/build-your-next-bot#build-with-a-coding-agent"&gt;   The full agent-driven workflow: <code>pipecat init</code>, the Context Hub, and your   first coding session &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/context-hub">https://docs.pipecat.ai/api-reference/context-hub</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tavus Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Tavus Transport</h1>
+<blockquote>TavusTransport joins your Pipecat bot to the same virtual room as a Tavus avatar for conversational video sessions.</blockquote>
+<h2>Overview</h2>
+<p>TavusTransport enables your Pipecat bot to join the same virtual room as a Tavus avatar and human participants. The transport integrates with the Tavus platform to create conversational AI applications where a Tavus avatar provides synchronized video and audio output while your bot handles the conversation logic.</p>
+<p>When used, the Pipecat bot connects to a Daily room alongside the Tavus avatar and user. The bot receives audio input from participants, processes it through your pipeline, and sends TTS audio to the Tavus avatar for synchronized video rendering.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Tavus Transport API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.tavus.transport.html"&gt;     Pipecat's API methods for Tavus platform integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-tavus-video-service.py"&gt;     Complete Tavus avatar conversation example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Tavus API Documentation" icon="book" href="https://docs.tavus.io/api-reference/phoenix-replica-model/create-replica"&gt;     Tavus official API reference and replica creation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Client SDK Integration" icon="link" href="/api-reference/client/js/transports/daily"&gt;     Connect using Pipecat Client SDK with Daily transport   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use TavusTransport, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[tavus]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Tavus Platform Setup</h3>
+<p>Before using TavusTransport, you need:</p>
+<ol><li><strong>Tavus Account</strong>: Sign up at <a href="https://tavus.io">Tavus.io</a></li><li><strong>API Key</strong>: Generate a Tavus API key for authentication</li><li><strong>Replica ID</strong>: Create or obtain a Tavus replica model ID</li><li><strong>Persona Configuration</strong>: Set up a persona (optional, defaults to Pipecat TTS voice)</li></ol>
+<p>&lt;Tip&gt;   Use <code>persona_id="pipecat0"</code> (the default) to have Tavus use your Pipecat bot's   TTS voice instead of a Tavus persona voice. &lt;/Tip&gt;</p>
+<h3>Required Environment Variables</h3>
+<ul><li><code>TAVUS_API_KEY</code>: Your Tavus API key for authentication</li><li><code>TAVUS_REPLICA_ID</code>: ID of the Tavus replica model to use</li></ul>
+<h2>Key Features</h2>
+<ul><li><strong>Avatar Integration</strong>: Seamlessly integrates Tavus avatars with Pipecat conversations</li><li><strong>Synchronized Audio/Video</strong>: Tavus avatar renders video synchronized with bot's TTS output</li><li><strong>Multi-participant Rooms</strong>: Supports bot, avatar, and human participants in the same session</li><li><strong>Conversation Management</strong>: Handles Tavus conversation lifecycle through API</li><li><strong>Real-time Streaming</strong>: Bidirectional audio streaming with video avatar output</li></ul>
+<h2>Configuration</h2>
+<h3>TavusTransport</h3>
+<p>&lt;ParamField path="bot_name" type="str" required&gt;   The name of the Pipecat bot instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for making async HTTP requests to the Tavus API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Tavus API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="replica_id" type="str" required&gt;   ID of the Tavus replica model to use for voice generation. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="persona_id" type="str" default="pipecat0"&gt;   ID of the Tavus persona. Defaults to <code>"pipecat0"</code>, which signals Tavus to use   the TTS voice of the Pipecat bot instead of a Tavus persona voice, and to   expect audio over the <code>conversation.echo</code> app message API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="TavusParams" default="TavusParams()"&gt;   Transport configuration parameters. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h3>TavusParams</h3>
+<p>Inherits from <code>DailyParams</code> with the following defaults changed:</p>
+<p>&lt;ParamField path="audio_in_enabled" type="bool" default="True"&gt;   Whether to enable audio input from participants. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_enabled" type="bool" default="True"&gt;   Whether to enable audio output to participants. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="microphone_out_enabled" type="bool" default="False"&gt;   Whether to enable microphone output track. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_faster_than_realtime" type="bool" default="True"&gt;   Whether to send bot audio app messages as fast as possible instead of paced to   real playback time. Enabled by default: it hands Tavus a larger rendering   buffer, since TTS audio is typically generated well faster than realtime and   pacing it throttles delivery to 1x. Set to <code>False</code> when a downstream processor   (e.g. <code>AudioBufferProcessor</code>) needs bot audio to arrive at the pipeline at   roughly real time. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>TavusTransport creates a three-way conversation between your Pipecat bot, a Tavus avatar, and human participants. The transport manages the Tavus API integration and Daily room connectivity automatically.</p>
+<h3>How the conversation flow works</h3>
+<p>When the pipeline starts, TavusTransport handles room creation behind the scenes:</p>
+<ol><li>Calls the Tavus API to create a new conversation (using your <code>replica_id</code> and <code>persona_id</code>)</li><li>Tavus returns a <code>conversation_url</code>, which is a Daily room URL</li><li>The bot automatically joins this room</li><li>The Tavus avatar also joins the same room</li><li>A human participant can join the room using the same URL</li></ol>
+<p>The <code>conversation_url</code> is consumed internally by the transport. To retrieve the room URL (for example, to share it with a frontend client), use the <code>on_connected</code> event handler:</p>
+<pre><code>@transport.event_handler("on_connected")
+async def on_connected(transport, data):
+    room_name = data.get("callConfig", {}).get("roomName")
+    conversation_url = f"https://tavus.daily.co/{room_name}"
+    logger.info(f"Conversation URL: {conversation_url}")</code></pre>
+<p>&lt;Tip&gt;   For local development, set the <code>TAVUS_SAMPLE_ROOM_URL</code> environment variable to   skip the Tavus API call and use a pre-existing Daily room URL instead. &lt;/Tip&gt;</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-tavus-video-service.py">complete example</a> for a full implementation including:</p>
+<ul><li>Tavus transport configuration</li><li>Avatar and replica setup</li><li>Pipeline integration with TTS</li><li>Event handling for participant management</li></ul>
+<h2>Event Handlers</h2>
+<p>TavusTransport provides event handlers for participant connection lifecycle. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Bot connected to the room</td></tr><tr><td><code>on_client_connected</code></td><td>Participant (non-avatar) connected to the session</td></tr><tr><td><code>on_client_disconnected</code></td><td>Participant (non-avatar) disconnected from the session</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The Tavus replica participant is automatically filtered out from these events.   Only human participant connections trigger the event handlers. The transport   also automatically unsubscribes from the Tavus replica's microphone to prevent   audio feedback. &lt;/Note&gt;</p>
+<h3>Room Lifecycle</h3>
+<h4>on\_connected</h4>
+<p>Fired when the bot connects to the Daily room. The <code>data</code> dict contains room configuration from Daily, including <code>callConfig</code> with the <code>roomName</code> field. This is useful for constructing the conversation URL that frontend clients need to join the session.</p>
+<pre><code>@transport.event_handler("on_connected")
+async def on_connected(transport, data):
+    # Extract the room name to build the conversation URL
+    room_name = data.get("callConfig", {}).get("roomName")
+    conversation_url = f"https://tavus.daily.co/{room_name}"
+    logger.info(f"Conversation URL: {conversation_url}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>TavusTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>dict</code></td><td>Join event data from Daily. Contains <code>callConfig</code> (with <code>roomName</code>), participant info, etc.</td></tr></tbody></table></div>
+<h3>Connection Lifecycle</h3>
+<h4>on\_client\_connected</h4>
+<p>Fired when a human participant connects to the session. The Tavus replica is filtered out from this event.</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, participant):
+    print(f"Client connected: {participant}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>TavusTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Participant data from Daily (includes <code>id</code>, <code>info</code> with <code>userName</code>, etc.)</td></tr></tbody></table></div>
+<h4>on\_client\_disconnected</h4>
+<p>Fired when a human participant disconnects from the session.</p>
+<pre><code>@transport.event_handler("on_client_disconnected")
+async def on_client_disconnected(transport, participant):
+    print(f"Client disconnected: {participant}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>TavusTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Participant data from Daily</td></tr></tbody></table></div>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li><li><a href="/api-reference/client/js/transports/daily">Client SDK Integration</a></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/tavus">https://docs.pipecat.ai/api-reference/server/services/transport/tavus</a></p>
+</div></main></div></body></html>

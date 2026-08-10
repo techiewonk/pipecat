@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L31 · IVR & voicemail — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 31 · Part VI — Production & quality</div>
+      <h1>IVR & voicemail</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Outbound phone bots hit two realities: menu systems ("press 1 for sales") and voicemail. Pipecat's <code>extensions/</code> package handles both.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="ivr">Navigating IVR menus</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="call connects|IVR menu plays|IvrNavigator listens|decides digit|sends DTMF → reaches human"
+           data-caption="Your bot dials out and the callee's IVR answers|a menu is spoken ('press 1 for billing…')|the IvrNavigator interprets it with the LLM|decides which key to press|and sends the DTMF tone to advance the menu">
+      </div>
+      <pre><code class="language-python">from pipecat.extensions.ivr.ivr_navigator import IvrNavigator
+# give it the goal; it listens to menus and presses the right keys to reach it
+navigator = IvrNavigator(llm=llm, goal="reach a billing representative")
+pipeline = Pipeline([transport.input(), stt, navigator, llm, tts, transport.output()])</code></pre>
+
+      <h2 id="voicemail">Detecting voicemail</h2>
+      <p>On outbound calls you need to know: did a human answer, or a machine? A <code>VoicemailDetector</code> classifies the call so you can leave a message or hang up rather than talking to a beep.</p>
+      <pre><code class="language-python">from pipecat.extensions.voicemail.voicemail_detector import VoicemailDetector
+detector = VoicemailDetector(llm=llm)
+# emits an event when it decides "human" vs "voicemail"; branch your logic accordingly</code></pre>
+
+      <h2 id="backchannel">Backchannel — active listening</h2>
+      <p>Long human turns feel awkward if the bot is silent. <strong>Backchanneling</strong> makes it emit short acknowledgements — "mm-hmm", "right", "I see" — while the user is still speaking, so the caller knows they're being heard. It's a Pipecat extension (the <code>pipecat-backchannel</code> add-on).</p>
+      <div class="pcflow" data-dur="6"
+           data-stages="user speaking…|backchannel processor|'mm-hmm'|user continues|full turn → LLM"
+           data-caption="The user is mid-explanation|a backchannel processor watches the ongoing speech|and injects a brief acknowledgement without taking the turn|the user keeps going, reassured|only the completed turn goes to the LLM">
+      </div>
+      <pre><code class="language-python"># pip install pipecat-backchannel ; then drop the processor into the pipeline
+from pipecat_backchannel import BackchannelProcessor
+pipeline = Pipeline([transport.input(), stt, BackchannelProcessor(),   # acknowledges while listening
+                     user_agg, llm, tts, transport.output(), assistant_agg])</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>extensions/ivr/ivr_navigator.py</code> — <code>IvrNavigator</code>. <code>extensions/voicemail/voicemail_detector.py</code> — <code>VoicemailDetector</code>. <strong>Backchannel</strong>: the <code>pipecat-backchannel</code> extension (docs: <code>api-reference/server/extensions/pipecat-backchannel</code>). Pairs with DTMF (<a href="l14-output-playback.html">Lesson 14</a>) and telephony (<a href="l30-runner-telephony.html">Lesson 30</a>). Docs: ivr, voicemail, backchannel.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Give an <code>IvrNavigator</code> a goal and test against a sample menu. (2) Add a <code>VoicemailDetector</code> and branch: leave a scripted message on voicemail, converse with a human. (3) Combine both on an outbound Twilio call.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does an <code>IvrNavigator</code> do?</summary><p>Interprets spoken phone menus with the LLM and sends the right DTMF keys to reach a goal.</p></details>
+      <details><summary>2. Why detect voicemail on outbound calls?</summary><p>So the bot leaves a message or hangs up instead of "talking" to a machine's greeting.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l32-integrations.html">Lesson 32 — Framework integrations →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

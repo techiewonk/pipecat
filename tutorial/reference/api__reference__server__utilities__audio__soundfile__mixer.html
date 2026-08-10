@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SoundfileMixer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>SoundfileMixer</h1>
+<blockquote>SoundfileMixer combines real-time Pipecat audio with sound files for background audio and effects.</blockquote>
+<h2>Overview</h2>
+<p><code>SoundfileMixer</code> is an audio mixer that combines incoming audio with audio from files. It supports multiple audio file formats through the soundfile library and can handle runtime volume adjustments and sound switching.</p>
+<p>&lt;Warning&gt;   <code>SoundfileMixer</code> does not resample sound files. Each file must already match   the output transport's sample rate. &lt;/Warning&gt;</p>
+<h2>Installation</h2>
+<p>The soundfile mixer requires additional dependencies:</p>
+<pre><code>uv add "pipecat-ai[soundfile]"</code></pre>
+<h2>Sample Rate Requirements</h2>
+<p>Sound files must match the output transport's sample rate and be mono (single channel). If a file's sample rate doesn't match, the mixer skips it at load time and logs a warning:</p>
+<pre><code>Sound file office_ambience.wav has incorrect sample rate 44100 (should be 24000)</code></pre>
+<p>The bot otherwise runs normally, so the only symptom is that background audio never plays. If that happens, check your logs for <code>has incorrect sample rate</code> and convert the file to the transport's sample rate.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="sound_files" type="Mapping[str, str]" required&gt;   Dictionary mapping sound names to file paths. Files must be mono (single channel), and each file's sample rate must match the output transport's sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="default_sound" type="str" required&gt;   Name of the default sound to play (must be a key in sound\_files). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="volume" type="float" default="0.4"&gt;   Initial volume for the mixed sound. Values typically range from 0.0 to 1.0, but can go higher. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="loop" type="bool" default="true"&gt;   Whether to loop the sound file when it reaches the end. &lt;/ParamField&gt;</p>
+<h2>Control Frames</h2>
+<p>&lt;ParamField path="MixerUpdateSettingsFrame" type="Frame"&gt;   Updates mixer settings at runtime</p>
+<p>  &lt;Expandable title="properties"&gt;     &lt;ParamField path="sound" type="str"&gt;       Changes the current playing sound (must be a key in sound\_files)     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="volume" type="float"&gt;       Updates the mixing volume     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="loop" type="bool"&gt;       Updates whether the sound should loop     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="MixerEnableFrame" type="Frame"&gt;   Enables or disables the mixer</p>
+<p>  &lt;Expandable title="properties"&gt;     &lt;ParamField path="enable" type="bool"&gt;       Whether mixing should be enabled     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<h2>Usage Example</h2>
+<pre><code># Initialize mixer with sound files
+mixer = SoundfileMixer(
+    sound_files={"office": "office_ambience.wav"},
+    default_sound="office",
+    volume=2.0,
+)
+
+# Add to transport
+transport = DailyTransport(
+    room_url,
+    token,
+    "Audio Bot",
+    DailyParams(
+        audio_out_enabled=True,
+        audio_out_mixer=mixer,
+    ),
+)
+
+# Control mixer at runtime
+await worker.queue_frame(MixerUpdateSettingsFrame({"volume": 0.5}))
+await worker.queue_frame(MixerEnableFrame(False))  # Disable mixing
+await worker.queue_frame(MixerEnableFrame(True))   # Enable mixing</code></pre>
+<h2>Notes</h2>
+<ul><li>Supports any audio format that soundfile can read</li><li>Sound files must be mono and match the output transport's sample rate — they are not resampled (see <a href="#sample-rate-requirements">Sample Rate Requirements</a>)</li><li>Thread-safe for pipeline processing</li><li>Can dynamically switch between multiple sound files</li><li>Volume can be adjusted in real-time</li><li>Mixing can be enabled/disabled on demand</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/audio/soundfile-mixer">https://docs.pipecat.ai/api-reference/server/utilities/audio/soundfile-mixer</a></p>
+</div></main></div></body></html>

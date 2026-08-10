@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTVIProcessor · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>RTVIProcessor</h1>
+<blockquote>RTVIProcessor coordinates RTVI protocol communication between Pipecat pipelines and connected clients.</blockquote>
+<p>The <code>RTVIProcessor</code> manages bidirectional communication between clients and your Pipecat application. It processes client messages, handles service configuration, executes actions, and coordinates function calls.</p>
+<h2>Initialization</h2>
+<p><code>RTVIProcessor</code> is automatically added to your pipeline when you create a <code>PipelineWorker</code>. Access it via <code>worker.rtvi</code>:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    stt,
+    # ... other processors ...
+    transport.output()
+])
+
+worker = PipelineWorker(pipeline)
+
+# Access the processor
+rtvi = worker.rtvi</code></pre>
+<p>To provide a custom processor (e.g., for <a href="./google-rtvi-observer">Google RTVI</a>):</p>
+<pre><code>from pipecat.services.google.rtvi import GoogleRTVIProcessor
+
+worker = PipelineWorker(pipeline, rtvi_processor=GoogleRTVIProcessor())</code></pre>
+<p>To disable RTVI entirely, set <code>enable_rtvi=False</code>.</p>
+<h2>Properties</h2>
+<h3>client\_version</h3>
+<p>Returns the negotiated client protocol version as <code>[major, minor, patch]</code>. Defaults to <code>[0, 0, 0]</code> until the client sends a <code>client-ready</code> message.</p>
+<pre><code>version = rtvi.client_version
+if version[0] == 2:
+    # Client is using protocol v2
+    pass</code></pre>
+<h2>Readiness Protocol</h2>
+<h3>Client Ready State</h3>
+<p>Clients indicate readiness by sending a <code>client-ready</code> message, triggering the <code>on_client_ready</code> event in the processor:</p>
+<pre><code>@rtvi.event_handler("on_client_ready")
+async def on_client_ready(rtvi):
+    # Handle client ready state
+    await rtvi.set_bot_ready()
+    # Initialize conversation
+    await worker.queue_frames([...])</code></pre>
+<p>&lt;Note&gt;   The processor validates the client's RTVI protocol version during the   handshake. The server protocol version is 2.1.0. Clients with major version 2   are fully compatible. Clients with major version 1 (deprecated) are still   supported with the legacy <code>bot-output</code> format. If the client's major version   doesn't match the server's protocol version, an error response is sent but the   connection continues. Check server logs for version compatibility warnings. &lt;/Note&gt;</p>
+<h3>Bot Ready State</h3>
+<p>The server must mark the bot as ready before it can process client messages:</p>
+<pre><code>await rtvi.set_bot_ready()</code></pre>
+<p>When marked ready, the bot sends a response containing:</p>
+<ul><li>RTVI protocol version</li><li>Current service configuration</li><li>Available actions</li></ul>
+<h2>Services</h2>
+<p>Services represent configurable components of your application that clients can interact with.</p>
+<h3>Registering Services</h3>
+<pre><code># 1. Define option handler
+async def handle_voice_option(processor, service, option):
+    voice_id = option.value
+    # Apply configuration change
+    logger.info(f"Voice ID updated to: {voice_id}")
+
+# 2. Create RTVIService
+voice_service = RTVIService(
+    name="voice",
+    options=[
+        RTVIServiceOption(
+            name="voice_id",
+            type="string",
+            handler=handle_voice_option
+        )
+    ]
+)
+
+# 3. Register with processor
+rtvi.register_service(voice_service)</code></pre>
+<h3>Option Types</h3>
+<p>Services support multiple data types for configuration:</p>
+<pre><code>RTVIServiceOption(
+    name="temperature",
+    type="number",  # number, string, bool, array, object
+    handler=handle_temperature
+)</code></pre>
+<p>Option handlers receive:</p>
+<ul><li>The processor instance</li><li>The service name</li><li>The option configuration with new value</li></ul>
+<h2>Actions</h2>
+<p>Actions are server-side functions that clients can trigger with arguments.</p>
+<h3>Registering Actions</h3>
+<pre><code># 1. Define handler function
+async def handle_print_message(processor, service, arguments):
+    message = arguments.get("message", "Default message")
+    logger.info(f"Print action triggered with message: {message}")
+    return True
+
+# 2. Create and register RTVIAction
+print_action = RTVIAction(
+    service="conversation",
+    action="print_message",
+    arguments=[
+        RTVIActionArgument(name="message", type="string")
+    ],
+    result="bool",
+    handler=handle_print_message
+)
+rtvi.register_action(print_action)</code></pre>
+<h3>Action Arguments</h3>
+<p>Actions can accept typed arguments from clients:</p>
+<pre><code>search_action = RTVIAction(
+    service="knowledge",
+    action="search",
+    arguments=[
+        RTVIActionArgument(name="query", type="string"),
+        RTVIActionArgument(name="limit", type="number")
+    ],
+    result="array",
+    handler=handle_search
+)</code></pre>
+<h2>Function Calls</h2>
+<p>Handle LLM function calls with client interaction:</p>
+<pre><code>
+await processor.handle_function_call(
+    function_name=function_name,
+    tool_call_id=tool_call_id,
+    arguments=arguments,
+)
+
+await processor.handle_function_call(params)</code></pre>
+<p>The function call process:</p>
+<ol><li>LLM requests a function call</li><li>Processor notifies client with <code>llm-function-call</code> message</li><li>Client executes function and returns result</li><li>Result is passed back to LLM via <code>FunctionCallResultFrame</code></li><li>Conversation continues</li></ol>
+<h2>Error Handling</h2>
+<p>Send error messages to clients:</p>
+<pre><code># General error
+await processor.send_error("Invalid configuration")
+
+# Request-specific error
+await processor._send_error_response(request_id, "Invalid action arguments")</code></pre>
+<p>Error categories:</p>
+<ul><li>Configuration errors</li><li>Action execution errors</li><li>Function call errors</li><li>Protocol errors</li><li>Fatal and non-fatal errors</li></ul>
+<h2>Bot Control</h2>
+<p>Manage bot state and handle interruptions:</p>
+<pre><code># Set bot as ready
+await processor.set_bot_ready()
+
+# Handle interruptions
+await processor.interrupt_bot()</code></pre>
+<h2>Custom Messaging</h2>
+<p>Server messages let you push unsolicited data from the server to the client at any time — notifications, status updates, real-time results, etc. They are distinct from <strong>server responses</strong>, which reply to a specific client request (see <a href="/client/guides/custom-messaging#requesting-data-from-the-server">Requesting Information from the Server</a>).</p>
+<h3>Sending server messages</h3>
+<p>Any <code>FrameProcessor</code> in the pipeline can push an <code>RTVIServerMessageFrame</code>. The <code>RTVIObserver</code> picks it up and delivers it to the client:</p>
+<pre><code>from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame
+
+class MyProcessor(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, SomeEventFrame):
+            await self.push_frame(
+                RTVIServerMessageFrame(
+                    data={"type": "event", "value": frame.value}
+                )
+            )
+        await self.push_frame(frame, direction)</code></pre>
+<p>&lt;Note&gt;   <code>RTVIServerMessageFrame</code> is a <code>SystemFrame</code>, so it uses the high-priority   SystemFrame lane, remains ordered with other SystemFrames, and is not   discarded by interruptions. &lt;/Note&gt;</p>
+<h3>Client-side handling</h3>
+<p>The message arrives at the client with the wire format <code>{ label: "rtvi-ai", type: "server-message", data: ... }</code>. Handle it with the <code>onServerMessage</code> callback:</p>
+<pre><code>pcClient.onServerMessage((message) =&gt; {
+  console.log("Server message:", message);
+  // message.data contains whatever you passed on the server
+});</code></pre>
+<p>See <a href="/client/guides/custom-messaging#receiving-messages-from-the-server">Handling Custom Messages from the Server</a> for more details and examples.</p>
+<h2>DTMF Input</h2>
+<p>The processor handles <code>dtmf</code> client messages for keypad input (e.g., phone menu navigation). Each <code>dtmf</code> message carries one or more keypad entries (<code>0</code>-<code>9</code>, <code>*</code>, <code>#</code>) as a list. The processor pushes one <code>InputDTMFFrame</code> per key, in order, downstream to the bot's DTMF handling (e.g., a <code>DTMFAggregator</code>) exactly as a telephony transport's rapid keypresses would arrive.</p>
+<pre><code># Client message format (JSON) — protocol 2.1.0
+{
+  "label": "rtvi-ai",
+  "type": "dtmf",
+  "id": "msg-123",
+  "data": {
+    "buttons": ["1", "2", "#"]
+  }
+}</code></pre>
+<p>When a bot uses a <code>DTMFAggregator</code>, the aggregator accumulates keys and flushes them (on <code>#</code> or its idle timeout) into a transcription like <code>"DTMF: 123#"</code> that the LLM can react to.</p>
+<h2>UI Messaging</h2>
+<p>The processor handles the <a href="/client/rtvi-standard#user-interface">User Interface</a> messages that let a server-side agent observe and drive the client GUI. Inbound UI messages from the client are turned into pipeline frames and surfaced via the <code>on_ui_message</code> event handler:</p>
+<div class="tablewrap"><table><thead><tr><th>Wire message</th><th>Frame pushed downstream</th><th><code>on_ui_message</code> payload</th></tr></thead><tbody><tr><td><code>ui-event</code></td><td><code>RTVIUIEventFrame</code></td><td><code>UIEventMessage</code></td></tr><tr><td><code>ui-snapshot</code></td><td><code>RTVIUISnapshotFrame</code></td><td><code>UISnapshotMessage</code></td></tr><tr><td><code>ui-cancel-job-group</code></td><td><code>RTVIUICancelJobGroupFrame</code></td><td><code>UICancelJobGroupMessage</code></td></tr></tbody></table></div>
+<pre><code>@rtvi.event_handler("on_ui_message")
+async def on_ui_message(processor, message):
+    # message is a UIEventMessage / UISnapshotMessage / UICancelJobGroupMessage
+    ...</code></pre>
+<p>When you use <a href="/api-reference/server/workers/ui-worker"><code>UIWorker</code></a>, <code>PipelineWorker</code> wires this up automatically (RTVI is enabled by default): inbound UI messages are republished onto the bus for the worker, and outbound <code>ui-command</code> / <code>ui-job-group</code> frames are translated by the <a href="/api-reference/server/rtvi/rtvi-observer#frame-translation">RTVI Observer</a>. You only handle <code>on_ui_message</code> directly when targeting the wire format from a single-LLM app without a <code>UIWorker</code>.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-processor">https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-processor</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 12 — Capstone: Gemini Live A2A · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 12 · Part C — Production &amp; A2A</div>
+<h1>Capstone: an all-in-one Gemini Live A2A (local + distributed)</h1>
+<div class="meta"><span class="pill">⏱ project</span><span class="pill grey">Level: advanced</span></div>
+<p class="lead">This ties the whole course together: a multi-agent, agent-to-agent system built on <a href="ch06-gemini-live.html">Gemini Live</a>, using the <a href="ch11-a2a-patterns.html">A2A patterns</a>, that runs both locally (in-memory bus) and distributed (Redis/PGMQ).</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="arch">Target architecture</h2>
+<pre class="diagram"> user ──▶ [ MAIN PipelineWorker ]  owns transport + bridges audio to the bus
+                  │
+     ┌────────────┼─────────────────────────┐
+     ▼            ▼                          ▼
+[Gemini triage] [Gemini specialist A]  [Gemini specialist B]   ← handoff (who's talking)
+     │
+     └─ debate tool ─▶ job_group(advocate, critic, analyst)     ← parallel fan-out
+ bus = InMemory (local)  ⇄  RedisBus / PgmqBus (distributed) — same agent code</pre>
+
+<h2 id="order">Recommended build order</h2>
+<ol>
+<li><strong>One Gemini Live agent</strong> (Ch 6) — get <code>realtime-gemini-live.py</code> talking with one tool.</li>
+<li><strong>Add a second agent + handoff</strong> (Ch 11) — wrap Gemini Live inside <code>LLMWorker</code>s and swap control with <code>activate_worker</code>.</li>
+<li><strong>Add parallel fan-out</strong> (Ch 11) — a <code>debate</code>-style tool dispatching to several Gemini agents, then synthesize.</li>
+<li><strong>Go distributed</strong> — switch the in-memory bus for <code>RedisBus</code>/<code>PgmqBus</code>; agents run in separate processes. Agent code is unchanged; only <code>bus=</code> changes.</li>
+<li><strong>Optional UI worker</strong> — surface state to a web client.</li>
+</ol>
+
+<h2 id="key">The key wiring (annotated)</h2>
+<pre><code class="language-python"># Each specialist is a Gemini Live agent on the bus
+class TriageAgent(LLMWorker):
+    @tool
+    async def route(self, params, department: str, reason: str):
+        await self.activate_worker(department, deactivate_self=True)   # handoff
+
+# main worker owns transport + audio, bridges to the bus
+runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+main = PipelineWorker(pipeline_with_gemini_io, bus=runner.bus)
+await runner.add_workers(TriageAgent("triage"), SpecialistA("billing"),
+                         SpecialistB("support"), main)
+await runner.run()
+
+# distributed: same code, swap the bus
+# runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))</code></pre>
+<div class="box errors"><p class="title">⚠️ Gemini-specific gotchas</p>
+<p>Gemini Live is speech-to-speech, so the <strong>main</strong> worker still owns the transport and bridges audio; each child is a Gemini Live LLM on the bus. Gemini drives turns server-side and emits no turn frames — don't build custom turn logic on those. And <code>google_search</code> can't combine with other tools on the Vertex variant (Ch 6).</p></div>
+
+<h2 id="decide">Open decisions (let's settle these together)</h2>
+<div class="box concept"><p class="title">🎯 Before coding the capstone</p>
+<p>How many specialist agents and their roles; whether fan-out agents are all Gemini Live or a cheaper text LLM; local vs. Redis vs. PGMQ for the first cut; and whether you want a UI worker. Bring these and we'll scaffold the runnable project.</p></div>
+
+<div class="box start"><p class="title">▶️ Foundations to run first</p>
+<pre><code class="language-bash">uv run python realtime/realtime-gemini-live.py                 # step 1
+cd examples/multi-worker && uv run python local-handoff/local-handoff-two-agents.py   # step 2 shape</code></pre></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>What is the one line that changes to go from local to distributed?</summary><p>The bus passed to the <code>WorkerRunner</code> — in-memory vs. <code>RedisBus</code>/<code>PgmqBus</code>. Agent code stays the same.</p></details>
+
+<p class="lead" style="margin-top:28px">🎉 That's the course. Jump to the <a href="all-in-one.html">all-in-one single page</a> for the whole thing in one file.</p>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

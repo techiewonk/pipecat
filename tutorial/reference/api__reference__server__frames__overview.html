@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frames · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Frames</h1>
+<blockquote>Frame categories, processing behavior, and common patterns for Pipecat pipelines</blockquote>
+<h2>Overview</h2>
+<p>Frames are the fundamental units of data in Pipecat. Every piece of information that moves through a pipeline — audio, text, images, control signals — is wrapped in a frame. Frame processors receive frames, act on them, and push new or modified frames along to the next processor.</p>
+<p>All frames inherit from the base <code>Frame</code> class and are Python <a href="https://docs.python.org/3/library/dataclasses.html">dataclasses</a>.</p>
+<h2>Frame Categories</h2>
+<p>Pipecat has three base frame types, each with different processing behavior:</p>
+<div class="tablewrap"><table><thead><tr><th>Base Type</th><th>Processing</th><th>Interruption Behavior</th></tr></thead><tbody><tr><td><code>DataFrame</code></td><td>Queued, processed in order with non-SystemFrames</td><td>Cancelled on user interruption</td></tr><tr><td><code>ControlFrame</code></td><td>Queued, processed in order with non-SystemFrames</td><td>Cancelled on user interruption</td></tr><tr><td><code>SystemFrame</code></td><td>Higher priority, queued, processed in order with SystemFrames</td><td><strong>Not</strong> cancelled on user interruption</td></tr></tbody></table></div>
+<h3>DataFrame</h3>
+<p>Data frames carry the main content flowing through a pipeline: audio chunks, text, images, and LLM messages. They are queued and processed in order with other DataFrames and ControlFrames. If a user interrupts (starts speaking while the bot is responding), any pending data frames are discarded so the new input can be handled immediately.</p>
+<p>Examples: <code>TextFrame</code>, <code>OutputAudioRawFrame</code>, <code>LLMMessagesAppendFrame</code>, <code>TTSSpeakFrame</code></p>
+<h3>ControlFrame</h3>
+<p>ControlFrames signal processing boundaries and configuration changes: response start/end markers, settings updates, and state transitions. They are queued and processed in order alongside DataFrames, and like DataFrames, any pending ControlFrames are discarded when a user interrupts unless combined with <code>UninterruptibleFrame</code>.</p>
+<p>Examples: <code>EndFrame</code>, <code>LLMFullResponseStartFrame</code>, <code>TTSStartedFrame</code>, <code>ServiceUpdateSettingsFrame</code></p>
+<h3>SystemFrame</h3>
+<p>SystemFrames are high-priority signals that must always be delivered: interruptions, user input, error notifications, and pipeline lifecycle events. They are queued and processed in order with other SystemFrames. Unlike DataFrames and ControlFrames, they are never discarded when a user interrupts.</p>
+<p>Examples: <code>StartFrame</code>, <code>CancelFrame</code>, <code>InterruptionFrame.</code>, <code>UserStartedSpeakingFrame</code>, <code>InputAudioRawFrame</code></p>
+<h2>Frame Properties</h2>
+<p>Every frame has these properties set automatically:</p>
+<p>&lt;ParamField path="id" type="int"&gt;   Unique identifier for the frame instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="name" type="str"&gt;   Human-readable name combining class name and instance count (e.g.,   <code>TextFrame#3</code>). Useful for debugging. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="pts" type="int | None"&gt;   Presentation timestamp in nanoseconds. Used for audio/video synchronization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="broadcast_sibling_id" type="int | None"&gt;   ID of the paired frame when a frame is broadcast in both directions. Set   automatically by <code>broadcast_frame()</code> and <code>broadcast_frame_instance()</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="metadata" type="Dict[str, Any]"&gt;   Dictionary for arbitrary frame metadata. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transport_source" type="str | None"&gt;   Name of the transport source that created this frame. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transport_destination" type="str | None"&gt;   Name of the transport destination for this frame. Used when a transport   supports multiple output tracks. &lt;/ParamField&gt;</p>
+<h2>Frame Direction</h2>
+<p>Frames flow through the pipeline in one of two directions:</p>
+<pre><code>from pipecat.processors.frame_processor import FrameDirection
+
+class FrameDirection(Enum):
+    DOWNSTREAM = 1  # Input → Output (default)
+    UPSTREAM = 2    # Output → Input</code></pre>
+<p><strong>Downstream</strong> is the default. In a typical voice AI pipeline, audio enters from the transport input, gets transcribed, runs through the LLM, converts to speech, and reaches the transport output.</p>
+<p><strong>Upstream</strong> lets processors send information back toward the start of the pipeline. The most common example: the assistant context aggregator at the end of the pipeline pushes context frames upstream so they flow back to the LLM.</p>
+<h3>Pushing Frames</h3>
+<p>Within a frame processor, call <code>push_frame()</code> to send a frame to the next processor:</p>
+<pre><code># Push downstream (default)
+await self.push_frame(frame, FrameDirection.DOWNSTREAM)
+
+# Push upstream
+await self.push_frame(frame, FrameDirection.UPSTREAM)</code></pre>
+<h3>Broadcasting Frames</h3>
+<p>To send a frame in <strong>both</strong> directions simultaneously, use <code>broadcast_frame()</code>:</p>
+<pre><code># Create and push instances upstream and downstream
+await self.broadcast_frame(UserStartedSpeakingFrame)</code></pre>
+<p>Each direction receives its own frame instance, linked by <code>broadcast_sibling_id</code>.</p>
+<p>To broadcast an existing frame instance (when you are not the original creator of the frame), use <code>broadcast_frame_instance()</code>:</p>
+<pre><code># Broadcast an existing frame instance in both directions
+await self.broadcast_frame_instance(frame)</code></pre>
+<p>This creates two new instances by shallow-copying all fields from the original frame except <code>id</code> and <code>name</code>, which get fresh values.</p>
+<p>&lt;Tip&gt;Prefer <code>broadcast_frame()</code> when possible, as it is more efficient.&lt;/Tip&gt;</p>
+<h2>Mixins</h2>
+<p>Mixins add cross-cutting behavior or shared data fields to frames without changing their base type.</p>
+<h3>UninterruptibleFrame</h3>
+<p>Occasionally a <code>DataFrame</code> or <code>ControlFrame</code> is too important to discard during an interruption. Adding the <code>UninterruptibleFrame</code> mixin protects it: the frame stays in internal queues and any task processing it will not be cancelled.</p>
+<pre><code>@dataclass
+class FunctionCallResultFrame(DataFrame, UninterruptibleFrame):
+    """Must be delivered even if the user interrupts."""
+    ...</code></pre>
+<p>Examples: <code>EndFrame</code>, <code>StopFrame</code>, <code>FunctionCallResultFrame</code>, <code>FunctionCallInProgressFrame</code></p>
+<h3>AudioRawFrame</h3>
+<p>Carries raw audio fields shared by both input and output audio frames.</p>
+<p>&lt;ParamField path="audio" type="bytes"&gt;   Raw audio bytes in PCM format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int"&gt;   Audio sample rate in Hz (e.g., 16000). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="num_channels" type="int"&gt;   Number of audio channels (e.g., 1 for mono). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="num_frames" type="int"&gt;   Number of audio frames. Calculated automatically from the audio data. &lt;/ParamField&gt;</p>
+<h3>ImageRawFrame</h3>
+<p>Carries raw image fields shared by both input and output image frames.</p>
+<p>&lt;ParamField path="image" type="bytes"&gt;   Raw image bytes. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="size" type="Tuple[int, int]"&gt;   Image dimensions as (width, height). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="format" type="str | None"&gt;   Image format (e.g., <code>"RGB"</code>, <code>"RGBA"</code>). &lt;/ParamField&gt;</p>
+<h2>Creating a Custom Frame</h2>
+<p>Frames are plain Python dataclasses, so you can define your own by subclassing one of the three base categories and decorating it with <code>@dataclass</code>. Pick the base class by how the frame should be handled:</p>
+<ul><li><code>DataFrame</code> for ordered data such as text, audio, or your own payload. Cancelled by user interruptions.</li><li><code>ControlFrame</code> for ordered control signals that flush in line with the data.</li><li><code>SystemFrame</code> for high-priority signals that skip the queue and are not affected by interruptions.</li></ul>
+<pre><code>from dataclasses import dataclass
+
+from pipecat.frames.frames import DataFrame, UninterruptibleFrame
+
+
+@dataclass
+class AsteriskCommandFrame(DataFrame):
+    """A custom command sent downstream to a telephony transport."""
+
+    command: str</code></pre>
+<p>Your frame travels the pipeline like any built-in frame, in the direction you push it (see <a href="#frame-direction">Frame Direction</a>). If the frame must survive a user interruption, add the <a href="#uninterruptibleframe"><code>UninterruptibleFrame</code></a> mixin:</p>
+<pre><code>@dataclass
+class AsteriskCommandFrame(DataFrame, UninterruptibleFrame):
+    command: str</code></pre>
+<h2>Common Patterns</h2>
+<p>Pipecat prefers pushing frames over calling methods directly between processors. Routing data through the pipeline as frames ensures correct processing order, which is critical for real-time use cases.</p>
+<p>Most frames are produced and consumed by Pipecat's built-in services. The patterns below cover the frames you're most likely to push yourself in application code.</p>
+<h3>Starting a Conversation</h3>
+<p>Add an initial message to the context, then push <code>LLMRunFrame</code> to kick off processing:</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, client):
+    context.add_message({"role": "user", "content": "Please introduce yourself."})
+    await worker.queue_frames([LLMRunFrame()])</code></pre>
+<h3>Injecting a Prompt</h3>
+<p><code>LLMMessagesAppendFrame</code> adds messages to the context without replacing what's already there. Set <code>run_llm=True</code> to trigger a response immediately:</p>
+<pre><code>message = {
+    "role": "user",
+    "content": "The user has been quiet. Ask if they're still there.",
+}
+await aggregator.push_frame(LLMMessagesAppendFrame([message], run_llm=True))</code></pre>
+<h3>Speaking Without the LLM</h3>
+<p><code>TTSSpeakFrame</code> sends text directly to the TTS service as a standalone utterance, bypassing the LLM entirely:</p>
+<pre><code>@llm.event_handler("on_function_calls_started")
+async def on_function_calls_started(service, function_calls):
+    await tts.queue_frame(TTSSpeakFrame("Let me check on that."))</code></pre>
+<h3>Ending a Conversation</h3>
+<p>Push <code>EndWorkerFrame</code> upstream to gracefully shut down the pipeline. Pair it with a <code>TTSSpeakFrame</code> to say goodbye first:</p>
+<pre><code>await aggregator.push_frame(
+    TTSSpeakFrame("It seems like you're busy. Have a nice day!")
+)
+await aggregator.push_frame(EndWorkerFrame(), FrameDirection.UPSTREAM)</code></pre>
+<p>&lt;Tip&gt;   See <a href="/pipecat/learn/pipeline-termination">Pipeline Termination</a> for the   difference between <code>EndFrame</code> and <code>EndWorkerFrame</code>, why the direction matters,   and how to end a conversation from inside a tool call. &lt;/Tip&gt;</p>
+<h3>Changing Service Settings at Runtime</h3>
+<p>Push settings frames to adjust LLM, TTS, or STT configuration mid-conversation:</p>
+<pre><code>await worker.queue_frame(
+    LLMUpdateSettingsFrame(delta=OpenAILLMService.Settings(temperature=0.1))
+)</code></pre>
+<h3>Updating Tools at Runtime</h3>
+<p>Add or replace available function-calling tools while the conversation is active:</p>
+<pre><code>new_tools = ToolsSchema(
+    standard_tools=[weather_function, restaurant_function]
+)
+await worker.queue_frames([LLMSetToolsFrame(tools=new_tools)])</code></pre>
+<h3>Playing Sound Effects</h3>
+<p>Load audio files and push <code>OutputAudioRawFrame</code> directly from a custom processor:</p>
+<pre><code>with wave.open("ding.wav") as f:
+    ding = OutputAudioRawFrame(f.readframes(-1), f.getframerate(), f.getnchannels())
+
+class SoundEffect(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, LLMFullResponseEndFrame):
+            await self.push_frame(ding)
+        await self.push_frame(frame, direction)</code></pre>
+<h3>Reacting to LLM Response Boundaries</h3>
+<p><code>LLMFullResponseStartFrame</code> and <code>LLMFullResponseEndFrame</code> bracket every LLM response. Custom processors can watch for these to trigger side effects:</p>
+<pre><code>class ResponseLogger(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, LLMFullResponseStartFrame):
+            logger.info("LLM response started")
+        elif isinstance(frame, LLMFullResponseEndFrame):
+            logger.info("LLM response finished")
+        await self.push_frame(frame, direction)</code></pre>
+<h2>Frame Type Reference</h2>
+<p>The individual reference pages below document every frame class, organized by function:</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Data Frames" icon="database" href="/api-reference/server/frames/data-frames"&gt;     Audio, image, text, transcription, and transport message frames that carry     content through the pipeline.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Control Frames" icon="sliders" href="/api-reference/server/frames/control-frames"&gt;     Pipeline lifecycle, LLM response boundaries, TTS state, service settings,     and filter/mixer configuration.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="System Frames" icon="bolt" href="/api-reference/server/frames/system-frames"&gt;     Interruptions, user/bot speaking state, VAD events, errors, metrics, and raw     input frames.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="LLM Frames" icon="brain" href="/api-reference/server/frames/llm-frames"&gt;     LLM context frame, function calling helper dataclasses, and links to     LLM-related frames on other pages.   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/frames/overview">https://docs.pipecat.ai/api-reference/server/frames/overview</a></p>
+</div></main></div></body></html>

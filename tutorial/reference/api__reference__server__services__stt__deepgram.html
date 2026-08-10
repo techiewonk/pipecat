@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deepgram Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Deepgram Speech-to-Text</h1>
+<blockquote>Streaming STT with DeepgramSTTService and DeepgramFluxSTTService: Nova models, Flux turn detection, and SageMaker variants.</blockquote>
+<h2>Overview</h2>
+<p>Deepgram provides four STT service implementations:</p>
+<ul><li><code>DeepgramSTTService</code> for real-time speech recognition using Deepgram's standard WebSocket API with support for interim results, language detection, and voice activity detection (VAD)</li><li><code>DeepgramFluxSTTService</code> for advanced conversational AI with Flux capabilities including intelligent turn detection, eager end-of-turn events, multilingual support (with <code>flux-general-multi</code> model), and enhanced speech processing for improved response timing</li><li><code>DeepgramSageMakerSTTService</code> for real-time speech recognition using Deepgram Nova models deployed on AWS SageMaker endpoints via HTTP/2 bidirectional streaming</li><li><code>DeepgramFluxSageMakerSTTService</code> for advanced conversational AI using Deepgram Flux models deployed on AWS SageMaker endpoints with native turn detection and low-latency streaming</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Deepgram STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.deepgram.stt.html"&gt;     Pipecat's API methods for standard Deepgram STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deepgram Flux API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.deepgram.flux.stt.html"&gt;     Pipecat's API methods for Deepgram Flux STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Standard STT Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram.py"&gt;     Complete example with standard Deepgram STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Flux STT Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram-flux.py"&gt;     Complete example with Deepgram Flux STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SageMaker Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram-sagemaker.py"&gt;     Complete example with Deepgram Nova on SageMaker   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Flux SageMaker Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram-flux-sagemaker.py"&gt;     Complete example with Deepgram Flux on SageMaker   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deepgram Documentation" icon="book" href="https://developers.deepgram.com/docs/pre-recorded-audio"&gt;     Official Deepgram documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deepgram Console" icon="microphone" href="https://console.deepgram.com/signup"&gt;     Access API keys and transcription models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Deepgram STT services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[deepgram]"</code></pre>
+<p>For the SageMaker variant, install both the Deepgram and SageMaker dependencies:</p>
+<pre><code>uv add "pipecat-ai[deepgram,sagemaker]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Deepgram Account Setup</h3>
+<p>Before using <code>DeepgramSTTService</code> or <code>DeepgramFluxSTTService</code>, you need:</p>
+<ol><li><strong>Deepgram Account</strong>: Sign up at <a href="https://console.deepgram.com/signup">Deepgram Console</a></li><li><strong>API Key</strong>: Generate an API key from your console dashboard</li><li><strong>Model Selection</strong>: Choose from available transcription models and features</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>DEEPGRAM_API_KEY</code>: Your Deepgram API key for authentication</li></ul>
+<h3>AWS SageMaker Setup</h3>
+<p>Before using <code>DeepgramSageMakerSTTService</code> or <code>DeepgramFluxSageMakerSTTService</code>, you need:</p>
+<ol><li><strong>AWS Account</strong>: With credentials configured (via environment variables, AWS CLI, or instance metadata)</li><li><strong>SageMaker Endpoint</strong>: A deployed SageMaker endpoint with a <a href="https://developers.deepgram.com/docs/deploy-amazon-sagemaker">Deepgram model</a> (Nova for standard service, Flux for advanced turn detection)</li><li><strong>Deepgram SDK</strong>: The Deepgram SDK may be needed for certain advanced configurations</li></ol>
+<h2>DeepgramSTTService</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepgram API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Custom Deepgram API base URL. Leave empty for the default endpoint. Supports   <code>wss://</code>, <code>https://</code>, <code>ws://</code>, <code>http://</code>, or bare hostname (defaults to   secure). Preserves the specified scheme, useful for air-gapped or private   deployments that don't use TLS. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channels" type="int" default="1"&gt;   Number of audio channels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="multichannel" type="bool" default="False"&gt;   Transcribe each audio channel independently. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="callback" type="str" default="None"&gt;   Callback URL for async transcription delivery. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="callback_method" type="str" default="None"&gt;   HTTP method for the callback (<code>"GET"</code> or <code>"POST"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tag" type="Any" default="None"&gt;   Custom billing tag. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool" default="None"&gt;   Opt out of the Deepgram Model Improvement Program. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="live_options" type="LiveOptions" default="None" deprecated&gt;   Legacy configuration options. *Deprecated in v0.0.105. Use   <code>settings=DeepgramSTTService.Settings(...)</code> for runtime-updatable fields and   direct constructor parameters for connection-level config instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="addons" type="Dict" default="None"&gt;   Additional Deepgram features to enable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="DEEPGRAM_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"nova-3-general"</code></td><td>Deepgram model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Recognition language. *(Inherited from base STT settings.)*</td></tr><tr><td><code>detect_entities</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable named entity detection.</td></tr><tr><td><code>diarize</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable speaker diarization.</td></tr><tr><td><code>dictation</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable dictation mode (converts commands to punctuation).</td></tr><tr><td><code>endpointing</code></td><td>`int \</td><td>bool`</td><td><code>None</code></td><td>Endpointing sensitivity in ms, or <code>False</code> to disable.</td></tr><tr><td><code>interim_results</code></td><td><code>bool</code></td><td><code>True</code></td><td>Stream partial recognition results.</td></tr><tr><td><code>keyterm</code></td><td>`str \</td><td>list`</td><td><code>None</code></td><td>Keyterms to boost recognition accuracy.</td></tr><tr><td><code>keywords</code></td><td>`str \</td><td>list`</td><td><code>None</code></td><td>Keywords to boost (str or list of str).</td></tr><tr><td><code>numerals</code></td><td><code>bool</code></td><td><code>False</code></td><td>Convert spoken numbers to numerals.</td></tr><tr><td><code>profanity_filter</code></td><td><code>bool</code></td><td><code>True</code></td><td>Filter profanity from transcripts.</td></tr><tr><td><code>punctuate</code></td><td><code>bool</code></td><td><code>True</code></td><td>Add punctuation to transcripts.</td></tr><tr><td><code>redact</code></td><td>`str \</td><td>list`</td><td><code>None</code></td><td>Redact sensitive information.</td></tr><tr><td><code>replace</code></td><td>`str \</td><td>list`</td><td><code>None</code></td><td>Word replacement rules.</td></tr><tr><td><code>search</code></td><td>`str \</td><td>list`</td><td><code>None</code></td><td>Search terms to highlight.</td></tr><tr><td><code>smart_format</code></td><td><code>bool</code></td><td><code>False</code></td><td>Apply smart formatting to transcripts.</td></tr><tr><td><code>utterance_end_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Silence duration in ms before an utterance-end event.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.deepgram.stt import DeepgramSTTService
+
+stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+)</code></pre>
+<h4>With Custom Settings</h4>
+<pre><code>from pipecat.services.deepgram.stt import DeepgramSTTService
+
+stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramSTTService.Settings(
+        model="nova-3-general",
+        language="es",
+        punctuate=True,
+        smart_format=True,
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Finalize on VAD stop</strong>: When the pipeline's VAD detects the user has stopped speaking, the service sends a <a href="https://developers.deepgram.com/docs/finalize">finalize</a> request to Deepgram for faster final transcript delivery.</li><li><strong>Multilingual support</strong>: Deepgram Nova models support many languages. The default is <code>Language.EN</code> (English). Set <code>language="multi"</code> in settings to enable multilingual transcription, which will detect and transcribe multiple languages within the same audio stream.</li><li><strong>Runtime settings updates</strong>: Changing settings via <code>STTUpdateSettingsFrame</code> triggers a reconnection with the new parameters. To avoid audio loss, reconnection is deferred until the current user turn ends (i.e., until <code>UserStoppedSpeakingFrame</code> is received). Audio frames arriving during the reconnect are buffered and replayed once the new connection is ready.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a> (<code>on_connected</code>, <code>on_disconnected</code>, <code>on_connection_error</code>).</p>
+<h2>DeepgramFluxSTTService</h2>
+<p>&lt;Note&gt;   Deepgram Flux provides its own user turn start and end detection and   automatically requests <code>ExternalUserTurnStrategies</code> at start, so you don't   need to configure turn strategies manually. Pass your own   <code>user_turn_strategies</code> only to override the service's recommendation. See   <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn   Strategies</a>   for more details. &lt;/Note&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepgram API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.deepgram.com/v2/listen"&gt;   WebSocket URL for the Deepgram Flux API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="flux-general-en" deprecated&gt;   Deepgram Flux model to use for transcription. *Deprecated in v0.0.105. Use   <code>settings=DeepgramFluxSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool" default="None"&gt;   Opt out of the Deepgram Model Improvement Program. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="flux_encoding" type="str" default="linear16"&gt;   Audio encoding format required by the Flux API. Must be <code>"linear16"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tag" type="list" default="None"&gt;   Tags to label requests for identification during usage reporting. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Legacy configuration options. *Deprecated in v0.0.105. Use   <code>settings=DeepgramFluxSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramFluxSTTService.Settings" default="None"&gt;   Configuration settings for the Flux API. See <a href="#settings-2">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether the bot should be interrupted when Flux detects user speech. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="watchdog_min_timeout" type="float" default="0.5"&gt;   Minimum silence duration in seconds before the watchdog sends silence to   prevent dangling turns. The actual threshold is <code>max(chunk_duration * 2,       watchdog_min_timeout)</code>, adapting automatically to the audio chunk size in use. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramFluxSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th><th>On-the-fly</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"flux-general-en"</code></td><td>Deepgram Flux model to use. *(Inherited from base STT settings.)*</td><td></td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Recognition language. *(Inherited from base STT settings.)*</td><td></td></tr><tr><td><code>eager_eot_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>EagerEndOfTurn threshold. Lower values trigger faster responses with more LLM calls; higher values are more conservative. <code>None</code> disables EagerEndOfTurn.</td><td>✓</td></tr><tr><td><code>eot_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>End-of-turn confidence threshold (default 0.7). Lower = faster turn endings.</td><td>✓</td></tr><tr><td><code>eot_timeout_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Time in ms after speech to finish a turn regardless of confidence (default 5000).</td><td>✓</td></tr><tr><td><code>keyterm</code></td><td><code>list</code></td><td><code>[]</code></td><td>Key terms to boost recognition accuracy for specialized terminology.</td><td>✓</td></tr><tr><td><code>min_confidence</code></td><td><code>float</code></td><td><code>None</code></td><td>Minimum average confidence required to produce a <code>TranscriptionFrame</code>.</td><td></td></tr><tr><td><code>numerals</code></td><td><code>bool</code></td><td><code>None</code></td><td>Convert spoken numbers to numeral form (e.g. "twenty three" → "23"). Connection-time only; cannot be updated mid-stream.</td><td></td></tr><tr><td><code>language_hints</code></td><td><code>list[Language]</code></td><td><code>None</code></td><td>Languages to bias transcription toward. Only honored by <code>flux-general-multi</code>. Empty list clears hints; <code>None</code> means auto-detect.</td><td>✓</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Parameters marked with ✓ in the "On-the-fly" column can be updated mid-stream   using <code>STTUpdateSettingsFrame</code> without requiring a WebSocket reconnect. &lt;/Note&gt;</p>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
+
+stt = DeepgramFluxSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+)</code></pre>
+<h4>With EagerEndOfTurn</h4>
+<pre><code>from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
+
+stt = DeepgramFluxSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramFluxSTTService.Settings(
+        eager_eot_threshold=0.5,
+        eot_threshold=0.8,
+        keyterm=["Pipecat", "Deepgram"],
+    ),
+)</code></pre>
+<h4>Multilingual Support</h4>
+<pre><code>from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
+from pipecat.transcriptions.language import Language
+
+# Use flux-general-multi with language hints
+stt = DeepgramFluxSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramFluxSTTService.Settings(
+        model="flux-general-multi",
+        language_hints=[Language.EN, Language.ES, Language.FR],
+    ),
+)</code></pre>
+<h4>Updating Settings Mid-Stream</h4>
+<p>The <code>keyterm</code>, <code>eot_threshold</code>, <code>eager_eot_threshold</code>, <code>eot_timeout_ms</code>, and <code>language_hints</code> settings can be updated on-the-fly using <code>STTUpdateSettingsFrame</code>:</p>
+<pre><code>from pipecat.frames.frames import STTUpdateSettingsFrame
+from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
+from pipecat.transcriptions.language import Language
+
+# During pipeline execution, update settings without reconnecting
+await worker.queue_frame(
+    STTUpdateSettingsFrame(
+        delta=DeepgramFluxSTTService.Settings(
+            eot_threshold=0.8,
+            keyterm=["Pipecat", "Deepgram"],
+        )
+    )
+)
+
+# Detect-then-lock: narrow language hints mid-stream
+await worker.queue_frame(
+    STTUpdateSettingsFrame(
+        delta=DeepgramFluxSTTService.Settings(
+            language_hints=[Language.ES],
+        )
+    )
+)</code></pre>
+<p>This sends a <code>Configure</code> message to Deepgram over the existing WebSocket connection, allowing you to adjust turn detection behavior, key terms, and language hints without interrupting the conversation.</p>
+<h3>Notes</h3>
+<ul><li><strong>Turn management</strong>: Flux provides its own turn detection via <code>StartOfTurn</code>/<code>EndOfTurn</code> events and broadcasts <code>UserStartedSpeakingFrame</code>/<code>UserStoppedSpeakingFrame</code> directly. The service automatically requests <code>ExternalUserTurnStrategies</code> at start to avoid conflicting VAD-based turn management.</li><li><strong>VAD is optional</strong>: When Flux drives turn detection, a VAD (such as <code>SileroVADAnalyzer</code>) in your transport is not required for core functionality. Include one if you want useful STT metrics; omit it otherwise.</li><li><strong>On-the-fly configuration</strong>: Supports updating <code>keyterm</code>, <code>eot_threshold</code>, <code>eager_eot_threshold</code>, <code>eot_timeout_ms</code>, and <code>language_hints</code> mid-stream via <code>STTUpdateSettingsFrame</code>. These updates are sent as <code>Configure</code> messages over the existing WebSocket connection without requiring a reconnect.</li><li><strong>EagerEndOfTurn</strong>: Enabling <code>eager_eot_threshold</code> provides faster response times by predicting end-of-turn before it is confirmed. EagerEndOfTurn transcripts are pushed as <code>InterimTranscriptionFrame</code>s. If the user resumes speaking, a <code>TurnResumed</code> event is fired.</li><li><strong>Multilingual support</strong>: Use the <code>flux-general-multi</code> model with <code>language_hints</code> to bias transcription toward specific languages (EN, ES, FR, DE, HI, RU, PT, JA, IT, NL). <code>TranscriptionFrame.language</code> reflects the detected language for each turn. Omit hints for auto-detection or pass a subset to bias toward expected languages.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a> (<code>on_connected</code>, <code>on_disconnected</code>, <code>on_connection_error</code>), plus turn-level events for more granular conversation tracking:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_start_of_turn</code></td><td>Start of a new turn detected</td></tr><tr><td><code>on_turn_resumed</code></td><td>A previously paused turn has resumed</td></tr><tr><td><code>on_end_of_turn</code></td><td>End of turn detected</td></tr><tr><td><code>on_eager_end_of_turn</code></td><td>Early end-of-turn prediction</td></tr><tr><td><code>on_update</code></td><td>Transcript updated</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_start_of_turn")
+async def on_start_of_turn(service, transcript):
+    print(f"Turn started: {transcript}")
+
+@stt.event_handler("on_end_of_turn")
+async def on_end_of_turn(service, transcript):
+    print(f"Turn ended: {transcript}")
+
+@stt.event_handler("on_eager_end_of_turn")
+async def on_eager_end_of_turn(service, transcript):
+    print(f"Early end-of-turn prediction: {transcript}")</code></pre>
+<p>Turn events receive <code>(service, transcript)</code> where <code>transcript</code> is the current transcript text. The <code>on_turn_resumed</code> event receives only <code>(service)</code>.</p>
+<h2>DeepgramSageMakerSTTService</h2>
+<p>&lt;ParamField path="endpoint_name" type="str" required&gt;   Name of the SageMaker endpoint with Deepgram model deployed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" required&gt;   AWS region where the SageMaker endpoint is deployed (e.g., <code>"us-east-2"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channels" type="int" default="1"&gt;   Number of audio channels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="multichannel" type="bool" default="False"&gt;   Transcribe each audio channel independently. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool" default="None"&gt;   Opt out of the Deepgram Model Improvement Program. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="live_options" type="LiveOptions" default="None" deprecated&gt;   Legacy configuration options. *Deprecated in v0.0.105. Use   <code>settings=DeepgramSageMakerSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramSageMakerSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings-3">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="DEEPGRAM_SAGEMAKER_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramSageMakerSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<p>The SageMaker service inherits all settings from <code>DeepgramSTTService.Settings</code>. See <a href="#settings">DeepgramSTTService Settings</a> above for the full list.</p>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.deepgram.sagemaker.stt import DeepgramSageMakerSTTService
+
+stt = DeepgramSageMakerSTTService(
+    endpoint_name=os.getenv("SAGEMAKER_STT_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION"),
+    settings=DeepgramSageMakerSTTService.Settings(
+        model="nova-3",
+        language="en",
+        interim_results=True,
+        punctuate=True,
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Finalize on VAD stop</strong>: Like <code>DeepgramSTTService</code>, the SageMaker service sends a <a href="https://developers.deepgram.com/docs/finalize">finalize</a> request when the pipeline's VAD detects the user has stopped speaking.</li><li><strong>SageMaker deployment</strong>: Requires a Deepgram model deployed to an AWS SageMaker endpoint. See the <a href="https://developers.deepgram.com/docs/deploy-amazon-sagemaker">Deepgram SageMaker deployment guide</a> for setup instructions.</li><li><strong>Keepalive</strong>: Automatically sends KeepAlive messages every 5 seconds to maintain the connection during periods of silence.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a> (<code>on_connected</code>, <code>on_disconnected</code>, <code>on_connection_error</code>).</p>
+<h2>DeepgramFluxSageMakerSTTService</h2>
+<p>&lt;Note&gt;   Deepgram Flux provides its own user turn start and end detection and   automatically requests <code>ExternalUserTurnStrategies</code> at start, so you don't   need to configure turn strategies manually. Pass your own   <code>user_turn_strategies</code> only to override the service's recommendation. See   <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn   Strategies</a>   for more details. &lt;/Note&gt;</p>
+<p>&lt;ParamField path="endpoint_name" type="str" required&gt;   Name of the SageMaker endpoint with Deepgram Flux model deployed (e.g.,   <code>"my-deepgram-flux-endpoint"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" required&gt;   AWS region where the endpoint is deployed (e.g., <code>"us-east-2"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. Must be <code>"linear16"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool" default="None"&gt;   Opt out of the Deepgram Model Improvement Program. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tag" type="list" default="None"&gt;   Tags to label requests for identification during usage reporting. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether to interrupt the bot when Flux detects user speech. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="watchdog_min_timeout" type="float" default="0.5"&gt;   Minimum silence duration in seconds before the watchdog sends silence to   prevent dangling turns. The actual threshold is <code>max(chunk_duration * 2,       watchdog_min_timeout)</code>, adapting automatically to the audio chunk size in use. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramFluxSageMakerSTTService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings-4">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramFluxSageMakerSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<p>The Flux SageMaker service inherits all settings from <code>DeepgramFluxSTTService.Settings</code> with the same on-the-fly configuration support:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th><th>On-the-fly</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"flux-general-en"</code></td><td>Deepgram Flux model to use. *(Inherited from base STT settings.)*</td><td></td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Recognition language. *(Inherited from base STT settings.)*</td><td></td></tr><tr><td><code>eager_eot_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>EagerEndOfTurn threshold. Lower values trigger faster responses with more LLM calls; higher values are more conservative. <code>None</code> disables EagerEndOfTurn.</td><td>✓</td></tr><tr><td><code>eot_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>End-of-turn confidence threshold (default 0.7). Lower = faster turn endings.</td><td>✓</td></tr><tr><td><code>eot_timeout_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Time in ms after speech to finish a turn regardless of confidence (default 5000).</td><td>✓</td></tr><tr><td><code>keyterm</code></td><td><code>list</code></td><td><code>[]</code></td><td>Key terms to boost recognition accuracy for specialized terminology.</td><td>✓</td></tr><tr><td><code>min_confidence</code></td><td><code>float</code></td><td><code>None</code></td><td>Minimum average confidence required to produce a <code>TranscriptionFrame</code>.</td><td></td></tr><tr><td><code>numerals</code></td><td><code>bool</code></td><td><code>None</code></td><td>Convert spoken numbers to numeral form (e.g. "twenty three" → "23"). Connection-time only; cannot be updated mid-stream.</td><td></td></tr><tr><td><code>language_hints</code></td><td><code>list[Language]</code></td><td><code>None</code></td><td>Languages to bias transcription toward. Only honored by <code>flux-general-multi</code>. Empty list clears hints; <code>None</code> means auto-detect.</td><td>✓</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Parameters marked with ✓ in the "On-the-fly" column can be updated mid-stream   using <code>STTUpdateSettingsFrame</code> without requiring a session restart. These   updates are sent as <code>Configure</code> messages to the Flux model over the existing   connection. &lt;/Note&gt;</p>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.deepgram.flux.sagemaker.stt import DeepgramFluxSageMakerSTTService
+
+stt = DeepgramFluxSageMakerSTTService(
+    endpoint_name=os.getenv("SAGEMAKER_FLUX_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION"),
+)</code></pre>
+<h4>With Custom Settings</h4>
+<pre><code>from pipecat.services.deepgram.flux.sagemaker.stt import DeepgramFluxSageMakerSTTService
+
+stt = DeepgramFluxSageMakerSTTService(
+    endpoint_name=os.getenv("SAGEMAKER_FLUX_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION"),
+    settings=DeepgramFluxSageMakerSTTService.Settings(
+        model="flux-general-en",
+        eot_threshold=0.7,
+        eager_eot_threshold=0.5,
+        keyterm=["Pipecat", "AI"],
+    ),
+)</code></pre>
+<h4>Updating Settings Mid-Stream</h4>
+<p>The <code>keyterm</code>, <code>eot_threshold</code>, <code>eager_eot_threshold</code>, <code>eot_timeout_ms</code>, and <code>language_hints</code> settings can be updated on-the-fly:</p>
+<pre><code>from pipecat.frames.frames import STTUpdateSettingsFrame
+from pipecat.services.deepgram.flux.sagemaker.stt import DeepgramFluxSageMakerSTTService
+from pipecat.transcriptions.language import Language
+
+# Update settings without reconnecting
+await worker.queue_frame(
+    STTUpdateSettingsFrame(
+        delta=DeepgramFluxSageMakerSTTService.Settings(
+            eot_threshold=0.8,
+            keyterm=["Pipecat", "Deepgram", "SageMaker"],
+            language_hints=[Language.EN],
+        )
+    )
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Turn management</strong>: Flux provides native turn detection via <code>StartOfTurn</code>/<code>EndOfTurn</code> events and broadcasts <code>UserStartedSpeakingFrame</code>/<code>UserStoppedSpeakingFrame</code> directly. The service automatically requests <code>ExternalUserTurnStrategies</code> at start to avoid conflicting VAD-based turn management.</li><li><strong>VAD is optional</strong>: When Flux drives turn detection, a VAD (such as <code>SileroVADAnalyzer</code>) in your transport is not required for core functionality. Include one if you want useful STT metrics; omit it otherwise.</li><li><strong>On-the-fly configuration</strong>: Supports updating <code>keyterm</code>, <code>eot_threshold</code>, <code>eager_eot_threshold</code>, <code>eot_timeout_ms</code>, and <code>language_hints</code> mid-stream via <code>STTUpdateSettingsFrame</code>. These updates are sent as <code>Configure</code> messages over the existing HTTP/2 connection without requiring a reconnect.</li><li><strong>EagerEndOfTurn</strong>: Enabling <code>eager_eot_threshold</code> provides faster response times by predicting end-of-turn before it is confirmed. EagerEndOfTurn transcripts are pushed as <code>InterimTranscriptionFrame</code>s. If the user resumes speaking, a <code>TurnResumed</code> event is fired.</li><li><strong>Multilingual support</strong>: Use the <code>flux-general-multi</code> model with <code>language_hints</code> to bias transcription toward specific languages (EN, ES, FR, DE, HI, RU, PT, JA, IT, NL). <code>TranscriptionFrame.language</code> reflects the detected language for each turn. Omit hints for auto-detection or pass a subset to bias toward expected languages.</li><li><strong>SageMaker deployment</strong>: Requires a Deepgram Flux model deployed to an AWS SageMaker endpoint. Unlike Nova models, Flux provides native turn detection and does not require external VAD.</li><li><strong>No KeepAlive needed</strong>: The Flux protocol uses a dynamic watchdog mechanism that sends silence when needed to maintain the connection (threshold: <code>max(chunk_duration * 2, watchdog_min_timeout)</code>), so manual KeepAlive messages are not required.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a> (<code>on_connected</code>, <code>on_disconnected</code>, <code>on_connection_error</code>), plus turn-level events for granular conversation tracking:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_start_of_turn</code></td><td>Start of a new turn detected</td></tr><tr><td><code>on_turn_resumed</code></td><td>A previously paused turn has resumed</td></tr><tr><td><code>on_end_of_turn</code></td><td>End of turn detected</td></tr><tr><td><code>on_eager_end_of_turn</code></td><td>Early end-of-turn prediction</td></tr><tr><td><code>on_update</code></td><td>Transcript updated</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_start_of_turn")
+async def on_start_of_turn(service, transcript):
+    print(f"Turn started: {transcript}")
+
+@stt.event_handler("on_end_of_turn")
+async def on_end_of_turn(service, transcript):
+    print(f"Turn ended: {transcript}")
+
+@stt.event_handler("on_eager_end_of_turn")
+async def on_eager_end_of_turn(service, transcript):
+    print(f"Early end-of-turn prediction: {transcript}")</code></pre>
+<p>Turn events receive <code>(service, transcript)</code> where <code>transcript</code> is the current transcript text. The <code>on_turn_resumed</code> event receives only <code>(service)</code>.</p>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> / <code>live_options=</code> pattern is deprecated as of   v0.0.105. Use <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/deepgram">https://docs.pipecat.ai/api-reference/server/services/stt/deepgram</a></p>
+</div></main></div></body></html>

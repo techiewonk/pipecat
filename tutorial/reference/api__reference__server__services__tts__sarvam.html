@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sarvam AI Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Sarvam AI Text-to-Speech</h1>
+<blockquote>TTS for Indian languages with SarvamTTSService and SarvamHttpTTSService, with extensive voice customization on Sarvam AI's API.</blockquote>
+<h2>Overview</h2>
+<p><code>SarvamTTSService</code> provides text-to-speech synthesis specialized for Indian languages and voices. The service offers extensive voice customization options including pitch, pace, and loudness control, with support for multiple Indian languages and preprocessing for mixed-language content. The <code>bulbul:v3-beta</code> model adds temperature control and 25 new speaker voices.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Sarvam TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.sarvam.tts.html"&gt;     Pipecat's API methods for Sarvam AI TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-sarvam.py"&gt;     Complete example with Indian language support   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sarvam Documentation" icon="book" href="https://docs.sarvam.ai/api-reference-docs/text-to-speech/convert"&gt;     Official Sarvam AI text-to-speech API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sarvam Console" icon="microphone" href="https://www.sarvam.ai/"&gt;     Access Indian language voices and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Sarvam AI services, no additional dependencies are required beyond the base installation:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Sarvam AI Account Setup</h3>
+<p>Before using Sarvam AI TTS services, you need:</p>
+<ol><li><strong>Sarvam AI Account</strong>: Sign up at <a href="https://www.sarvam.ai/">Sarvam AI Console</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Language Selection</strong>: Choose from available Indian language voices</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SARVAM_API_KEY</code>: Your Sarvam AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>Sarvam offers two service implementations: <code>SarvamTTSService</code> (WebSocket) for real-time streaming and <code>SarvamHttpTTSService</code> (HTTP) for simpler batch synthesis.</p>
+<h3>SarvamTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Sarvam AI API subscription key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="bulbul:v2" deprecated&gt;   TTS model to use. Options: <code>bulbul:v2</code>, <code>bulbul:v3-beta</code>, <code>bulbul:v3</code>.   *Deprecated in v0.0.105. Use <code>settings=SarvamTTSService.Settings(model=...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None" deprecated&gt;   Speaker voice ID. If <code>None</code>, uses the model-appropriate default (<code>anushka</code> for   v2, <code>shubh</code> for v3). *Deprecated in v0.0.105. Use   <code>settings=SarvamTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.sarvam.ai/text-to-speech/ws"&gt;   WebSocket URL for the TTS backend. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries, producing more natural   speech. <code>TOKEN</code> streams tokens directly for lower latency. Import from   <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None" deprecated&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz (8000, 16000, 22050, 24000). If <code>None</code>, uses   model-specific default (22050 for v2, 24000 for v3). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=SarvamTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SarvamTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#sarvamttsservice-settings">SarvamTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>SarvamHttpTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Sarvam AI API subscription key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="bulbul:v2" deprecated&gt;   TTS model to use. Options: <code>bulbul:v2</code>, <code>bulbul:v3-beta</code>, <code>bulbul:v3</code>.   *Deprecated in v0.0.105. Use   <code>settings=SarvamHttpTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None" deprecated&gt;   Speaker voice ID. If <code>None</code>, uses the model-appropriate default. *Deprecated   in v0.0.105. Use <code>settings=SarvamHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.sarvam.ai"&gt;   Sarvam AI API base URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz (8000, 16000, 22050, 24000). If <code>None</code>, uses   model-specific default. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=SarvamHttpTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SarvamHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#sarvamhttpttsservice-settings">SarvamHttpTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>SarvamTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SarvamTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>enable_preprocessing</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Enable text preprocessing.</td></tr><tr><td><code>pace</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Pace of speech.</td></tr><tr><td><code>pitch</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Pitch of speech.</td></tr><tr><td><code>loudness</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Loudness of speech.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Temperature for speech synthesis.</td></tr><tr><td><code>min_buffer_size</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Minimum buffer size for WebSocket.</td></tr><tr><td><code>max_chunk_length</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Maximum chunk length for WebSocket.</td></tr></tbody></table></div>
+<h4>SarvamHttpTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SarvamHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>enable_preprocessing</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Enable text preprocessing.</td></tr><tr><td><code>pace</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Pace of speech.</td></tr><tr><td><code>pitch</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Pitch of speech.</td></tr><tr><td><code>loudness</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Loudness of speech.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Temperature for speech synthesis.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup (WebSocket)</h3>
+<pre><code>from pipecat.services.sarvam import SarvamTTSService
+from pipecat.transcriptions.language import Language
+
+tts = SarvamTTSService(
+    api_key=os.getenv("SARVAM_API_KEY"),
+    settings=SarvamTTSService.Settings(
+        voice="anushka",
+        model="bulbul:v2",
+        language=Language.HI,
+    ),
+)</code></pre>
+<h3>With v3 Model and Temperature Control</h3>
+<pre><code>from pipecat.services.sarvam import SarvamTTSService
+from pipecat.transcriptions.language import Language
+
+tts = SarvamTTSService(
+    api_key=os.getenv("SARVAM_API_KEY"),
+    settings=SarvamTTSService.Settings(
+        voice="aditya",
+        model="bulbul:v3-beta",
+        language=Language.HI,
+        pace=1.2,
+        temperature=0.8,
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>import aiohttp
+from pipecat.services.sarvam import SarvamHttpTTSService
+from pipecat.transcriptions.language import Language
+
+async with aiohttp.ClientSession() as session:
+    tts = SarvamHttpTTSService(
+        api_key=os.getenv("SARVAM_API_KEY"),
+        aiohttp_session=session,
+        settings=SarvamHttpTTSService.Settings(
+            voice="anushka",
+            model="bulbul:v2",
+            language=Language.HI,
+            pitch=0.1,
+            pace=1.2,
+            loudness=1.5,
+        ),
+    )</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Model differences</strong>: <code>bulbul:v2</code> supports pitch and loudness control; <code>bulbul:v3-beta</code> and <code>bulbul:v3</code> add temperature control but do not support pitch or loudness. Setting unsupported parameters for a model will log a warning.</li><li><strong>Default speakers vary by model</strong>: v2 defaults to <code>anushka</code>; v3 models default to <code>shubh</code>.</li><li><strong>Default sample rates vary by model</strong>: v2 defaults to 22050 Hz; v3 models default to 24000 Hz.</li><li><strong>Indian language focus</strong>: Sarvam AI specializes in Indian languages, supporting Bengali, English (India), Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil, and Telugu.</li><li><strong>Pace ranges differ</strong>: <code>bulbul:v2</code> supports pace from 0.3 to 3.0, while v3 models support 0.5 to 2.0. Values outside the range are clamped automatically.</li></ul>
+<h2>Event Handlers</h2>
+<p>Sarvam WebSocket TTS supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Sarvam WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Sarvam WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Sarvam")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/sarvam">https://docs.pipecat.ai/api-reference/server/services/tts/sarvam</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L30 · Runner & telephony — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 30 · Part VI — Production & quality</div>
+      <h1>Runner & telephony</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">The dev runner is how every example boots and picks a transport. Understand it, and putting your bot on a phone number is a config change.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="runner">How a bot boots</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="POST /start {transport}|runner/run.py|RunnerArguments|create_transport()|your bot()"
+           data-caption="A client hits the dev server picking a transport|runner/run.py routes WebRTC/Daily/telephony/WS|it builds the matching RunnerArguments|create_transport() constructs the right transport (+ serializer)|and calls your bot(runner_args) entry point">
+      </div>
+      <p>One server serves WebRTC, Daily, telephony, and WebSocket simultaneously; the client picks via the request. Your <code>bot(runner_args)</code> is the single entry point — the same one Pipecat Cloud calls.</p>
+
+      <h2 id="telephony">Telephony = WebSocket + a serializer</h2>
+      <p>Phone providers stream μ-law audio over a WebSocket in their own JSON format. A <code>FrameSerializer</code> converts between that and Pipecat frames; the runner auto-wires the right one.</p>
+      <pre><code class="language-python">from pipecat.serializers.twilio import TwilioFrameSerializer
+transport = FastAPIWebsocketTransport(websocket=ws, params=FastAPIWebsocketParams(
+    audio_in_enabled=True, audio_out_enabled=True, add_wav_header=False,
+    serializer=TwilioFrameSerializer(stream_sid=..., call_sid=..., account_sid=..., auth_token=...),
+))</code></pre>
+      <pre><code class="language-bash">ngrok http 7860                                            # expose your server
+uv run python getting-started/06-voice-agent.py -t twilio -x &lt;ngrok-host&gt;</code></pre>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Provider</th><th>Serializer</th></tr></thead>
+        <tbody>
+          <tr><td>Twilio</td><td><code>TwilioFrameSerializer</code></td></tr>
+          <tr><td>Telnyx</td><td><code>TelnyxFrameSerializer</code></td></tr>
+          <tr><td>Plivo</td><td><code>PlivoFrameSerializer</code></td></tr>
+          <tr><td>Exotel</td><td><code>ExotelFrameSerializer</code></td></tr>
+          <tr><td>Vonage / Genesys</td><td><code>VonageFrameSerializer</code> / <code>GenesysAudioHookSerializer</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>runner/run.py</code> — dev server, route setup, <code>parse_telephony_websocket()</code>. <code>runner/types.py</code> — <code>RunnerArguments</code> subclasses. <code>runner/utils.py</code> — <code>create_transport()</code>, auto serializer wiring. <code>serializers/*</code> — all <code>FrameSerializer</code>s (+ <code>ProtobufFrameSerializer</code>).</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 13</p>
+        <p>Put Atlas on a phone number: run it with <code>-t twilio</code> behind ngrok and call in. Same bot, now reachable by phone.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run any example with <code>-t daily</code> and note the unchanged code. (2) Read <code>runner/utils.py</code>'s <code>create_transport</code> and find the telephony auto-detection. (3) Set up a Twilio number pointing at your ngrok URL and call it.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What is the single entry point every transport (and Pipecat Cloud) calls?</summary><p><code>bot(runner_args)</code> — it builds the transport via <code>create_transport</code> and runs your pipeline.</p></details>
+      <details><summary>2. What makes telephony work over a WebSocket?</summary><p>A provider-specific <code>FrameSerializer</code> that converts the provider's JSON/μ-law stream to/from Pipecat frames.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l31-ivr-voicemail.html">Lesson 31 — IVR & voicemail →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLNG Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>SLNG Text-to-Speech</h1>
+<blockquote>SlngTTSService and SlngHttpTTSService synthesize TTS through SLNG, a unified voice AI gateway routing multiple providers.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="slng-ai" maintainerUrl="https://github.com/slng-ai" repo="https://github.com/slng-ai/pipecat-slng" /&gt;</p>
+<h2>Overview</h2>
+<p><code>SlngTTSService</code> and <code>SlngHttpTTSService</code> synthesize speech through <a href="https://slng.ai">SLNG</a>, a unified voice AI gateway that routes to multiple TTS providers (Deepgram, ElevenLabs, Rime, Sarvam, and more) through a single API key. Swapping the <code>model</code> string switches providers with no other code changes. Use the WebSocket <code>SlngTTSService</code> for low-latency, interruptible streaming synthesis, or the HTTP <code>SlngHttpTTSService</code> for simple, non-streaming request/response synthesis.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/slng-ai/pipecat-slng"&gt;     Source code, examples, and issues for the SLNG integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-slng/"&gt;     The <code>pipecat-slng</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SLNG Website" icon="globe" href="https://slng.ai"&gt;     Learn about the SLNG unified voice AI gateway   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SLNG Docs" icon="book" href="https://docs.slng.ai/"&gt;     Documentation for the SLNG platform and APIs   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-slng</code></pre>
+<h2>Prerequisites</h2>
+<h3>SLNG Account Setup</h3>
+<p>Before using the SLNG TTS services, you need:</p>
+<ol><li><strong>SLNG Account</strong>: Get an API key at <a href="https://slng.ai">slng.ai</a></li><li><strong>API Key</strong>: Used to authenticate all requests to SLNG</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SLNG_API_KEY</code>: Your SLNG API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>Both services share the same <code>Settings</code> dataclass (<code>SlngTTSSettings</code>) and most constructor parameters. The key difference is transport: <code>SlngTTSService</code> connects over WebSocket and exposes the full config surface, while <code>SlngHttpTTSService</code> issues one HTTP POST per utterance.</p>
+<h3><code>SlngTTSService</code> (WebSocket)</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Authentication key for the SLNG API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="slng/deepgram/aura:2-en"&gt;   The TTS model to use. Use a <code>slng/...</code> prefix for SLNG-hosted routes, or an   external provider route (e.g. <code>deepgram/aura:2</code>) proxied through SLNG. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="None"&gt;   Voice identifier for synthesis (e.g. <code>aura-2-thalia-en</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="api.slng.ai"&gt;   The API host. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. One of <code>"linear16"</code>, <code>"mp3"</code>, <code>"opus"</code>, <code>"mulaw"</code>, or   <code>"alaw"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. If <code>None</code>, uses the pipeline sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region_override" type="str" default="None"&gt;   Pin requests to a specific datacenter. One of <code>"ap-southeast-2"</code>,   <code>"eu-north-1"</code>, <code>"us-east-1"</code>. Sent as the <code>X-Region-Override</code> header and   takes precedence over <code>world_part_override</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="world_part_override" type="str" default="None"&gt;   Constrain routing to a broad geographic zone. One of <code>"ap"</code>, <code>"eu"</code>, <code>"na"</code>.   Sent as the <code>X-World-Part-Override</code> header. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="provider_key" type="str" default="None"&gt;   Your own upstream provider API key (BYOK). Sent as the <code>X-Slng-Provider-Key</code>   header so the provider bills your account directly. Only supported on external   catalog routes (no <code>slng/</code> prefix). See the <a href="https://docs.slng.ai/execution-layer/byok">BYOK   docs</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN"&gt;   Synthesis language. Defaults to <code>Language.EN</code> when not given. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="speed" type="float" default="None"&gt;   Speech speed multiplier. <code>None</code> keeps the server default. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SlngTTSService.Settings" default="None"&gt;   Runtime-updatable settings override. Merged on top of any explicit kwargs. &lt;/ParamField&gt;</p>
+<h3><code>SlngHttpTTSService</code> (HTTP)</h3>
+<p><code>SlngHttpTTSService</code> accepts the same parameters as <code>SlngTTSService</code> with these differences:</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.slng.ai"&gt;   Full base URL (including scheme) of the SLNG API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" default="None"&gt;   Optional aiohttp session. If <code>None</code>, one is created in <code>start()</code> and closed in   <code>stop()</code>/<code>cancel()</code>. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   The HTTP bridge request body accepts only <code>{text, voice}</code> — there is no   <code>config</code> object — so <code>encoding</code>, <code>sample_rate</code>, <code>language</code>, and <code>speed</code> are   not configurable over HTTP. <code>region_override</code>/<code>world_part_override</code> are sent   as the <code>region</code>/<code>world-part</code> query parameters. WAV responses are decoded to   raw PCM; compressed responses (MP3/Ogg) yield an <code>ErrorFrame</code>. Use the   streaming <code>SlngTTSService</code> if you need codec control. &lt;/Note&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SlngTTSSettings(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier for speech synthesis.</td></tr><tr><td><code>language</code></td><td><code>Language</code></td><td><code>Language.EN</code></td><td>Language for speech synthesis.</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>None</code></td><td>Speech speed multiplier. <code>None</code> uses the server default.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Changing <code>voice</code>, <code>speed</code>, or <code>language</code> mid-session on the WebSocket service   reconnects to re-run the init handshake — expect a brief reconnect. See the   <a href="https://github.com/slng-ai/pipecat-slng">source repository</a> for the   authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Streaming (WebSocket)</h3>
+<pre><code>import os
+from pipecat_slng import SlngTTSService
+
+tts = SlngTTSService(
+    api_key=os.getenv("SLNG_API_KEY"),
+    model="slng/deepgram/aura:2-en",
+    voice="aura-2-thalia-en",
+)
+
+# ... add tts to your pipeline</code></pre>
+<h3>Non-streaming (HTTP)</h3>
+<pre><code>import os
+from pipecat_slng import SlngHttpTTSService
+
+tts = SlngHttpTTSService(
+    api_key=os.getenv("SLNG_API_KEY"),
+    model="slng/deepgram/aura:2-en",
+    voice="aura-2-thalia-en",
+)
+
+# ... add tts to your pipeline</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v1.3.0. Check the <a href="https://github.com/slng-ai/pipecat-slng">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/slng">https://docs.pipecat.ai/api-reference/server/services/tts/slng</a></p>
+</div></main></div></body></html>

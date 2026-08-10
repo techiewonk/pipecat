@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Azure Speech-to-Text</h1>
+<blockquote>AzureSTTService runs continuous real-time STT on the Azure Cognitive Services Speech SDK, with custom endpoints and broad language support.</blockquote>
+<h2>Overview</h2>
+<p><code>AzureSTTService</code> provides real-time speech recognition using Azure's Cognitive Services Speech SDK with support for continuous recognition, extensive language support, and configurable audio processing for enterprise applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Azure STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.azure.stt.html"&gt;     Pipecat's API methods for Azure Speech integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-azure.py"&gt;     Complete example with Azure services integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Azure Speech Documentation" icon="book" href="https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-to-text"&gt;     Official Azure Speech Service documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Azure Portal" icon="microphone" href="https://portal.azure.com/"&gt;     Create Speech Services resource and get API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Azure Speech services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[azure]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Azure Account Setup</h3>
+<p>Before using Azure STT services, you need:</p>
+<ol><li><strong>Azure Account</strong>: Sign up at <a href="https://portal.azure.com/">Azure Portal</a></li><li><strong>Speech Services Resource</strong>: Create a Speech Services resource in Azure</li><li><strong>API Credentials</strong>: Get your API key and region from the resource</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>AZURE_SPEECH_API_KEY</code>: Your Azure Speech API key</li><li><code>AZURE_SPEECH_REGION</code>: Your Azure Speech region (required unless using <code>private_endpoint</code>)</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Azure Cognitive Services subscription key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" default="None"&gt;   Azure region for the Speech service (e.g., <code>"eastus"</code>, <code>"westus2"</code>). Required   unless <code>private_endpoint</code> is provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN_US" deprecated&gt;   Language for speech recognition. *Deprecated in v0.0.105. Use   <code>settings=AzureSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="private_endpoint" type="str" default="None"&gt;   Private endpoint for STT behind firewall. Enables use in private networks.   When provided, <code>region</code> becomes optional (takes priority if both are   specified). See <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-services-private-link?tabs=portal">Azure Speech private link   documentation</a>   for setup details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="endpoint_id" type="str" default="None"&gt;   Custom model endpoint ID. Use this for custom speech models deployed in Azure. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AzureSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="AZURE_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AzureSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN_US</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>profanity</code></td><td>`"raw" \</td><td>"masked" \</td><td>"removed"`</td><td><code>None</code></td><td>How Azure handles profanity in transcripts. <code>"raw"</code> returns text as recognized with no masking, <code>"masked"</code> replaces profane words with <code>****</code> (Azure default), <code>"removed"</code> drops profane words. Default <code>None</code> keeps Azure SDK default (<code>"masked"</code>). Use <code>"raw"</code> for non-English deployments where Azure's profanity filter over-eagerly masks ordinary words.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.azure.stt import AzureSTTService
+
+stt = AzureSTTService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region=os.getenv("AZURE_SPEECH_REGION"),
+)</code></pre>
+<h3>With Custom Language</h3>
+<pre><code>from pipecat.services.azure.stt import AzureSTTService
+from pipecat.transcriptions.language import Language
+
+stt = AzureSTTService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region="westus2",
+    settings=AzureSTTService.Settings(
+        language=Language.FR,
+    ),
+)</code></pre>
+<h3>With Profanity Filtering</h3>
+<pre><code>from pipecat.services.azure.stt import AzureSTTService
+
+# Disable profanity masking for non-English deployments
+stt = AzureSTTService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region="westus2",
+    settings=AzureSTTService.Settings(
+        profanity="raw",  # No masking
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>SDK-based (not WebSocket)</strong>: Unlike most other STT services in Pipecat, Azure STT uses the Azure Cognitive Services Speech SDK rather than a raw WebSocket connection. Recognition callbacks run on SDK-managed threads and are bridged to asyncio via <code>asyncio.run_coroutine_threadsafe</code>.</li><li><strong>Continuous recognition</strong>: The service uses Azure's <code>start_continuous_recognition_async</code> for always-on transcription. It provides both interim (<code>recognizing</code>) and final (<code>recognized</code>) results automatically.</li><li><strong>Finalized transcripts</strong>: Azure's <code>RecognizedSpeech</code> events are marked as finalized (<code>TranscriptionFrame(finalized=True)</code>). This enables downstream user-turn stop strategies (e.g., <code>SpeechTimeoutUserTurnStop</code>) to take their fast-path instead of waiting for VAD events, which may not arrive on short utterances.</li><li><strong>Custom endpoints</strong>: Use the <code>endpoint_id</code> parameter to point to a custom speech model deployed in your Azure subscription for domain-specific accuracy improvements.</li><li><strong>Region vs private endpoint</strong>: Either <code>region</code> or <code>private_endpoint</code> must be provided (but not both). If both are specified, <code>private_endpoint</code> takes priority and a warning is logged. If neither is provided, a <code>ValueError</code> is raised.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/azure">https://docs.pipecat.ai/api-reference/server/services/stt/azure</a></p>
+</div></main></div></body></html>

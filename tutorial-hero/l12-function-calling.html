@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L12 · Function calling, async tools & MCP — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 12 · Part II — The voice loop</div>
+      <h1>Function calling, async tools & MCP</h1>
+      <div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: intermediate</span><span class="pill">High value</span></div>
+      <p class="lead">Function calling turns a talker into a doer: the LLM asks to run a function, Pipecat runs your Python, and feeds the result back. MCP extends this to tools hosted in a separate server.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">The call loop</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="LLM:asks to call|run_function_calls|FunctionCallParams|your handler|result_callback|LLM:answers"
+           data-caption="The LLM returns 'call get_weather(location=…)' instead of prose|Pipecat's run_function_calls dispatches it|building a FunctionCallParams with the arguments|Your async handler does the work (API call, DB, …)|You return via result_callback(...)|The result goes back to the LLM, which speaks a natural answer">
+      </div>
+
+      <h2 id="define">Define & register a tool</h2>
+      <pre><code class="language-python">from pipecat.services.llm_service import FunctionCallParams
+
+async def get_current_weather(params: FunctionCallParams, location: str, format: str):
+    """Get the current weather.
+    Args:
+        location: The city and state, e.g. "San Francisco, CA".
+        format: "celsius" or "fahrenheit".
+    """                                                    # the docstring IS the schema
+    data = await fetch_weather(location, format)           # your real work
+    await params.result_callback(data)                     # return to the LLM
+
+@llm.event_handler("on_function_calls_started")            # speak while a slow tool runs
+async def _(service, function_calls):
+    await tts.queue_frame(TTSSpeakFrame("Let me check on that."))
+
+context = LLMContext(tools=[get_current_weather])          # register by passing to context</code></pre>
+      <div class="box py">
+        <p class="title">🐍 The docstring is the contract</p>
+        <p>Pipecat reads the function name, typed arguments, and docstring to tell the LLM how to call it. Vague docstring = the tool never gets used. (Prefer an explicit <code>FunctionSchema</code> for realtime providers — see <a href="l15-realtime.html">Lesson 15</a>.)</p>
+      </div>
+
+      <h2 id="async">Async & cancellable tools</h2>
+      <p>By default a tool is "sync" (the LLM waits). Register with <code>cancel_on_interruption=False</code> to make it "async": the LLM continues, and the result is injected later as a developer message. Interruptions cancel in-flight interruptible calls.</p>
+      <pre><code class="language-python">llm.register_function("slow_lookup", slow_lookup, cancel_on_interruption=False, timeout_secs=20)
+# inside slow_lookup you can stream interim updates:
+await params.result_callback({"status": "still searching…"},
+                             properties=FunctionCallResultProperties(is_final=False))
+await params.result_callback(final_answer)   # the final result</code></pre>
+
+      <h2 id="mcp">MCP — tools from a separate server</h2>
+      <p>The Model Context Protocol lets your bot use tools hosted elsewhere (memory, filesystem, a SaaS API). <code>MCPClient</code> discovers them and registers each as an ordinary Pipecat function.</p>
+      <pre><code class="language-python">from mcp import StdioServerParameters
+from pipecat.services.mcp_service import MCPClient
+
+mcp = MCPClient(StdioServerParameters(command="...", args=[...]))  # local subprocess
+tools = await mcp.register_tools(llm)                              # its tools become the LLM's
+context = LLMContext(tools=tools)
+# streamable-HTTP variant points at a URL instead of a command.</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/llm_service.py</code> — <code>register_function</code> (776), <code>run_function_calls</code> (1244), <code>_run_function_call</code> (1343), the <code>result_callback</code> closure, async-cancellation. <code>adapters/schemas/*</code> — <code>FunctionSchema</code>, <code>ToolsSchema</code>. <code>services/mcp_service.py</code> — the MCP bridge. <code>processors/aggregators/async_tool_messages.py</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 3</p>
+        <p>Give Atlas real tools: a weather lookup and one MCP memory server. Ask "what's the weather in Paris?" and hear the filler line, then the answer.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Add a third tool <code>get_time(location)</code>. (2) Make the weather tool a real <code>async</code> HTTP call. (3) Run <code>mcp/mcp-stdio.py</code>, tell it to remember a fact, reconnect, and recall it.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Where does a tool's schema come from?</summary><p>The function's name, typed parameters, and docstring (or an explicit <code>FunctionSchema</code>).</p></details>
+      <details><summary>2. How is an MCP tool different from a local one?</summary><p>It lives in a separate, standardized tool server; <code>MCPClient</code> registers it as a normal Pipecat function.</p></details>
+      <details><summary>3. What does <code>cancel_on_interruption=False</code> do?</summary><p>Marks the tool "async" — the LLM continues immediately and the result is injected later; the call can be cancelled on interruption.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l13-tts.html">Lesson 13 — Text to Speech →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google Speech-to-Text</h1>
+<blockquote>GoogleSTTService provides real-time STT on Google Cloud Speech-to-Text V2, with 125+ languages, model selection, and VAD.</blockquote>
+<h2>Overview</h2>
+<p><code>GoogleSTTService</code> provides real-time speech recognition using Google Cloud's Speech-to-Text V2 API with support for 125+ languages, multiple models, voice activity detection, and advanced features like automatic punctuation and word-level confidence scores.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Google STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.stt.html"&gt;     Pipecat's API methods for Google Cloud STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-google.py"&gt;     Complete example with Google Cloud services   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Cloud Documentation" icon="book" href="https://cloud.google.com/speech-to-text/v2/docs"&gt;     Official Google Cloud Speech-to-Text documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Cloud Console" icon="microphone" href="https://console.cloud.google.com/iam-admin/serviceaccounts"&gt;     Create service accounts and manage API access   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Google Cloud Speech services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Cloud Setup</h3>
+<p>Before using Google Cloud STT services, you need:</p>
+<ol><li><strong>Google Cloud Account</strong>: Sign up at <a href="https://console.cloud.google.com/">Google Cloud Console</a></li><li><strong>Project Setup</strong>: Create a project and enable the Speech-to-Text API</li><li><strong>Service Account</strong>: Create a service account with Speech-to-Text permissions</li><li><strong>Authentication</strong>: Set up credentials via service account key or Application Default Credentials</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_APPLICATION_CREDENTIALS</code>: Path to your service account key file (recommended)</li><li>Or use Application Default Credentials for cloud deployments</li></ul>
+<h2>Configuration</h2>
+<h3>GoogleSTTService</h3>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string containing Google Cloud service account credentials. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to service account credentials JSON file. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" default="global"&gt;   Google Cloud location (e.g., <code>"global"</code>, <code>"us-central1"</code>). Non-global   locations use regional endpoints. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="GoogleSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for the STT service. *Deprecated in v0.0.105. Use   <code>settings=GoogleSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="GOOGLE_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   You must provide either <code>credentials</code> (JSON string), <code>credentials_path</code> (file   path), or have Application Default Credentials configured. At least one   authentication method is required. &lt;/Note&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GoogleSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"latest_long"</code></td><td>Speech recognition model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>languages</code></td><td>`Language \</td><td>List[Language]`</td><td><code>[Language.EN_US]</code></td><td>Single language or list of recognition languages. First language is primary.</td></tr><tr><td><code>use_separate_recognition_per_channel</code></td><td><code>bool</code></td><td><code>False</code></td><td>Process each audio channel separately.</td></tr><tr><td><code>enable_automatic_punctuation</code></td><td><code>bool</code></td><td><code>True</code></td><td>Add punctuation to transcripts.</td></tr><tr><td><code>enable_spoken_punctuation</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include spoken punctuation in transcript.</td></tr><tr><td><code>enable_spoken_emojis</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include spoken emojis in transcript.</td></tr><tr><td><code>profanity_filter</code></td><td><code>bool</code></td><td><code>False</code></td><td>Filter profanity from transcript.</td></tr><tr><td><code>enable_word_time_offsets</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include timing information for each word.</td></tr><tr><td><code>enable_word_confidence</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include confidence scores for each word.</td></tr><tr><td><code>enable_interim_results</code></td><td><code>bool</code></td><td><code>True</code></td><td>Stream partial recognition results.</td></tr><tr><td><code>enable_voice_activity_events</code></td><td><code>bool</code></td><td><code>False</code></td><td>Detect voice activity in audio.</td></tr><tr><td><code>adaptation</code></td><td>`dict \</td><td>SpeechAdaptation`</td><td><code>None</code></td><td>Phrase sets biasing recognition toward domain-specific terms. Each <code>phrase_sets</code> entry is either a resource name or an inline phrase set. See <a href="#speech-adaptation">Speech Adaptation</a> for details. Support varies by model/language.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.google.stt import GoogleSTTService
+
+stt = GoogleSTTService(
+    credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+)</code></pre>
+<h3>With Credentials JSON String</h3>
+<pre><code>import json
+from pipecat.services.google.stt import GoogleSTTService
+
+stt = GoogleSTTService(
+    credentials=json.dumps(credentials_dict),
+    location="us-central1",
+)</code></pre>
+<h3>With Custom Parameters</h3>
+<pre><code>from pipecat.services.google.stt import GoogleSTTService
+from pipecat.transcriptions.language import Language
+
+stt = GoogleSTTService(
+    credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    settings=GoogleSTTService.Settings(
+        languages=[Language.EN_US, Language.ES],
+        model="latest_long",
+        enable_automatic_punctuation=True,
+        enable_word_time_offsets=True,
+        enable_word_confidence=True,
+    ),
+)</code></pre>
+<h3>Speech Adaptation</h3>
+<p>Bias recognition toward domain-specific terms using inline phrase sets or references to pre-created phrase sets:</p>
+<pre><code>from pipecat.services.google.stt import GoogleSTTService
+
+stt = GoogleSTTService(
+    credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    settings=GoogleSTTService.Settings(
+        adaptation={
+            "phrase_sets": [
+                # Reference a pre-created phrase set
+                "projects/my-project/locations/global/phraseSets/catalog",
+                # Inline phrase set with boost values
+                {
+                    "phrases": [
+                        {"value": "pipecat", "boost": 15.0},
+                        {"value": "voice pipeline"},
+                    ]
+                },
+            ]
+        }
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>Google STT supports dynamic settings updates via <code>STTUpdateSettingsFrame</code>:</p>
+<pre><code>from pipecat.frames.frames import STTUpdateSettingsFrame
+from pipecat.transcriptions.language import Language
+
+await worker.queue_frame(
+    STTUpdateSettingsFrame(
+        delta=GoogleSTTService.Settings(
+            languages=[Language.FR],
+            model="latest_short",
+            enable_automatic_punctuation=False,
+        )
+    )
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Streaming time limit</strong>: Google Cloud STT has a 5-minute streaming limit per connection. The service automatically handles stream reconnection at 4 minutes to provide seamless transcription without interruption.</li><li><strong>Multi-language support</strong>: Pass a list of <code>Language</code> values to <code>languages</code> for multi-language recognition. The first language is the primary language.</li><li><strong>Regional endpoints</strong>: Use the <code>location</code> parameter to route requests through regional endpoints (e.g., <code>"us-central1"</code>, <code>"europe-west1"</code>) for data residency requirements. The default <code>"global"</code> endpoint works for most use cases.</li><li><strong>Stream abort on inactivity</strong>: If no audio is sent for \~10 seconds (e.g., when audio frames are blocked), Google automatically closes the stream. The service recovers by automatically reconnecting.</li><li><strong>Authentication priority</strong>: The service checks for credentials in this order: <code>credentials</code> (JSON string), <code>credentials_path</code> (file), then Application Default Credentials.</li><li><strong>Speech adaptation</strong>: Support varies by model and language — see <a href="https://cloud.google.com/speech-to-text/v2/docs/speech-to-text-supported-languages">Google's language support documentation</a>.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>Google STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Google Cloud Speech-to-Text</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Google Cloud Speech-to-Text</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Google STT")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/google">https://docs.pipecat.ai/api-reference/server/services/stt/google</a></p>
+</div></main></div></body></html>

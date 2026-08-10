@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transcriptions · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Transcriptions</h1>
+<blockquote>Collect user and assistant transcripts in Pipecat with turn-management transcription events and aggregators.</blockquote>
+<h2>Overview</h2>
+<p>Pipecat provides a straightforward way to collect conversation transcriptions using <a href="/api-reference/server/utilities/turn-management/turn-events">turn events</a>. When a user or assistant turn ends, the corresponding event includes the complete transcript for that turn.</p>
+<p>The key events for transcription collection are:</p>
+<ul><li><strong><code>on_user_turn_stopped</code></strong> - Provides the user's complete transcript via <code>UserTurnStoppedMessage</code></li><li><strong><code>on_assistant_turn_stopped</code></strong> - Provides the assistant's complete transcript via <code>AssistantTurnStoppedMessage</code></li></ul>
+<p>&lt;Note&gt;   The examples below assume a cascade (STT → LLM → TTS) pipeline. With a   realtime (speech-to-speech) service and <code>LLMContextAggregatorPair(context,       realtime_service_mode=True)</code>, collect the user transcript from   <a href="/api-reference/server/utilities/turn-management/turn-events#on_user_turn_message_added"><code>on_user_turn_message_added</code></a>   instead — in that mode <code>UserTurnStoppedMessage.content</code> is <code>None</code>. &lt;/Note&gt;</p>
+<h2>Basic Example</h2>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    UserTurnStoppedMessage,
+    AssistantTurnStoppedMessage,
+)
+
+# Create context aggregator
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(context)
+
+# Handle user transcriptions
+@user_aggregator.event_handler("on_user_turn_stopped")
+async def on_user_turn_stopped(aggregator, strategy, message: UserTurnStoppedMessage):
+    print(f"[USER] {message.content}")
+
+# Handle assistant transcriptions
+@assistant_aggregator.event_handler("on_assistant_turn_stopped")
+async def on_assistant_turn_stopped(aggregator, message: AssistantTurnStoppedMessage):
+    if message.content:
+        print(f"[ASSISTANT] {message.content}")
+    if message.interrupted:
+        print("[ASSISTANT] (interrupted)")</code></pre>
+<h2>Saving Transcripts to a File</h2>
+<pre><code>import json
+from datetime import datetime
+
+transcript_log = []
+
+@user_aggregator.event_handler("on_user_turn_stopped")
+async def on_user_turn_stopped(aggregator, strategy, message: UserTurnStoppedMessage):
+    transcript_log.append({
+        "role": "user",
+        "content": message.content,
+        "timestamp": message.timestamp,
+        "user_id": message.user_id,
+    })
+
+@assistant_aggregator.event_handler("on_assistant_turn_stopped")
+async def on_assistant_turn_stopped(aggregator, message: AssistantTurnStoppedMessage):
+    transcript_log.append({
+        "role": "assistant",
+        "content": message.content,
+        "timestamp": message.timestamp,
+        "interrupted": message.interrupted,
+    })
+
+# Save transcript when session ends
+async def save_transcript():
+    with open(f"transcript_{datetime.now().isoformat()}.json", "w") as f:
+        json.dump(transcript_log, f, indent=2)</code></pre>
+<h2>Sending Transcripts to an External Service</h2>
+<pre><code>import aiohttp
+
+async def send_to_service(role: str, content: str, timestamp: str):
+    async with aiohttp.ClientSession() as session:
+        await session.post(
+            "https://api.example.com/transcripts",
+            json={"role": role, "content": content, "timestamp": timestamp}
+        )
+
+@user_aggregator.event_handler("on_user_turn_stopped")
+async def on_user_turn_stopped(aggregator, strategy, message: UserTurnStoppedMessage):
+    await send_to_service("user", message.content, message.timestamp)
+
+@assistant_aggregator.event_handler("on_assistant_turn_stopped")
+async def on_assistant_turn_stopped(aggregator, message: AssistantTurnStoppedMessage):
+    await send_to_service("assistant", message.content, message.timestamp)</code></pre>
+<h2>Message Types</h2>
+<p>For details on <code>UserTurnStoppedMessage</code> and <code>AssistantTurnStoppedMessage</code> fields, see <a href="/api-reference/server/utilities/turn-management/turn-events#message-types">Turn Events - Message Types</a>.</p>
+<h2>Related</h2>
+<ul><li><a href="/api-reference/server/utilities/turn-management/turn-events">Turn Events</a> - Complete reference for turn lifecycle events</li><li><a href="/pipecat/fundamentals/saving-transcripts">Saving Transcripts Guide</a> - Guide for saving conversation transcripts</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-management/transcriptions">https://docs.pipecat.ai/api-reference/server/utilities/turn-management/transcriptions</a></p>
+</div></main></div></body></html>

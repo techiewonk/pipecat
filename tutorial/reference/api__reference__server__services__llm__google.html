@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Gemini LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google Gemini LLM</h1>
+<blockquote>GoogleLLMService integrates Google's Gemini models with streaming responses, function calling, and multimodal input support.</blockquote>
+<h2>Overview</h2>
+<p><code>GoogleLLMService</code> provides integration with Google's Gemini models, supporting streaming responses, function calling, and multimodal inputs. It includes specialized context handling for Google's message format while maintaining compatibility with OpenAI-style contexts.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Gemini LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.llm.html"&gt;     Pipecat's API methods for Google Gemini integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-google.py"&gt;     Complete example with function calling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gemini Documentation" icon="book" href="https://ai.google.dev/gemini-api/docs"&gt;     Official Google Gemini API documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google AI Studio" icon="microphone" href="https://aistudio.google.com/"&gt;     Access Gemini models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Google Gemini services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Gemini Setup</h3>
+<p>Before using Google Gemini LLM services, you need:</p>
+<ol><li><strong>Google Account</strong>: Sign up at <a href="https://aistudio.google.com/">Google AI Studio</a></li><li><strong>API Key</strong>: Generate a Gemini API key from AI Studio</li><li><strong>Model Selection</strong>: Choose from available Gemini models (Gemini 2.5 Flash, Gemini 2.5 Pro, etc.)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_API_KEY</code>: Your Google Gemini API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Google AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   Gemini model name to use (e.g., <code>"gemini-2.5-flash"</code>, <code>"gemini-2.5-pro"</code>).   *Deprecated in v0.0.105. Use <code>settings=GoogleLLMService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleLLMService.Settings" default="None"&gt;   Runtime-configurable model settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable model settings. See <a href="#settings">Settings</a> below.   *Deprecated in v0.0.105. Use <code>settings=GoogleLLMService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="system_instruction" type="str" default="None" deprecated&gt;   System instruction/prompt for the model. Sets the overall behavior and   context. *Deprecated in v0.0.105. Use   <code>settings=GoogleLLMService.Settings(system_instruction=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools" type="List[Dict[str, Any]]" default="None"&gt;   List of available tools/functions for the model to call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_config" type="Dict[str, Any]" default="None"&gt;   Configuration for tool usage behavior. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_options" type="HttpOptions" default="None"&gt;   HTTP options for the Google API client. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GoogleLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Gemini model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>system_instruction</code></td><td><code>str</code></td><td><code>None</code></td><td>System instruction/prompt for the model. *(Inherited from base settings.)*</td></tr><tr><td><code>max_tokens</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Maximum number of tokens to generate.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Sampling temperature (0.0 to 2.0). Lower values are more focused, higher values are more creative.</td></tr><tr><td><code>top_k</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Top-k sampling parameter. Limits tokens to the top k most likely.</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Top-p (nucleus) sampling (0.0 to 1.0). Controls diversity of output.</td></tr><tr><td><code>thinking</code></td><td><code>GoogleThinkingConfig</code></td><td><code>NOT_GIVEN</code></td><td>Thinking configuration. See <a href="#googlethinkingconfig">GoogleThinkingConfig</a> below.</td></tr><tr><td><code>safety_settings</code></td><td><code>list[SafetySetting]</code></td><td><code>NOT_GIVEN</code></td><td>Content safety filters. Each entry pairs a harm category with a blocking threshold.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted from the API request, letting the Gemini API   use its own defaults. If <code>thinking</code> is not provided, Pipecat applies   low-latency thinking defaults for Flash models: Gemini 2.5 Flash uses   <code>thinking_budget=0</code> (disables thinking), while Gemini 3+ Flash uses   <code>thinking_level="minimal"</code>. &lt;/Note&gt;</p>
+<h3>GoogleThinkingConfig</h3>
+<p>Configuration for controlling the model's internal thinking process. Gemini 2.5 and 3 series models support this feature.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>thinking_budget</code></td><td><code>int</code></td><td><code>None</code></td><td>Token budget for thinking (Gemini 2.5 series). -1 for dynamic, 0 to disable, or a specific count (e.g., 128-32768).</td></tr><tr><td><code>thinking_level</code></td><td><code>str</code></td><td><code>None</code></td><td>Thinking level for Gemini 3 models. <code>"low"</code>, <code>"high"</code> for 3 Pro; <code>"minimal"</code>, <code>"low"</code>, <code>"medium"</code>, <code>"high"</code> for 3 Flash.</td></tr><tr><td><code>include_thoughts</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether to include thought summaries in the response.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Gemini 2.5 series models use <code>thinking_budget</code>, while Gemini 3 models use   <code>thinking_level</code>. Do not mix these parameters across model generations. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.google import GoogleLLMService
+
+llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    model="gemini-2.5-flash",
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.google import GoogleLLMService
+
+llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    settings=GoogleLLMService.Settings(
+        model="gemini-2.5-pro",
+        system_instruction="You are a helpful assistant.",
+        temperature=0.7,
+        max_tokens=2048,
+        top_p=0.9,
+    ),
+)</code></pre>
+<h3>With Thinking Configuration</h3>
+<pre><code># Gemini 2.5 series (using thinking_budget)
+llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    settings=GoogleLLMService.Settings(
+        model="gemini-2.5-pro",
+        max_tokens=8192,
+        thinking=GoogleLLMService.GoogleThinkingConfig(
+            thinking_budget=4096,
+            include_thoughts=True,
+        ),
+    ),
+)
+
+# Gemini 3 series (using thinking_level)
+llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    settings=GoogleLLMService.Settings(
+        model="gemini-3-flash",
+        max_tokens=8192,
+        thinking=GoogleLLMService.GoogleThinkingConfig(
+            thinking_level="high",
+            include_thoughts=True,
+        ),
+    ),
+)</code></pre>
+<h3>With Safety Settings</h3>
+<pre><code>from google.genai.types import HarmBlockThreshold, HarmCategory, SafetySetting
+
+llm = GoogleLLMService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    settings=GoogleLLMService.Settings(
+        model="gemini-2.5-flash",
+        safety_settings=[
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            ),
+        ],
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>Model settings can be changed mid-conversation using <code>LLMUpdateSettingsFrame</code>:</p>
+<pre><code>from pipecat.frames.frames import LLMUpdateSettingsFrame
+from pipecat.services.google.llm import GoogleLLMSettings
+
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=GoogleLLMSettings(
+            temperature=0.3,
+            max_tokens=1024,
+        )
+    )
+)
+
+# Update safety settings (accepts SafetySetting objects or plain dicts)
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=GoogleLLMSettings(
+            safety_settings=[
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_LOW_AND_ABOVE",
+                }
+            ]
+        )
+    )
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>System instruction priority</strong>: The <code>system_instruction</code> set via the constructor or <code>GoogleLLMSettings</code> takes priority over any system message in the context. If both are set, a warning is logged and the constructor/settings value is used.</li><li><strong>Thinking defaults</strong>: By default, Pipecat applies low-latency thinking defaults for Flash models to reduce latency. Gemini 2.5 Flash uses <code>thinking_budget=0</code> (disables thinking), while Gemini 3+ Flash uses <code>thinking_level="minimal"</code>. To override this behavior, explicitly pass a <code>GoogleThinkingConfig</code> via <code>settings</code>.</li><li><strong>Safety settings</strong>: Categories left unspecified in <code>safety_settings</code> keep the Gemini API defaults. The setting accepts <code>SafetySetting</code> objects or plain dicts, and is runtime-updatable via <code>LLMUpdateSettingsFrame</code>.</li><li><strong>Multimodal support</strong>: Gemini models natively support image and audio inputs through Google's Content/Part format. Images and audio are automatically converted from OpenAI-style contexts.</li><li><strong>Grounding with Google Search</strong>: When grounding metadata is present in the response (e.g., from Google Search tool), the service emits <code>LLMSearchResponseFrame</code> with search results and source attributions.</li><li><strong>Context format</strong>: The service automatically converts between OpenAI-style message formats and Google's native Content/Part format, so you can use either.</li></ul>
+<h2>Event Handlers</h2>
+<p><code>GoogleLLMService</code> supports the following event handlers, inherited from <a href="/api-reference/server/events/service-events">LLMService</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_completion_timeout</code></td><td>Called when an LLM completion request times out (Google <code>DeadlineExceeded</code>)</td></tr><tr><td><code>on_function_calls_started</code></td><td>Called when function calls are received and execution is about to start</td></tr></tbody></table></div>
+<pre><code>@llm.event_handler("on_completion_timeout")
+async def on_completion_timeout(service):
+    print("LLM completion timed out")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/google">https://docs.pipecat.ai/api-reference/server/services/llm/google</a></p>
+</div></main></div></body></html>

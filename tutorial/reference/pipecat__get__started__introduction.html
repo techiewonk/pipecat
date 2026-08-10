@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction to Pipecat · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Introduction to Pipecat</h1>
+<blockquote>Start here with the Pipecat framework: what it is, how pipelines orchestrate AI services, and where to go next.</blockquote>
+<p>Pipecat is an open source Python framework for building voice and multimodal AI agents. It orchestrates AI services, network transports, and audio processing to enable ultra-low latency conversations that feel natural and responsive. The framework is free to use under the BSD-2 license, and you choose your own stack: any speech-to-text, LLM, and text-to-speech provider, hosted on your own infrastructure or <a href="https://www.daily.co/pricing/pipecat-cloud">Pipecat Cloud</a> — you pay only for the providers you choose.</p>
+<p>&lt;Card title="Quickstart" icon="rocket" href="/pipecat/get-started/quickstart"&gt;   Want to dive right in? Build and run your first Pipecat application &lt;/Card&gt;</p>
+<h2>What You Can Build</h2>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="Voice Assistants" icon="microphone" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/simple-chatbot"&gt;     Natural, real-time conversations with AI using speech recognition and     synthesis   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Phone Agents" icon="phone" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/twilio-chatbot"&gt;     Connect to your agent via phone for support, intake, and customer service     interactions   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Multimodal Apps" icon="layer-group" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/vision/vision-openai.py"&gt;     Applications that combine voice, video, images, and text for rich interactions   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Creative Experiences" icon="wand-magic-sparkles" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/storytelling-chatbot"&gt;     Storytelling experiences and social companions that engage users   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Interactive Games" icon="gamepad" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/word-wrangler-gemini-live"&gt;     Voice-controlled games and interactive experiences with real-time AI responses   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Conversation Flows" icon="diagram-project" href="https://github.com/pipecat-ai/pipecat/tree/main/examples/flows"&gt;     Build structured conversations with Pipecat Flows to complete tasks and improve LLM accuracy   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>How It Works</h2>
+<p>Pipecat orchestrates AI services in a <strong>pipeline</strong>, which is a series of processors that handle real-time audio, text, and video frames with ultra-low latency.</p>
+<p>Here's what happens in a typical voice conversation:</p>
+<ol><li><strong>Transport</strong> receives audio from the user (browser, phone, etc.)</li><li><strong>Speech Recognition</strong> converts speech to text in real-time</li><li><strong>LLM</strong> generates intelligent responses based on context</li><li><strong>Speech Synthesis</strong> converts responses back to natural speech</li><li><strong>Transport</strong> streams audio back to the user</li></ol>
+<p>In most cases, the entire round-trip interaction happens between 500-800ms, creating a natural conversation experience for the user.</p>
+<p>&lt;img src="https://mintcdn.com/daily/2bYrACcmgvvzC075/images/pipecat-overview.png?fit=max&amp;auto=format&amp;n=2bYrACcmgvvzC075&amp;q=85&amp;s=662989d7a789021f9cd8742df91dc508" alt="Pipecat Overview" className="rounded-lg" width="2320" height="1660" data-path="images/pipecat-overview.png" /&gt;</p>
+<h2>A Multi-Agent System</h2>
+<p>The bot above is a single agent. Pipecat is also a multi-agent system: the same <code>WorkerRunner</code> can coordinate many agents that communicate over a shared message <strong>bus</strong>. Most agents run their own pipeline (<code>PipelineWorker</code>, <code>LLMWorker</code>), while a coordinator can be a plain <code>BaseWorker</code> with no pipeline at all. A normal bot is just the one-agent case, so every Pipecat app is multi-agent ready.</p>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="Agent Handoff" icon="arrows-repeat" href="/pipecat/learn/agent-handoff"&gt;     Specialized agents that transfer control seamlessly during a conversation.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Job Coordination" icon="users" href="/pipecat/learn/job-coordination"&gt;     Dispatch work to multiple agents in parallel and collect their results.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Distributed Agents" icon="server" href="/pipecat/learn/distributed-agents"&gt;     Run agents across separate processes or machines on a shared bus.   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>Pipecat requires Python 3.11 or later and is published on PyPI as <a href="https://pypi.org/project/pipecat-ai/"><code>pipecat-ai</code></a>. Install the base package with optional <strong>extras</strong> for each transport, AI service, and utility you need:</p>
+<pre><code>uv add "pipecat-ai[daily,deepgram,openai,cartesia,silero]"</code></pre>
+<p>Each <a href="/api-reference/server/services/supported-services">service page</a> lists the exact extra to install. To upgrade to the latest version:</p>
+<pre><code>uv lock --upgrade-package pipecat-ai
+uv sync</code></pre>
+<h2>Ready to Build?</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Quickstart" icon="rocket" href="/pipecat/get-started/quickstart"&gt;     Build and run your first Pipecat application   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Core Concepts" icon="book-open" href="/pipecat/learn/overview"&gt;     Learn about pipelines, processors, transports, and context management   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Supported Services" icon="puzzle-piece" href="/api-reference/server/services/supported-services"&gt;     Browse the complete list of 100+ AI service integrations   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deploy" icon="cloud" href="/pipecat/deployment/overview"&gt;     Deploy to Pipecat Cloud or self-host on your own infrastructure   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/get-started/introduction">https://docs.pipecat.ai/pipecat/get-started/introduction</a></p>
+</div></main></div></body></html>

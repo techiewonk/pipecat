@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Vertex AI LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google Vertex AI LLM</h1>
+<blockquote>GoogleVertexLLMService extends GoogleLLMService with Vertex AI authentication for running Gemini models on Google Cloud.</blockquote>
+<h2>Overview</h2>
+<p><code>GoogleVertexLLMService</code> provides access to Google's language models through Vertex AI. It extends <code>GoogleLLMService</code> with Vertex AI authentication, connecting to Google's enterprise AI services with enhanced security and compliance.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Vertex AI LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.vertex.llm.html"&gt;     Pipecat's API methods for Google Vertex AI integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-google-vertex.py"&gt;     Browse examples using Vertex AI models   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Vertex AI Documentation" icon="book" href="https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference"&gt;     Official Google Vertex AI documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Cloud Console" icon="microphone" href="https://console.cloud.google.com/vertex-ai"&gt;     Access Vertex AI and manage credentials   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Google Vertex AI services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Cloud Setup</h3>
+<p>Before using Google Vertex AI LLM services, you need:</p>
+<ol><li><strong>Google Cloud Account</strong>: Sign up at <a href="https://console.cloud.google.com/">Google Cloud Console</a></li><li><strong>Project Setup</strong>: Create a project and enable the Vertex AI API</li><li><strong>Service Account</strong>: Create a service account with Vertex AI permissions</li><li><strong>Authentication</strong>: Set up credentials via service account key or Application Default Credentials</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_APPLICATION_CREDENTIALS</code>: Path to your service account key file (recommended)</li><li>Or use Application Default Credentials for cloud deployments</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string of Google service account credentials for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to the service account JSON key file. Alternative to providing   credentials as a string. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="project_id" type="str" required&gt;   Google Cloud project ID. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" default="us-east4"&gt;   GCP region for the Vertex AI endpoint (e.g., <code>"us-east4"</code>, <code>"us-central1"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use   <code>settings=GoogleVertexLLMService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="GoogleLLMService.InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=GoogleVertexLLMService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleVertexLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="/api-reference/server/services/llm/google#settings">Google Gemini   Settings</a> for the full   parameter reference. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="system_instruction" type="str" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use   <code>settings=GoogleVertexLLMService.Settings(system_instruction=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools" type="list" default="None"&gt;   List of available tools/functions for the model. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_config" type="dict" default="None"&gt;   Configuration for tool usage behavior. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_options" type="HttpOptions" default="None"&gt;   HTTP options for the Google AI client. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.google.vertex.llm import GoogleVertexLLMService
+
+llm = GoogleVertexLLMService(
+    credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    project_id="my-gcp-project",
+    location="us-east4",
+    model="gemini-2.5-flash",
+)</code></pre>
+<h3>With Credentials JSON String</h3>
+<pre><code>from pipecat.services.google.vertex.llm import GoogleVertexLLMService
+
+llm = GoogleVertexLLMService(
+    credentials=os.getenv("GOOGLE_CREDENTIALS_JSON"),
+    project_id="my-gcp-project",
+    location="us-central1",
+    settings=GoogleVertexLLMService.Settings(
+        model="gemini-2.5-flash",
+        temperature=0.7,
+        top_p=0.9,
+    ),
+)</code></pre>
+<h3>With Application Default Credentials</h3>
+<pre><code>from pipecat.services.google.vertex.llm import GoogleVertexLLMService
+
+# Uses ADC when neither credentials nor credentials_path is provided
+llm = GoogleVertexLLMService(
+    project_id="my-gcp-project",
+    location="us-east4",
+    model="gemini-2.5-flash",
+)</code></pre>
+<h3>With Safety Settings</h3>
+<pre><code>from google.genai.types import HarmBlockThreshold, HarmCategory, SafetySetting
+from pipecat.services.google.vertex.llm import GoogleVertexLLMService
+
+llm = GoogleVertexLLMService(
+    credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    project_id="my-gcp-project",
+    location="us-east4",
+    settings=GoogleVertexLLMService.Settings(
+        model="gemini-2.5-flash",
+        safety_settings=[
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+        ],
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li>This service does <strong>not</strong> accept an <code>api_key</code> parameter. Use <code>credentials</code>, <code>credentials_path</code>, or Application Default Credentials instead.</li><li><code>GoogleVertexLLMService</code> extends <code>GoogleLLMService</code> and uses the Google AI Python SDK with Vertex AI authentication.</li><li>Authentication supports three methods: direct JSON credentials string, path to a service account key file, or Application Default Credentials (ADC).</li><li>The <code>project_id</code> parameter is required. If <code>location</code> is not provided, it defaults to <code>"us-east4"</code>.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/google-vertex">https://docs.pipecat.ai/api-reference/server/services/llm/google-vertex</a></p>
+</div></main></div></body></html>

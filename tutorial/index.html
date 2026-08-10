@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat Feature Tutorial — build toward a Gemini Live A2A</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Feature-based tutorial</div>
+      <h1>Pipecat, by feature — from first sound to an all-in-one Gemini&nbsp;Live A2A</h1>
+      <p class="lead">A hands-on, production-minded course. Each <strong>capability</strong> is explained exactly once — no repetition — and every chapter builds toward one goal: a multi-agent <strong>Gemini Live agent-to-agent (A2A)</strong> system that runs both locally and distributed.</p>
+
+      <div class="box concept">
+        <p class="title">🎯 How this course is organized</p>
+        <p>We teach <strong>features, not files</strong>. There are 380 example scripts in the repo; most are the same pattern with a different provider. So instead of walking all of them, each chapter takes one feature, explains it once, shows annotated real code, and lists which example files demonstrate it. Common building blocks (pipeline, frames, workers, the bus) are defined in <a href="ch00-foundations.html">Chapter&nbsp;0</a> and referenced everywhere else.</p>
+      </div>
+
+      <h2 id="path">The learning path</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Part</th><th>Chapters</th><th>You'll be able to…</th></tr></thead>
+          <tbody>
+            <tr><td><strong>A — Core</strong></td><td>0–5</td><td>Understand the pipeline, control turn-taking and audio, and build a full voice agent with memory and tools.</td></tr>
+            <tr><td><strong>B — Modalities</strong></td><td>6–9</td><td>Use Gemini Live (speech-to-speech), add vision/video/avatars, ground answers with RAG, and script structured Flows.</td></tr>
+            <tr><td><strong>C — Production & A2A</strong></td><td>10–12</td><td>Ship production features and telephony, then compose multiple agents into the Gemini Live A2A capstone.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="chapters">All chapters</h2>
+      <div class="grid">
+        <a class="card" href="ch00-foundations.html"><div class="n">CH 0</div><div class="h">Foundations</div><div class="d">Pipeline, frames, processors, worker, runner, bus, transports — the shared vocabulary.</div></a>
+        <a class="card" href="ch01-turn-taking.html"><div class="n">CH 1</div><div class="h">Turn-taking</div><div class="d">VAD, turn detection, interruptions, idle — knowing when to listen and when to speak.</div></a>
+        <a class="card" href="ch02-audio-frame-processing.html"><div class="n">CH 2</div><div class="h">Audio &amp; Frame Processing</div><div class="d">VAD variants, resamplers, mixers, noise filters, muting, DTMF, recording + the frame-processor toolbox.</div></a>
+        <a class="card" href="ch03-speech-io.html"><div class="n">CH 3</div><div class="h">Speech I/O</div><div class="d">STT + TTS as swappable services; switching voice and language at runtime.</div></a>
+        <a class="card" href="ch04-brain-memory.html"><div class="n">CH 4</div><div class="h">Brain &amp; Memory</div><div class="d">LLM inference, context, persistence, and summarization.</div></a>
+        <a class="card" href="ch05-tools-mcp.html"><div class="n">CH 5</div><div class="h">Tools &amp; MCP</div><div class="d">Function calling and Model Context Protocol tool servers.</div></a>
+        <a class="card" href="ch06-gemini-live.html"><div class="n">CH 6</div><div class="h">Gemini Live</div><div class="d">Realtime speech-to-speech — the engine the capstone standardizes on.</div></a>
+        <a class="card" href="ch07-multimodal.html"><div class="n">CH 7</div><div class="h">Multimodal</div><div class="d">Vision, video processing, and talking-head avatars.</div></a>
+        <a class="card" href="ch08-rag.html"><div class="n">CH 8</div><div class="h">RAG &amp; Grounding</div><div class="d">Ground answers in your data and cite sources.</div></a>
+        <a class="card" href="ch09-flows.html"><div class="n">CH 9</div><div class="h">Flows</div><div class="d">Structured, reliable multi-step conversations.</div></a>
+        <a class="card" href="ch10-production-telephony.html"><div class="n">CH 10</div><div class="h">Production &amp; Telephony</div><div class="d">Wake phrase, translation, voicemail, recording, metrics + a phone-transport comparison.</div></a>
+        <a class="card" href="ch11-a2a-patterns.html"><div class="n">CH 11</div><div class="h">Multi-agent A2A</div><div class="d">Handoff, parallel fan-out, sidecar, proxy, UI worker, distributed bus.</div></a>
+        <a class="card" href="ch12-capstone-gemini-a2a.html"><div class="n">CH 12</div><div class="h">Capstone</div><div class="d">The all-in-one Gemini Live A2A — local and distributed.</div></a>
+        <a class="card" href="ch13-api-reference.html"><div class="n">CH 13</div><div class="h">API Reference</div><div class="d">Every page of the official API reference — 320+ classes, categorized and filterable.</div></a>
+      </div>
+
+      <div class="box start">
+        <p class="title">▶️ Before you begin</p>
+        <p>From the repo root: <code>uv sync --all-extras</code>, then <code>cp env.example .env</code> and add keys for the providers you'll use (for the capstone you mainly need <code>GOOGLE_API_KEY</code>). Run any example with <code>uv&nbsp;run&nbsp;python&nbsp;&lt;path&gt;.py</code> and open <code>http://localhost:7860/client/</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">📥 Works offline</p>
+        <p>This tutorial has no internet dependencies — the theme, navigation, and syntax highlighting are all local. The chapters read fully offline right now. To also mirror the <strong>344 linked documentation pages</strong> (the full <a href="ch13-api-reference.html">API Reference</a> plus every chapter's "Docs" link) for offline reading, run this once with internet:</p>
+        <pre><code class="language-bash">python tutorial/build_offline_docs.py   # or: uv run python tutorial/build_offline_docs.py</code></pre>
+        <p>It saves themed local copies under <code>tutorial/reference/</code> and rewrites every doc link in every page to point at them. After that, nothing here needs a connection.</p>
+      </div>
+
+      <p class="lead">Start with <a href="ch00-foundations.html">Chapter 0 — Foundations →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Android SDK Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Android SDK Overview</h1>
+<blockquote>The Pipecat Android SDK: a Kotlin client library for building voice and multimodal AI applications on Android.</blockquote>
+<p>The Pipecat Android SDK provides a Kotlin implementation for building voice and multimodal AI applications on Android. It handles:</p>
+<ul><li>Real-time audio and video streaming</li><li>Bot communication and state management</li><li>Media device handling</li><li>Event handling</li></ul>
+<h2>Installation</h2>
+<p>Add the dependency for your chosen transport to your <code>app/build.gradle.kts</code> file. For example, to use the Daily transport:</p>
+<pre><code>dependencies {
+    implementation("ai.pipecat:daily-transport:1.2.0")
+}</code></pre>
+<h2>Example</h2>
+<p>Here's a simple example using Daily as the transport layer.</p>
+<pre><code>val callbacks = object : PipecatEventCallbacks() {
+
+    override fun onBackendError(message: String) {
+        Log.e(TAG, "Error from backend: $message")
+    }
+
+    // ...
+}
+
+val options = PipecatClientOptions(callbacks = callbacks)
+
+val client = PipecatClientDaily(DailyTransport(context), options)
+
+val startBotParams = APIRequest(
+    endpoint = "https://your-server.com/start",
+    requestData = Value.Object(
+        "transport" to Value.Str("daily"),
+        "createDailyRoom" to Value.Bool(true),
+    )
+)
+
+// Kotlin coroutines:
+client.startBotAndConnect(startBotParams).await()
+
+// Or, callbacks:
+client.startBotAndConnect(startBotParams).withCallback {
+    // ...
+}</code></pre>
+<h2>Documentation</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="API Reference" icon="book" href="/api-reference/client/android/api-reference"&gt;     SDK API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Transport Packages" icon="network-wired" href="/api-reference/client/android/transports/daily"&gt;     Daily, Gemini, OpenAI WebRTC, and SmallWebRTC transports   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/android/overview">https://docs.pipecat.ai/api-reference/client/android/overview</a></p>
+</div></main></div></body></html>

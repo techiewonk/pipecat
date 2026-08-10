@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Daily WebRTC Transport</h1>
+<blockquote>The Daily transport for the Pipecat C++ SDK: real-time WebRTC audio and video in native applications on Daily's infrastructure.</blockquote>
+<p>The Daily transport implementation enables real-time audio and video communication in your Pipecat C++ applications using <a href="https://www.daily.co/">Daily's</a> WebRTC infrastructure.</p>
+<h2>Dependencies</h2>
+<h3>Daily Core C++ SDK</h3>
+<p>Download the <a href="https://github.com/daily-co/daily-core-sdk">Daily Core C++ SDK</a> from the <a href="https://github.com/daily-co/daily-core-sdk/releases">available releases</a> for your platform and set:</p>
+<pre><code>export DAILY_CORE_PATH=/path/to/daily-core-sdk</code></pre>
+<h3>Pipecat C++ SDK</h3>
+<p>Build the base <a href="https://github.com/pipecat-ai/pipecat-client-cxx-daily">Pipecat C++ SDK</a> first and set:</p>
+<pre><code>export PIPECAT_SDK_PATH=/path/to/pipecat-client-cxx</code></pre>
+<h2>Building</h2>
+<p>First, set a few environment variables:</p>
+<pre><code>PIPECAT_SDK_PATH=/path/to/pipecat-client-cxx
+DAILY_CORE_PATH=/path/to/daily-core-sdk</code></pre>
+<p>Then, build the project:</p>
+<p>&lt;Tabs&gt;   &lt;Tab title="Linux/macOS"&gt;     ``<code>bash theme={null}     cmake . -G Ninja -Bbuild -DCMAKE_BUILD_TYPE=Release     ninja -C build     </code>``   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="Windows"&gt;     ```bash theme={null}     # Initialize Visual Studio environment     "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" amd64</p>
+<p>    # Configure and build     cmake . -Bbuild --preset vcpkg     cmake --build build --config Release     ```   &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<h2>Examples</h2>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="Basic Client" icon="code" href="https://github.com/pipecat-ai/pipecat-client-cxx-daily/blob/main/examples/c++"&gt;     Simple C++ implementation example   &lt;/Card&gt;</p>
+<p>  {" "}</p>
+<p>  &lt;Card title="Audio Client" icon="waveform" href="https://github.com/pipecat-ai/pipecat-client-cxx-daily/blob/main/examples/c++-portaudio"&gt;     C++ client with PortAudio support   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Node.js Server" icon="server" href="https://github.com/pipecat-ai/pipecat-client-cxx-daily/blob/main/examples/server"&gt;     Example Node.js proxy implementation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/cpp/transport">https://docs.pipecat.ai/api-reference/client/cpp/transport</a></p>
+</div></main></div></body></html>

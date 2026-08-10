@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTVIObserver · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>RTVIObserver</h1>
+<blockquote>RTVIObserver converts Pipecat pipeline frames into RTVI protocol messages for connected clients.</blockquote>
+<p>The <code>RTVIObserver</code> translates Pipecat's internal pipeline events into standardized RTVI protocol messages. It monitors frame flow through the pipeline and generates corresponding client messages based on event types.</p>
+<h2>Purpose</h2>
+<p>The <code>RTVIObserver</code> primarily serves to convert internal pipeline frames into to client-compatible RTVI messages. It is required for any application using RTVI as the client protocol to ensure proper communication of events such as speech start/stop, user transcript, bot output, metrics, and server messages.</p>
+<h2>Automatic Setup</h2>
+<p><code>RTVIObserver</code> is automatically created and attached when you create a <code>PipelineWorker</code>. No manual setup is required for standard usage.</p>
+<p>To customize the observer's behavior, pass <code>RTVIObserverParams</code> to the worker:</p>
+<pre><code>from pipecat.processors.frameworks.rtvi import RTVIObserverParams
+
+worker = PipelineWorker(
+    pipeline,
+    rtvi_observer_params=RTVIObserverParams(
+        bot_llm_enabled=False,
+        metrics_enabled=False,
+    ),
+)</code></pre>
+<h2>Configuration</h2>
+<p><code>RTVIObserverParams</code> accepts the following fields:</p>
+<p>&lt;ParamField path="bot_output_enabled" default="True"&gt;   Indicates if bot output messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_llm_enabled" default="True"&gt;   Indicates if the bot's LLM messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_tts_enabled" default="True"&gt;   Indicates if the bot's TTS messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_speaking_enabled" default="True"&gt;   Indicates if the bot's started/stopped speaking messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_audio_level_enabled" default="False"&gt;   Indicates if bot's audio level messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_llm_enabled" default="True"&gt;   Indicates if the user's LLM input messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_speaking_enabled" default="True"&gt;   Indicates if the user's started/stopped speaking messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="vad_user_speaking_enabled" default="False"&gt;   Indicates if raw VAD user started/stopped speaking messages should be sent.   These reflect the VAD signal directly, independent of turn finalization   (unlike <code>user_speaking_enabled</code>, which a turn strategy may gate or defer). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_mute_enabled" default="True"&gt;   Indicates if user mute started/stopped messages (<code>user-mute-started</code>,   <code>user-mute-stopped</code>) should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_transcription_enabled" default="True"&gt;   Indicates if user's transcription messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_audio_level_enabled" default="False"&gt;   Indicates if user's audio level messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="metrics_enabled" default="True"&gt;   Indicates if metrics messages should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="system_logs_enabled" default="False"&gt;   Indicates if system logs should be sent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="skip_aggregator_types" default="None"&gt;   List of aggregation types to skip sending as tts/output messages.</p>
+<p>  &lt;Note&gt;     {" "}</p>
+<p>    If using this to avoid sending secure information, be sure to also disable     bot\_llm\_enabled to avoid leaking through LLM messages.   &lt;/Note&gt; &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_output_transforms" default="None"&gt;   A list of tuples to transform text before sending it to the client. Each tuple should be of the form <code>(aggregation_type, transform_function)</code>.</p>
+<p>  The preferred transform signature is:</p>
+<pre><code>  async def my_transform(
+      text: str,
+      agg_type: AggregationType | str,
+      accumulated_text: str | None = None,
+      remaining_text: str | None = None,
+  ) -&gt; BotOutputTransformResult:
+      ...</code></pre>
+<p>  When <code>accumulated_text</code> and <code>remaining_text</code> are <code>None</code>, the transform is being called for the full segment text (<code>bot-output</code> message). When they are provided, the transform is being called for a progress event and must return a <code>BotOutputTransformResult</code> with <code>accumulated_text</code> and <code>remaining_text</code> set, enabling word-level transforms on the client side.</p>
+<p>  The legacy 2-parameter signature <code>(text, agg_type) -&gt; str</code> is deprecated but still works. Transforms using it will emit a <code>DeprecationWarning</code> at registration time.</p>
+<p>  <strong>Example:</strong></p>
+<pre><code>  from pipecat.processors.frameworks.rtvi import BotOutputTransformResult
+
+  async def redact_sensitive(
+          text: str,
+          agg_type: str,
+          accumulated_text: str | None = None,
+          remaining_text: str | None = None,
+      ) -&gt; BotOutputTransformResult:
+          transformed = "XXXX-XXXX-XXXX-" + text[-4:]
+          if accumulated_text is not None and remaining_text is not None:
+              ratio = len(accumulated_text) / max(len(text), 1)
+              split = int(ratio * len(transformed))
+              return BotOutputTransformResult(
+                  text=transformed,
+                  accumulated_text=transformed[:split],
+                  remaining_text=transformed[split:],
+              )
+          return BotOutputTransformResult(text=transformed)
+
+  bot_output_transforms = [
+      ("credit_card", redact_sensitive),  # Only for 'credit_card' type
+      ("*", lambda text, agg_type: text.upper()),  # For all types, make uppercase
+  ]
+
+  observer = RTVIObserver(
+      rtvi,
+      params=RTVIObserverParams(bot_output_transforms=bot_output_transforms),
+  )</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_level_period_secs" default="0.15"&gt;   How often audio levels should be sent if enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="function_call_report_level" type="Dict[str, RTVIFunctionCallReportLevel]" default="{&amp;#x22;*&amp;#x22;: RTVIFunctionCallReportLevel.NONE}"&gt;   Controls what information is exposed in function call lifecycle events   (<code>llm-function-call-started</code>, <code>llm-function-call-in-progress</code>,   <code>llm-function-call-stopped</code>). Maps function names to security levels, where   <code>"*"</code> sets the default for unlisted functions.</p>
+<p>  <strong>Levels:</strong></p>
+<ul><li><code>DISABLED</code>: No events emitted for this function</li><li><code>NONE</code>: Events with <code>tool_call_id</code> only (most secure when events are needed)</li><li><code>NAME</code>: Adds function name to events</li><li><code>FULL</code>: Adds function name, arguments, and results</li></ul>
+<pre><code>  from pipecat.processors.frameworks.rtvi import (
+      RTVIFunctionCallReportLevel,
+      RTVIObserverParams,
+  )
+
+  worker = PipelineWorker(
+      pipeline,
+      rtvi_observer_params=RTVIObserverParams(
+          function_call_report_level={
+              "*": RTVIFunctionCallReportLevel.NONE,
+              "get_weather": RTVIFunctionCallReportLevel.FULL,
+          },
+      ),
+  )</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h2>Frame Translation</h2>
+<p>The observer maps Pipecat's internal frames to RTVI protocol messages:</p>
+<div class="tablewrap"><table><thead><tr><th>Pipeline Frame</th><th>RTVI Message</th></tr></thead><tbody><tr><td><strong>Speech Events</strong></td><td></td></tr><tr><td><code>UserStartedSpeakingFrame</code></td><td><code>RTVIUserStartedSpeakingMessage</code></td></tr><tr><td><code>UserStoppedSpeakingFrame</code></td><td><code>RTVIUserStoppedSpeakingMessage</code></td></tr><tr><td><code>VADUserStartedSpeakingFrame</code></td><td><code>VADUserStartedSpeakingMessage</code></td></tr><tr><td><code>VADUserStoppedSpeakingFrame</code></td><td><code>VADUserStoppedSpeakingMessage</code></td></tr><tr><td><code>BotStartedSpeakingFrame</code></td><td><code>RTVIBotStartedSpeakingMessage</code></td></tr><tr><td><code>BotStoppedSpeakingFrame</code></td><td><code>RTVIBotStoppedSpeakingMessage</code></td></tr><tr><td><strong>User Mute</strong></td><td></td></tr><tr><td><code>UserMuteStartedFrame</code></td><td><code>RTVIUserMuteStartedMessage</code></td></tr><tr><td><code>UserMuteStoppedFrame</code></td><td><code>RTVIUserMuteStoppedMessage</code></td></tr><tr><td><strong>Transcription</strong></td><td></td></tr><tr><td><code>TranscriptionFrame</code></td><td><code>RTVIUserTranscriptionMessage(final=true)</code></td></tr><tr><td><code>InterimTranscriptionFrame</code></td><td><code>RTVIUserTranscriptionMessage(final=false)</code></td></tr><tr><td><strong>Bot Output</strong></td><td></td></tr><tr><td><code>AggregatedTextFrame</code></td><td><code>RTVIBotOutputMessage</code></td></tr><tr><td><strong>LLM Processing</strong></td><td></td></tr><tr><td><code>LLMFullResponseStartFrame</code></td><td><code>RTVIBotLLMStartedMessage</code></td></tr><tr><td><code>LLMFullResponseEndFrame</code></td><td><code>RTVIBotLLMStoppedMessage</code></td></tr><tr><td><code>LLMTextFrame</code></td><td><code>RTVIBotLLMTextMessage</code></td></tr><tr><td><strong>TTS Events</strong></td><td></td></tr><tr><td><code>TTSStartedFrame</code></td><td><code>RTVIBotTTSStartedMessage</code></td></tr><tr><td><code>TTSStoppedFrame</code></td><td><code>RTVIBotTTSStoppedMessage</code></td></tr><tr><td><code>TTSTextFrame</code></td><td><code>RTVIBotTTSTextMessage</code></td></tr><tr><td><strong>Function Calls</strong></td><td></td></tr><tr><td><code>FunctionCallsStartedFrame</code></td><td><code>llm-function-call-started</code></td></tr><tr><td><code>FunctionCallInProgressFrame</code></td><td><code>llm-function-call-in-progress</code></td></tr><tr><td><code>FunctionCallResultFrame</code></td><td><code>llm-function-call-stopped</code></td></tr><tr><td><strong>Context/Metrics</strong></td><td></td></tr><tr><td><code>LLMContextFrame</code></td><td><code>RTVIUserLLMTextMessage</code></td></tr><tr><td><code>MetricsFrame</code></td><td><code>RTVIMetricsMessage</code></td></tr><tr><td><code>RTVIServerMessageFrame</code></td><td><code>RTVIServerMessage</code></td></tr><tr><td><strong>User Interface</strong></td><td></td></tr><tr><td><code>RTVIUICommandFrame</code></td><td><code>UICommandMessage</code> (<code>ui-command</code>)</td></tr><tr><td><code>RTVIUIJobGroupFrame</code></td><td><code>UIJobGroupMessage</code> (<code>ui-job-group</code>)</td></tr></tbody></table></div>
+<p>The <a href="/client/rtvi-standard#user-interface">User Interface</a> frames are emitted by <code>PipelineWorker</code> when a <a href="/api-reference/server/workers/ui-worker"><code>UIWorker</code></a> sends a command or runs a job group; the observer translates them into the outbound <code>ui-command</code> / <code>ui-job-group</code> messages the client renders.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-observer">https://docs.pipecat.ai/api-reference/server/rtvi/rtvi-observer</a></p>
+</div></main></div></body></html>

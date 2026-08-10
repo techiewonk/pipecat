@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HeyGen Video Avatar · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>HeyGen Video Avatar</h1>
+<blockquote>HeyGenVideoService drives HeyGen LiveAvatar interactive video avatars from your Pipecat agent's speech output.</blockquote>
+<h2>Overview</h2>
+<p><code>HeyGenVideoService</code> integrates with HeyGen <a href="https://www.liveavatar.com/">LiveAvatar</a> to create interactive AI-powered video avatars that respond naturally in real-time conversations. The service handles bidirectional audio/video streaming, avatar animations, voice activity detection, and conversation interruptions to deliver engaging conversational AI experiences with lifelike visual presence.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="HeyGen Video API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.heygen.video.html"&gt;     Pipecat's API methods for HeyGen video integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-heygen-video-service.py"&gt;     Complete example with interactive avatar   &lt;/Card&gt;</p>
+<p>  &lt;Card title="HeyGen Documentation" icon="book" href="https://docs.liveavatar.com/"&gt;     Official HeyGen API documentation and guides   &lt;/Card&gt;</p>
+<p>  &lt;Card title="HeyGen Platform" icon="microphone" href="https://www.liveavatar.com/"&gt;     Access interactive avatars and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use HeyGen services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[heygen]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>HeyGen Account Setup</h3>
+<p>Before using HeyGen video services, you need:</p>
+<ol><li><strong>HeyGen Account</strong>: Sign up at <a href="https://app.liveavatar.com/signin">HeyGen Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Avatar Selection</strong>: Choose from available interactive avatars</li><li><strong>Streaming Setup</strong>: Configure real-time avatar streaming capabilities</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>HEYGEN_LIVE_AVATAR_API_KEY</code>: Your HeyGen LiveAvatar API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   HeyGen API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session" type="aiohttp.ClientSession" required&gt;   HTTP client session for API requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_request" type="LiveAvatarNewSessionRequest | NewSessionRequest" default="None"&gt;   Configuration for the HeyGen session. When <code>None</code>, defaults to using the   <code>"Shawn_Therapist_public"</code> avatar. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="service_type" type="ServiceType" default="None"&gt;   Service type for the avatar session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="HeyGenVideoService.Settings" default="None"&gt;   Runtime-configurable settings. HeyGen has no model-level settings, so this is   primarily used for the <code>extra</code> dict. See <a href="/pipecat/fundamentals/service-settings">Service   Settings</a> for details. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import aiohttp
+from pipecat.services.heygen import HeyGenVideoService
+
+async with aiohttp.ClientSession() as session:
+    heygen = HeyGenVideoService(
+        api_key=os.getenv("HEYGEN_LIVE_AVATAR_API_KEY"),
+        session=session,
+    )</code></pre>
+<h3>With Custom Session Request</h3>
+<pre><code>from pipecat.services.heygen.api_liveavatar import LiveAvatarNewSessionRequest
+
+heygen = HeyGenVideoService(
+    api_key=os.getenv("HEYGEN_LIVE_AVATAR_API_KEY"),
+    session=session,
+    session_request=LiveAvatarNewSessionRequest(
+        avatar_id="your_avatar_id",
+        version="v2",
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Bidirectional streaming</strong>: The service manages both sending audio to HeyGen and receiving avatar video/audio back through WebRTC.</li><li><strong>Interruption handling</strong>: When a user starts speaking, the service interrupts the avatar's current speech, cancels ongoing audio tasks, and activates the avatar's listening animation.</li><li><strong>Metrics support</strong>: The service supports TTFB metrics tracking using <code>TTSStartedFrame</code> and <code>BotStartedSpeakingFrame</code> signals.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/video/heygen">https://docs.pipecat.ai/api-reference/server/services/video/heygen</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat Cloud REST API · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipecat Cloud REST API</h1>
+<blockquote>Base URLs, authentication, error handling, and the OpenAPI specification for the Pipecat Cloud REST API.</blockquote>
+<p>The Pipecat Cloud REST API is described by a single OpenAPI 3.0 specification:</p>
+<p>&lt;Card title="OpenAPI specification" icon="file-code" href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/openapi.json"&gt;   Download the complete spec to generate clients, run mocks, or feed to AI   tools. &lt;/Card&gt;</p>
+<h2>Base URLs</h2>
+<p>The API is split across two base URLs, depending on who is calling:</p>
+<div class="tablewrap"><table><thead><tr><th>API</th><th>Base URL</th><th>Used for</th></tr></thead><tbody><tr><td>Public</td><td><code>https://api.pipecat.daily.co/v1/public</code></td><td>Starting agent sessions and proxying requests to running sessions</td></tr><tr><td>Private</td><td><code>https://api.pipecat.daily.co/v1</code></td><td>Managing agents, secrets, builds, regions, and organization settings</td></tr></tbody></table></div>
+<h2>Authentication</h2>
+<p>All endpoints authenticate with a Bearer token in the <code>Authorization</code> header:</p>
+<pre><code>curl -H "Authorization: Bearer $TOKEN" https://api.pipecat.daily.co/v1/agents</code></pre>
+<ul><li><strong>Public API</strong> endpoints use a <strong>public API key</strong> — safe to use from client-facing servers that start sessions.</li><li><strong>Private API</strong> endpoints use a <strong>private API key</strong> — keep this server-side only.</li></ul>
+<p>Create both key types from the <a href="https://pipecat.daily.co/">Pipecat Cloud dashboard</a> under <strong>Settings &gt; API Keys</strong>.</p>
+<h2>Errors</h2>
+<p>Error responses share a common shape:</p>
+<pre><code>{
+  "error": "Attempt to start agent when deployment is not in ready state. Is your image pull secret valid?",
+  "code": "PCC-1001"
+}</code></pre>
+<p>Deployment-related error codes (<code>PCC-*</code>) are documented in the <a href="/pipecat-cloud/fundamentals/error-codes">error codes reference</a>.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/overview">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/overview</a></p>
+</div></main></div></body></html>

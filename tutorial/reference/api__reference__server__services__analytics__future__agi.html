@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Future AGI Observability · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Future AGI Observability</h1>
+<blockquote>traceAI-pipecat adds OpenTelemetry tracing and evaluation instrumentation from Future AGI to Pipecat applications.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="future-agi" maintainerUrl="https://github.com/future-agi" repo="https://github.com/future-agi/traceAI" /&gt;</p>
+<h2>Overview</h2>
+<p><code>traceAI-pipecat</code> adds OpenTelemetry observability to Pipecat applications, enabling tracing and monitoring of voice agents with automatic attribute mapping to <a href="https://futureagi.com/">Future AGI</a> conventions. It works by mapping Pipecat's OpenTelemetry spans (LLM, STT, TTS, tools, sessions) into Future AGI's tracing and evaluation format so you can observe and evaluate your pipeline in the Future AGI platform.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/future-agi/traceAI/tree/main/python/frameworks/pipecat"&gt;     Source code, examples, and issues for the Pipecat integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/traceAI-pipecat/"&gt;     The <code>traceAI-pipecat</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Future AGI" icon="book" href="https://futureagi.com/"&gt;     Learn more about the Future AGI observability and evaluation platform   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add traceAI-pipecat</code></pre>
+<p>For gRPC transport, also install the gRPC extras:</p>
+<pre><code>uv add "fi-instrumentation[grpc]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Future AGI Account Setup</h3>
+<p>Before using the integration, you need:</p>
+<ol><li><strong>Future AGI Account</strong>: Sign up at <a href="https://futureagi.com/">Future AGI</a></li><li><strong>API Credentials</strong>: An API key and secret key from your Future AGI account</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FI_API_KEY</code>: Your Future AGI API key</li><li><code>FI_SECRET_KEY</code>: Your Future AGI secret key</li></ul>
+<pre><code>import os
+
+os.environ["FI_API_KEY"] = FI_API_KEY
+os.environ["FI_SECRET_KEY"] = FI_SECRET_KEY</code></pre>
+<h2>Setup</h2>
+<p>Enable observability by registering a tracer provider and then installing the Pipecat attribute mapping. The mapping updates your existing span exporters to convert Pipecat attributes into Future AGI conventions.</p>
+<pre><code>from fi_instrumentation.otel import register, Transport, ProjectType
+from traceai_pipecat import enable_http_attribute_mapping
+
+# Register the tracer provider to establish the observability pipeline
+trace_provider = register(
+    project_type=ProjectType.OBSERVE,
+    project_name="My Pipecat Voice App",
+    transport=Transport.HTTP,
+    set_global_tracer_provider=True,
+)
+
+# Install attribute mapping to convert Pipecat attributes to Future AGI conventions
+enable_http_attribute_mapping()
+
+# Your Pipecat application code here...</code></pre>
+<p>For gRPC transport, use <code>enable_grpc_attribute_mapping()</code> instead, or specify the transport explicitly:</p>
+<pre><code>from traceai_pipecat import enable_fi_attribute_mapping
+from fi_instrumentation.otel import Transport
+
+enable_fi_attribute_mapping(transport=Transport.HTTP)  # or Transport.GRPC</code></pre>
+<p>&lt;Note&gt;   Call <code>register()</code> before installing attribute mapping, and make sure the   transport type matches your tracer provider configuration. See the <a href="https://github.com/future-agi/traceAI/tree/main/python/frameworks/pipecat">source   repository</a>   for the full API reference, feature list, and troubleshooting. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>The integration targets Pipecat's OpenTelemetry tracing support. A specific tested Pipecat version is not stated in the repository; check the <a href="https://github.com/future-agi/traceAI/tree/main/python/frameworks/pipecat">source repository</a> for the latest compatibility details and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/analytics/future-agi">https://docs.pipecat.ai/api-reference/server/services/analytics/future-agi</a></p>
+</div></main></div></body></html>

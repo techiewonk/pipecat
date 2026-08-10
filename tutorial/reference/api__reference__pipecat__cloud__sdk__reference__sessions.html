@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session Management · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Session Management</h1>
+<blockquote>Start and manage Pipecat Cloud agent sessions programmatically with the pipecatcloud Python SDK's session APIs.</blockquote>
+<p>The session management classes allow you to start and interact with agent sessions.</p>
+<h2>Session</h2>
+<p>The <code>Session</code> class is the primary way to start and interact with agent sessions.</p>
+<pre><code>from pipecatcloud.session import Session, SessionParams
+
+session = Session(
+    agent_name="my-agent",
+    api_key="pk_...",
+    params=SessionParams(use_daily=True)
+)</code></pre>
+<h3>Constructor Parameters</h3>
+<p>&lt;ParamField path="agent_name" type="string" required&gt;   Name of the deployed agent to interact with. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="string" required&gt;   Public API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="SessionParams"&gt;   Optional parameters to configure the session. &lt;/ParamField&gt;</p>
+<h3>Methods</h3>
+<p>&lt;ResponseField name="start()" type="async"&gt;   Starts a new session with the specified agent.</p>
+<p>  <strong>Returns</strong></p>
+<p>  A dictionary containing session information. If <code>use_daily</code> is True, includes <code>dailyRoom</code> URL and <code>dailyToken</code>.</p>
+<p>  <strong>Raises</strong></p>
+<p>  <code>AgentStartError</code>: If the session fails to start due to missing API key, agent not found, agent not ready, or capacity limits. &lt;/ResponseField&gt;</p>
+<h2>SessionParams</h2>
+<p>The <code>SessionParams</code> class allows you to configure a session.</p>
+<pre><code>from pipecatcloud.session import SessionParams
+
+params = SessionParams(
+    data={"custom_field": "value"},
+    use_daily=True,
+    daily_room_properties={"enable_recording": "cloud"}
+)</code></pre>
+<h3>Parameters</h3>
+<p>&lt;ParamField path="data" type="Dict[str, Any]" default="None"&gt;   Optional dictionary of data to pass to the agent. Must be JSON-serializable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_daily" type="boolean" default="False"&gt;   If True, creates a Daily WebRTC room for the session, enabling voice   interaction. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="daily_room_properties" type="Dict[str, Any]" default="None"&gt;   Optional dictionary of properties to configure the Daily room. Only used when   <code>use_daily=True</code>.</p>
+<p>  See <a href="https://docs.daily.co/reference/rest-api/rooms/config">Daily API   documentation</a> for   available properties. &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/sessions">https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/sessions</a></p>
+</div></main></div></body></html>

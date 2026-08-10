@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turn Events · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Turn Events</h1>
+<blockquote>Handle user and assistant turn lifecycle events for transcriptions and turn tracking</blockquote>
+<h2>Overview</h2>
+<p>Turn events provide hooks into the conversation turn lifecycle, allowing you to know when users and assistants start or stop speaking. These events are emitted by the context aggregators (<code>LLMUserAggregator</code> and <code>LLMAssistantAggregator</code>) and are particularly useful for:</p>
+<ul><li><strong>Collecting transcriptions</strong> - Get complete user and assistant transcripts when turns end</li><li><strong>Turn tracking</strong> - Monitor conversation flow and timing</li><li><strong>Analytics</strong> - Measure turn durations, detect timeouts, and track conversation patterns</li></ul>
+<h2>Events Summary</h2>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Emitter</th><th>Description</th></tr></thead><tbody><tr><td><code>on_user_turn_started</code></td><td><code>user_aggregator</code></td><td>User begins speaking</td></tr><tr><td><code>on_user_turn_inference_triggered</code></td><td><code>user_aggregator</code></td><td>Enough signal to start LLM inference</td></tr><tr><td><code>on_user_turn_stopped</code></td><td><code>user_aggregator</code></td><td>User finishes speaking (includes transcript)</td></tr><tr><td><code>on_user_turn_message_added</code></td><td><code>user_aggregator</code></td><td>A user message was written to the LLM context</td></tr><tr><td><code>on_user_turn_stop_timeout</code></td><td><code>user_aggregator</code></td><td>User turn ended due to timeout</td></tr><tr><td><code>on_user_turn_idle</code></td><td><code>user_aggregator</code></td><td>User has been idle (not speaking) for timeout</td></tr><tr><td><code>on_user_mute_started</code></td><td><code>user_aggregator</code></td><td>User input was muted</td></tr><tr><td><code>on_user_mute_stopped</code></td><td><code>user_aggregator</code></td><td>User input was unmuted</td></tr><tr><td><code>on_assistant_turn_started</code></td><td><code>assistant_aggregator</code></td><td>Assistant begins responding</td></tr><tr><td><code>on_assistant_turn_stopped</code></td><td><code>assistant_aggregator</code></td><td>Assistant finishes responding (includes transcript)</td></tr><tr><td><code>on_assistant_thought</code></td><td><code>assistant_aggregator</code></td><td>Assistant produced a thought (reasoning models)</td></tr><tr><td><code>on_summary_applied</code></td><td><code>assistant_aggregator</code></td><td>Context summarization was applied</td></tr></tbody></table></div>
+<h2>User Turn Events</h2>
+<p>User turn events are registered on the <code>user_aggregator</code> from an <code>LLMContextAggregatorPair</code>.</p>
+<h3>on\_user\_turn\_started</h3>
+<p>Fired when a user turn is detected to have started, based on the configured <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#start-strategies">start strategies</a>.</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_started")
+async def on_user_turn_started(aggregator, strategy):
+    print(f"User started speaking (detected by {strategy})")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr><tr><td><code>strategy</code></td><td><code>BaseUserTurnStartStrategy</code></td><td>The strategy that triggered the turn start</td></tr></tbody></table></div>
+<h3>on\_user\_turn\_inference\_triggered</h3>
+<p>Fired when a stop strategy has enough signal to start LLM inference for the current turn. For the default strategies this fires together with <code>on_user_turn_stopped</code>. When a strategy gates finalization on a separate signal — for example <a href="/api-reference/server/utilities/turn-management/filter-incomplete-turns"><code>FilterIncompleteUserTurnStrategies</code></a>, where the public stop event waits for the LLM's <code>✓</code> verdict — this event fires first (and may fire multiple times in one turn) while <code>on_user_turn_stopped</code> is deferred.</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_inference_triggered")
+async def on_user_turn_inference_triggered(aggregator, strategy):
+    print(f"Inference triggered by {strategy}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr><tr><td><code>strategy</code></td><td><code>BaseUserTurnStopStrategy</code></td><td>The strategy that triggered the inference</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Bind <code>on_user_turn_inference_triggered</code> to react when inference starts, and   <code>on_user_turn_stopped</code> to react when the turn is semantically final. With the   default strategies the two fire together, so most applications only need   <code>on_user_turn_stopped</code>. &lt;/Note&gt;</p>
+<h3>on\_user\_turn\_stopped</h3>
+<p>Fired when a user turn is detected to have ended, based on the configured <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#stop-strategies">stop strategies</a>. This event includes the complete user transcript for the turn.</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_stopped")
+async def on_user_turn_stopped(aggregator, strategy, message: UserTurnStoppedMessage):
+    print(f"User said: {message.content}")
+    print(f"Turn started at: {message.timestamp}")
+    if message.user_id:
+        print(f"User ID: {message.user_id}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr><tr><td><code>strategy</code></td><td><code>BaseUserTurnStopStrategy</code></td><td>The strategy that triggered the turn stop</td></tr><tr><td><code>message</code></td><td><code>UserTurnStoppedMessage</code></td><td>Contains the user's transcript and metadata</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   In realtime mode (<code>realtime_service_mode=True</code> on   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services"><code>LLMContextAggregatorPair</code></a>),   the user message isn't finalized at turn-stop time, so <code>message.content</code> is   <code>None</code>. Subscribe to   <a href="#on_user_turn_message_added"><code>on_user_turn_message_added</code></a> instead to get the   finalized user text. Behavior in cascade (STT → LLM → TTS) pipelines is   unchanged. &lt;/Note&gt;</p>
+<h3>on\_user\_turn\_message\_added</h3>
+<p>Fired when a user message is written to the LLM context, carrying the finalized turn text. In cascade pipelines this coincides with <code>on_user_turn_stopped</code>. In realtime mode (<code>realtime_service_mode=True</code>) the write is triggered by the assistant response start rather than the user-turn-end frame, so this event — not <code>on_user_turn_stopped</code> — is the canonical way to subscribe to "context just updated, here's the user text."</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_message_added")
+async def on_user_turn_message_added(aggregator, message: UserTurnMessageAddedMessage):
+    print(f"User said: {message.content}")
+    print(f"Turn started at: {message.timestamp}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr><tr><td><code>message</code></td><td><code>UserTurnMessageAddedMessage</code></td><td>Contains the finalized user text and metadata</td></tr></tbody></table></div>
+<h3>on\_user\_turn\_stop\_timeout</h3>
+<p>Fired when a user turn times out without any stop strategy triggering. This is a fallback mechanism that ends the turn after a configurable timeout period (default: 5.0 seconds) when the user has stopped speaking according to VAD but no transcription-based stop has occurred. Commonly, this event is used to retrigger the LLM response after the user has stopped speaking.</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_stop_timeout")
+async def on_user_turn_stop_timeout(aggregator):
+    message = {
+        "role": "developer",
+        "content": "Continue.",
+    }
+    await user_aggregator.queue_frame(LLMMessagesAppendFrame([message], run_llm=True))</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   After <code>on_user_turn_stop_timeout</code> fires, <code>on_user_turn_stopped</code> will also be   called with the accumulated transcript. &lt;/Note&gt;</p>
+<h3>on\_user\_turn\_idle</h3>
+<p>Fired when the user has been idle (not speaking) for a configured timeout period. This event is useful for re-engaging users who may have stepped away or need a prompt to continue the conversation. The idle timer starts when the bot finishes speaking and is cancelled when the user or bot starts speaking again.</p>
+<pre><code>@user_aggregator.event_handler("on_user_turn_idle")
+async def on_user_turn_idle(aggregator):
+    # Re-engage the user with a contextual prompt
+    message = {
+        "role": "developer",
+        "content": "The user has been quiet. Politely and briefly ask if they're still there.",
+    }
+    await aggregator.push_frame(LLMMessagesAppendFrame([message], run_llm=True))</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The idle timer starts when the bot stops speaking and is cancelled when the   user or bot starts speaking. It is suppressed during function calls and active   user turns. This event can fire multiple times if the user remains idle. &lt;/Note&gt;</p>
+<h3>on\_user\_mute\_started</h3>
+<p>Fired when user input is muted. See <a href="/pipecat/fundamentals/user-input-muting">User Input Muting</a> for details on muting.</p>
+<pre><code>@user_aggregator.event_handler("on_user_mute_started")
+async def on_user_mute_started(aggregator):
+    print("User input muted")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr></tbody></table></div>
+<h3>on\_user\_mute\_stopped</h3>
+<p>Fired when user input is unmuted.</p>
+<pre><code>@user_aggregator.event_handler("on_user_mute_stopped")
+async def on_user_mute_stopped(aggregator):
+    print("User input unmuted")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user aggregator instance</td></tr></tbody></table></div>
+<h2>Assistant Turn Events</h2>
+<p>Assistant turn events are registered on the <code>assistant_aggregator</code> from an <code>LLMContextAggregatorPair</code>.</p>
+<h3>on\_assistant\_turn\_started</h3>
+<p>Fired when the assistant begins generating a response.</p>
+<pre><code>@assistant_aggregator.event_handler("on_assistant_turn_started")
+async def on_assistant_turn_started(aggregator):
+    print("Assistant started responding")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMAssistantAggregator</code></td><td>The assistant aggregator instance</td></tr></tbody></table></div>
+<h3>on\_assistant\_turn\_stopped</h3>
+<p>Fired when the assistant finishes responding or is interrupted. This event includes the complete assistant transcript for the turn.</p>
+<pre><code>@assistant_aggregator.event_handler("on_assistant_turn_stopped")
+async def on_assistant_turn_stopped(aggregator, message: AssistantTurnStoppedMessage):
+    if message.content:
+        print(f"Assistant said: {message.content}")
+    print(f"Turn started at: {message.timestamp}")
+    print(f"Was interrupted: {message.interrupted}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMAssistantAggregator</code></td><td>The assistant aggregator instance</td></tr><tr><td><code>message</code></td><td><code>AssistantTurnStoppedMessage</code></td><td>Contains the assistant's transcript and metadata</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   This event fires when the LLM response completes, when the user interrupts, or   when a user image is appended to context. The event always fires when a turn   ends, even if <code>content</code> is empty (e.g., the turn was interrupted before any   tokens were generated). &lt;/Note&gt;</p>
+<h3>on\_assistant\_thought</h3>
+<p>Fired when the assistant produces a thought from a reasoning model (e.g., extended thinking in Claude). This event provides visibility into the model's reasoning process.</p>
+<pre><code>@assistant_aggregator.event_handler("on_assistant_thought")
+async def on_assistant_thought(aggregator, message: AssistantThoughtMessage):
+    print(f"Assistant thought: {message.content}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMAssistantAggregator</code></td><td>The assistant aggregator instance</td></tr><tr><td><code>message</code></td><td><code>AssistantThoughtMessage</code></td><td>Contains the thought content and timestamp</td></tr></tbody></table></div>
+<h3>on\_summary\_applied</h3>
+<p>Fired when context summarization is successfully applied. This event is useful for monitoring context management and logging compression metrics.</p>
+<pre><code>from pipecat.processors.aggregators.llm_context_summarizer import SummaryAppliedEvent
+
+@assistant_aggregator.event_handler("on_summary_applied")
+async def on_summary_applied(aggregator, summarizer, event: SummaryAppliedEvent):
+    print(
+        f"Context summarized: {event.original_message_count} -&gt; "
+        f"{event.new_message_count} messages "
+        f"({event.summarized_message_count} summarized, "
+        f"{event.preserved_message_count} preserved)"
+    )</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>aggregator</code></td><td><code>LLMAssistantAggregator</code></td><td>The assistant aggregator instance</td></tr><tr><td><code>summarizer</code></td><td><code>LLMContextSummarizer</code></td><td>The summarizer that applied the summary</td></tr><tr><td><code>event</code></td><td><code>SummaryAppliedEvent</code></td><td>Contains summarization metrics and metadata</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   This event requires <code>enable_auto_context_summarization=True</code> in the   <code>LLMAssistantAggregatorParams</code> or manual triggering via   <code>LLMSummarizeContextFrame</code>. See <a href="/api-reference/server/utilities/context-summarization">Context   Summarization</a> for   details. &lt;/Note&gt;</p>
+<h2>Message Types</h2>
+<h3>UserTurnStoppedMessage</h3>
+<p>Contains the user's complete transcript when their turn ends.</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import UserTurnStoppedMessage</code></pre>
+<p>&lt;ParamField path="content" type="str | None"&gt;   The complete transcribed text from the user's turn. <code>None</code> in realtime mode   (<code>realtime_service_mode=True</code>), where the user message isn't finalized at   turn-stop time — subscribe to   <a href="#on_user_turn_message_added"><code>on_user_turn_message_added</code></a> for the finalized   text instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="str"&gt;   ISO 8601 timestamp indicating when the user turn started. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_id" type="str | None"&gt;   Optional identifier for the user, if available from the transport. &lt;/ParamField&gt;</p>
+<h3>UserTurnMessageAddedMessage</h3>
+<p>Accompanies <code>on_user_turn_message_added</code>, carrying the finalized user text written to the LLM context.</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import UserTurnMessageAddedMessage</code></pre>
+<p>&lt;ParamField path="content" type="str"&gt;   The aggregated, finalized user transcript for the turn. Always populated. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="str"&gt;   ISO 8601 timestamp indicating when the user turn started. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_id" type="str | None"&gt;   Optional identifier for the user, if available from the transport. &lt;/ParamField&gt;</p>
+<h3>AssistantTurnStoppedMessage</h3>
+<p>Contains the assistant's complete transcript when their turn ends.</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import AssistantTurnStoppedMessage</code></pre>
+<p>&lt;ParamField path="content" type="str"&gt;   The complete text content from the assistant's turn. May be empty if the LLM   returned zero tokens (e.g., turn was interrupted before any tokens were   received or pushed). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="interrupted" type="bool"&gt;   Whether the assistant turn was interrupted. True if the turn ended due to user   interruption or cancellation, False if it completed normally. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="str"&gt;   ISO 8601 timestamp indicating when the assistant turn started. &lt;/ParamField&gt;</p>
+<h3>AssistantThoughtMessage</h3>
+<p>Contains an assistant's thought content from reasoning models.</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import AssistantThoughtMessage</code></pre>
+<p>&lt;ParamField path="content" type="str"&gt;   The thought/reasoning text from the assistant. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="str"&gt;   ISO 8601 timestamp indicating when the thought started. &lt;/ParamField&gt;</p>
+<h2>Related</h2>
+<ul><li><a href="/api-reference/server/utilities/turn-management/transcriptions">Transcriptions</a> - Collect conversation transcripts using turn events</li><li><a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn Strategies</a> - Configure turn detection behavior</li><li><a href="/api-reference/server/utilities/observers/turn-tracking-observer">Turn Tracking Observer</a> - Track complete turn cycles with timing</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-management/turn-events">https://docs.pipecat.ai/api-reference/server/utilities/turn-management/turn-events</a></p>
+</div></main></div></body></html>

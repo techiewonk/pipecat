@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L7 · Audio: filters, resamplers, VAD — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 7 · Part II — The voice loop</div>
+      <h1>Audio: filters, resamplers, VAD</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate</span><span class="pill">Production-critical</span></div>
+      <p class="lead">Real calls are noisy and run at odd sample rates. This is the production-audio layer: clean the mic, convert rates, and detect speech.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="chain">The input audio chain</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="🎤 mic|audio_in_filter:noise cancel|resampler:rate convert|VAD:speech?|STT"
+           data-caption="Raw mic audio enters the input transport|An optional noise filter removes hum/keyboard/room noise|A resampler converts to the rate the models expect|VAD decides speech vs silence — the fastest turn signal|Clean, correctly-rated audio reaches STT">
+      </div>
+
+      <h2 id="filters">Noise cancellation (audio_in_filter)</h2>
+      <p>Attach a filter to the transport to clean incoming audio <em>before</em> VAD/STT — a big quality win on real calls.</p>
+      <pre><code class="language-python">from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter   # free / open
+# from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter  # paid SDK
+
+"webrtc": lambda: TransportParams(
+    audio_in_enabled=True, audio_out_enabled=True,
+    audio_in_filter=RNNoiseFilter(),                 # clean the mic first
+)</code></pre>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Filter</th><th>Import</th><th>License</th></tr></thead>
+        <tbody>
+          <tr><td><code>RNNoiseFilter</code></td><td><code>audio.filters.rnnoise_filter</code></td><td><strong>Free/open</strong> — best first choice.</td></tr>
+          <tr><td><code>KrispVivaFilter</code></td><td><code>audio.filters.krisp_viva_filter</code></td><td>Krisp SDK (commercial key).</td></tr>
+          <tr><td><code>KoalaFilter</code></td><td><code>audio.filters.koala_filter</code></td><td>Picovoice Koala (access key).</td></tr>
+          <tr><td><code>AICFilter</code></td><td><code>audio.filters.aic_filter</code></td><td>ai-coustics (API key).</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="resamplers">Resamplers (the "sampler")</h2>
+      <p>Phone audio is 8&nbsp;kHz; models want 16/24&nbsp;kHz. A resampler converts between them so nothing sounds chipmunked. Usually automatic (the output <code>MediaSender</code> uses a streaming one), but you can pick the engine:</p>
+      <pre><code class="language-python">from pipecat.audio.resamplers.soxr_resampler import SOXRAudioResampler
+resampler = SOXRAudioResampler()          # high quality (SoX)
+# SOXRStreamAudioResampler — streaming/realtime · ResampyResampler — pure-Python fallback</code></pre>
+
+      <h2 id="vad">VAD: the speech signal</h2>
+      <p>Voice Activity Detection answers "speech or silence?" — the fastest end-of-turn signal. The default is Silero (local, free). You can tune it and place it explicitly, or (more commonly) hand it to the aggregator in <a href="l10-turn-taking.html">Lesson 10</a>.</p>
+      <pre><code class="language-python">from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
+
+vad = SileroVADAnalyzer(params=VADParams(
+    confidence=0.7,    # how sure before "speech"
+    start_secs=0.2,    # speech must persist this long to start a turn
+    stop_secs=0.8,     # silence this long ends the turn
+    min_volume=0.6,
+))
+# explicit placement (standalone route):
+from pipecat.processors.audio.vad_processor import VADProcessor
+pipeline = Pipeline([transport.input(), VADProcessor(vad_analyzer=vad), stt, ...])</code></pre>
+      <p>VAD state machine: <code>QUIET → STARTING → SPEAKING → STOPPING</code>. It emits <code>VADUserStartedSpeakingFrame</code>/<code>VADUserStoppedSpeakingFrame</code> that the turn logic consumes.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>audio/filters/*</code> (all subclass <code>BaseAudioFilter</code>) · <code>audio/resamplers/*</code> (<code>BaseAudioResampler</code>) · <code>audio/vad/vad_analyzer.py</code> (<code>VADAnalyzer</code>, <code>VADParams</code>, <code>VADState</code>), <code>audio/vad/silero.py</code> (<code>SileroVADAnalyzer</code>), <code>audio/vad/vad_controller.py</code> · <code>processors/audio/vad_processor.py</code> (<code>VADProcessor</code>). Also <code>audio/mixers/</code>, <code>audio/dtmf/</code>, <code>audio/volume.py</code> (used in Lesson 14).</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Add <code>audio_in_filter=RNNoiseFilter()</code> to <code>getting-started/06</code> and test in a noisy room. (2) Lower VAD <code>stop_secs</code> to 0.4 and feel it cut you off sooner. (3) Run <code>examples/transcription/transcription-deepgram.py</code> and watch the VAD gate transcripts.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Which noise filter needs no license?</summary><p><code>RNNoiseFilter</code> — the others (Krisp, Koala, ai-coustics) need keys.</p></details>
+      <details><summary>2. What does a resampler fix, and where does one usually run automatically?</summary><p>Sample-rate mismatches (e.g. 8 kHz phone ↔ 24 kHz TTS); the output <code>MediaSender</code> runs a streaming resampler for you.</p></details>
+      <details><summary>3. What are the four VAD states?</summary><p>QUIET, STARTING, SPEAKING, STOPPING.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l08-stt.html">Lesson 8 — Speech to Text →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

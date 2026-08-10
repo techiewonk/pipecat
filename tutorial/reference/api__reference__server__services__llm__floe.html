@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floe LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Floe LLM</h1>
+<blockquote>LLM service that routes OpenAI-compatible chat completions through Floe with per-call spend caps</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="Floe Labs" maintainerUrl="https://github.com/Floe-Labs" repo="https://github.com/Floe-Labs/pipecat-floe" /&gt;</p>
+<h2>Overview</h2>
+<p><code>FloeLLMService</code> provides an OpenAI-compatible interface for running LLMs through <a href="https://floelabs.xyz">Floe</a> — a unified billing ledger for voice AI where one key powers the LLM, STT, and TTS legs of an agent, metered per call and bounded by pre-call spend caps. It extends Pipecat's <code>OpenAILLMService</code>, so streaming responses, function calling, usage/TTFB metrics, and OpenTelemetry tracing all work unchanged.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/Floe-Labs/pipecat-floe"&gt;     Source code, examples, and issues for the Floe integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-floe/"&gt;     The <code>pipecat-floe</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Floe" icon="book" href="https://floe-labs.gitbook.io/docs"&gt;     Documentation and supported models for Floe   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://dev-dashboard.floelabs.xyz"&gt;     Create and manage your Floe agent keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-floe</code></pre>
+<h2>Prerequisites</h2>
+<h3>Floe Account Setup</h3>
+<p>Before using the Floe LLM service, you need:</p>
+<ol><li><strong>Floe Account</strong>: Sign up at the <a href="https://dev-dashboard.floelabs.xyz">Floe dashboard</a></li><li><strong>API Key</strong>: Create an agent key from your dashboard. New keys come with</li></ol>
+<p>   welcome credit that covers the first calls.</p>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FLOE_API_KEY</code>: Your Floe agent key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Floe agent key. Falls back to the <code>FLOE_API_KEY</code> environment variable if not   provided. Raises <code>ValueError</code> if neither is set. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="openai/gpt-4o-mini"&gt;   Fully qualified <code>provider/model</code> identifier (for example   <code>"openai/gpt-4o-mini"</code> or <code>"anthropic/claude-sonnet-4-6"</code>). A bare model name   is rejected by Floe. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://credit-api.floelabs.xyz/v1"&gt;   Floe OpenAI-compatible base URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task_id" type="str" default="None"&gt;   Optional Floe task ID sent as the <code>X-Floe-Task-Id</code> header on every request, so   a per-task budget can bound one conversation. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="kwargs"&gt;   Additional keyword arguments passed through to the underlying   <code>OpenAILLMService</code>. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat_floe import FloeLLMService, FloeSTTService, FloeTTSService
+from pipecat.pipeline.pipeline import Pipeline
+
+# One Floe key powers all three legs, on a single budget.
+stt = FloeSTTService()                              # streaming STT (WebSocket)
+llm = FloeLLMService(model="openai/gpt-4o-mini")    # OpenAI-compatible
+tts = FloeTTSService(model="openai/tts-1", voice="alloy")
+
+# Build pipeline
+pipeline = Pipeline([stt, llm, tts])</code></pre>
+<p>See the <a href="https://github.com/Floe-Labs/pipecat-floe">source repository</a> for a complete runnable example wiring a WebSocket transport → STT → LLM → TTS.</p>
+<h2>Compatibility</h2>
+<p>Built and verified against Pipecat v1.7.0+. Check the <a href="https://github.com/Floe-Labs/pipecat-floe">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/floe">https://docs.pipecat.ai/api-reference/server/services/llm/floe</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coqui XTTS Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Coqui XTTS Text-to-Speech</h1>
+<blockquote>XTTSTTSService provides multilingual TTS with voice cloning through a locally hosted Coqui XTTS streaming server.</blockquote>
+<p>&lt;Warning&gt;   <code>XTTSService</code> is deprecated as of v1.7.0 and will be removed in v2.0.0. The <a href="https://github.com/coqui-ai/xtts-streaming-server">Coqui XTTS streaming server</a> it connects to has been unmaintained since February 2024 and pins a commit of the discontinued <code>coqui-ai/TTS</code> library. The XTTS-v2 model is licensed for non-commercial use only.</p>
+<p>  <strong>Alternatives:</strong></p>
+<ul><li><a href="/api-reference/server/services/tts/kokoro"><code>KokoroTTSService</code></a> — Maintained local TTS service</li><li><a href="/api-reference/server/services/tts/piper"><code>PiperTTSService</code></a> — Maintained local TTS service</li><li><a href="/api-reference/server/services/tts/xtts-vllm"><code>pipecat-xtts-vllm</code></a> — Community-maintained package targeting a current XTTSv2 serving stack</li></ul>
+<p>&lt;/Warning&gt;</p>
+<h2>Overview</h2>
+<p><code>XTTSTTSService</code> provides multilingual voice synthesis with voice cloning capabilities through a locally hosted streaming server. The service supports real-time streaming and custom voice training using Coqui's XTTS-v2 model for cross-lingual text-to-speech.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="XTTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.xtts.tts.html"&gt;     Pipecat's API methods for XTTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-xtts.py"&gt;     Complete example with voice cloning   &lt;/Card&gt;</p>
+<p>  &lt;Card title="XTTS Repository" icon="book" href="https://github.com/coqui-ai/xtts-streaming-server"&gt;     Official XTTS streaming server repository   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Cloning" icon="microphone" href="https://github.com/coqui-ai/xtts-streaming-server#voice-cloning"&gt;     Learn about custom voice training   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>XTTS requires a running streaming server. Start the server using Docker:</p>
+<pre><code>docker run --gpus=all -e COQUI_TOS_AGREED=1 --rm -p 8000:80 \
+  ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda121</code></pre>
+<h2>Prerequisites</h2>
+<h3>XTTS Server Setup</h3>
+<p>Before using XTTSTTSService, you need:</p>
+<ol><li><strong>Docker Environment</strong>: Set up Docker with GPU support for optimal performance</li><li><strong>XTTS Server</strong>: Run the XTTS streaming server container</li><li><strong>Voice Models</strong>: Configure voice models and cloning samples as needed</li></ol>
+<h3>Required Configuration</h3>
+<ul><li><strong>Server URL</strong>: Configure the XTTS server endpoint (default: <code>http://localhost:8000</code>)</li><li><strong>Voice Selection</strong>: Set up voice models or voice cloning samples</li></ul>
+<p>&lt;Note&gt;   GPU acceleration is recommended for optimal performance. The server requires   CUDA support for best results. &lt;/Note&gt;</p>
+<h2>Configuration</h2>
+<h3>XTTSService</h3>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   ID of the studio speaker to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=XTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" required&gt;   Base URL of the XTTS streaming server (e.g. <code>http://localhost:8000</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests to the XTTS server. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language for synthesis. Supports Czech, German, English, Spanish, French,   Hindi, Hungarian, Italian, Japanese, Korean, Dutch, Polish, Portuguese,   Russian, Turkish, and Chinese. *Deprecated in v0.0.106. Use   <code>settings=XTTSService.Settings(language=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="XTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. Audio is automatically resampled from XTTS's native 24kHz output. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>XTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import aiohttp
+from pipecat.services.xtts import XTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = XTTSService(
+        settings=XTTSService.Settings(
+            voice="Ana Florence",
+        ),
+        base_url="http://localhost:8000",
+        aiohttp_session=session,
+    )</code></pre>
+<h3>With Language Configuration</h3>
+<pre><code>import aiohttp
+from pipecat.services.xtts import XTTSService
+from pipecat.transcriptions.language import Language
+
+async with aiohttp.ClientSession() as session:
+    tts = XTTSService(
+        settings=XTTSService.Settings(
+            voice="Ana Florence",
+            language=Language.ES,
+        ),
+        base_url="http://localhost:8000",
+        aiohttp_session=session,
+    )</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Local server required</strong>: XTTS requires a locally running streaming server (via Docker). The service connects to this server over HTTP.</li><li><strong>Studio speakers</strong>: On startup, the service fetches available "studio speakers" from the server's <code>/studio_speakers</code> endpoint. The <code>voice_id</code> must match one of these speakers.</li><li><strong>Audio resampling</strong>: XTTS natively outputs audio at 24kHz. The service automatically resamples to match the pipeline's configured sample rate.</li><li><strong>GPU recommended</strong>: The XTTS server performs best with CUDA-enabled GPU acceleration. CPU inference is significantly slower.</li><li><strong>No API key required</strong>: XTTS runs locally, so no external API credentials are needed.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/xtts">https://docs.pipecat.ai/api-reference/server/services/tts/xtts</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tavus Video Avatar · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Tavus Video Avatar</h1>
+<blockquote>TavusVideoService generates Tavus AI avatar video that speaks your Pipecat agent's TTS output in real time.</blockquote>
+<h2>Overview</h2>
+<p><code>TavusVideoService</code> integrates with Tavus to generate AI-powered video avatars that speak your text-to-speech output in real-time. The service takes audio input and produces synchronized video of a realistic avatar speaking, enabling engaging conversational AI experiences with visual presence.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Tavus Video API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.tavus.video.html"&gt;     Pipecat's API methods for Tavus video integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-tavus-video-service.py"&gt;     Complete example with avatar video generation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Tavus Documentation" icon="book" href="https://docs.tavus.io/sections/replica/overview"&gt;     Official Tavus replica and avatar documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Tavus Platform" icon="microphone" href="https://platform.tavus.io/auth/sign-up?plan=free"&gt;     Create avatars and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Tavus services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[tavus]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Tavus Account Setup</h3>
+<p>Before using Tavus video services, you need:</p>
+<ol><li><strong>Tavus Account</strong>: Sign up at <a href="https://platform.tavus.io/auth/sign-up?plan=free">Tavus Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Replica Creation</strong>: Create and train voice replicas for your avatars</li><li><strong>Avatar Selection</strong>: Choose or create avatar models for video generation</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>TAVUS_API_KEY</code>: Your Tavus API key for authentication</li><li><code>TAVUS_REPLICA_ID</code>: ID of your trained voice replica</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Tavus API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="replica_id" type="str" required&gt;   ID of the Tavus voice replica to use for speech synthesis. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="persona_id" type="str" default="pipecat0"&gt;   ID of the Tavus persona. Defaults to <code>"pipecat0"</code>, which signals Tavus to use   the TTS voice of the Pipecat bot instead of a Tavus persona voice, and to   expect audio over the <code>conversation.echo</code> app message API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session" type="aiohttp.ClientSession" required&gt;   Async HTTP session used for communication with Tavus. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="TavusVideoService.Settings" default="None"&gt;   Runtime-configurable settings. Tavus has no model-level settings, so this is   primarily used for the <code>extra</code> dict. See <a href="/pipecat/fundamentals/service-settings">Service   Settings</a> for details. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import aiohttp
+from pipecat.services.tavus import TavusVideoService
+
+async with aiohttp.ClientSession() as session:
+    tavus = TavusVideoService(
+        api_key=os.getenv("TAVUS_API_KEY"),
+        replica_id=os.getenv("TAVUS_REPLICA_ID"),
+        session=session,
+    )</code></pre>
+<h3>With Custom Persona</h3>
+<pre><code>tavus = TavusVideoService(
+    api_key=os.getenv("TAVUS_API_KEY"),
+    replica_id=os.getenv("TAVUS_REPLICA_ID"),
+    persona_id="my-custom-persona",
+    session=session,
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Dual room architecture</strong>: When used with DailyTransport, Tavus creates two virtual rooms -- a Tavus room (containing the avatar and the Pipecat bot) and a user room (containing the Pipecat bot and the user).</li><li><strong>Interruption handling</strong>: The service handles interruptions by resetting the audio send task and sending an interrupt message to the Tavus client.</li><li><strong>Metrics support</strong>: The service supports TTFB metrics tracking using <code>TTSStartedFrame</code> and <code>BotStartedSpeakingFrame</code> signals.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/video/tavus">https://docs.pipecat.ai/api-reference/server/services/video/tavus</a></p>
+</div></main></div></body></html>

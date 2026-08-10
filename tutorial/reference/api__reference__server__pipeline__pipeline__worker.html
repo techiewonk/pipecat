@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipelineWorker · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>PipelineWorker</h1>
+<blockquote>PipelineWorker manages Pipecat pipeline execution and lifecycle inside the multi-agent framework.</blockquote>
+<h2>Overview</h2>
+<p><code>PipelineWorker</code> is the central class for managing pipeline execution. It handles the lifecycle of the pipeline, processes frames in both directions, manages cancellation, and provides event handlers for monitoring pipeline activity.</p>
+<p>&lt;Note&gt;   <code>PipelineWorker</code> builds on   <a href="/api-reference/server/workers/base-worker"><code>BaseWorker</code></a>, so it can take part   in a multi-worker system. See   <a href="/api-reference/server/workers/base-worker">Workers</a> for the full worker   model. <code>PipelineTask</code> is a deprecated alias for <code>PipelineWorker</code>; existing   code that uses it keeps working. &lt;/Note&gt;</p>
+<h2>Basic Usage</h2>
+<pre><code>from pipecat.pipeline.pipeline import Pipeline
+from pipecat.workers.runner import WorkerRunner
+from pipecat.pipeline.worker import PipelineParams, PipelineWorker
+
+# Create a pipeline
+pipeline = Pipeline([...])
+
+# Create a worker with the pipeline
+worker = PipelineWorker(pipeline)
+
+# Queue frames for processing
+await worker.queue_frame(TTSSpeakFrame("Hello, how can I help you today?"))
+
+# Run the pipeline
+runner = WorkerRunner()
+await runner.run(worker)</code></pre>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="pipeline" type="BasePipeline" required&gt;   The pipeline to execute. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="PipelineParams" default="PipelineParams()"&gt;   Configuration parameters for the pipeline. See   <a href="/api-reference/server/pipeline/pipeline-params">PipelineParams</a> for details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="observers" type="List[BaseObserver]" default="[]"&gt;   List of observers for monitoring pipeline execution. See   <a href="/api-reference/server/utilities/observers/observer-pattern">Observers</a> for   details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="clock" type="BaseClock" default="SystemClock()"&gt;   Clock implementation for timing operations. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task_manager" type="BaseTaskManager | None" default="None"&gt;   Custom task manager for handling asyncio tasks. If None, a default TaskManager   is used. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="check_dangling_tasks" type="bool" default="True"&gt;   Whether to warn about tasks left running when the worker finishes. Only   applies when the worker owns its task manager; otherwise the runner reports   dangling tasks. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="idle_timeout_secs" type="float | None" default="300"&gt;   Timeout in seconds before considering the pipeline idle. Set to None to   disable idle detection. See <a href="/api-reference/server/pipeline/pipeline-idle-detection">Pipeline Idle   Detection</a> for   details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="idle_timeout_frames" type="Tuple[Type[Frame], ...]" default="(BotSpeakingFrame, UserSpeakingFrame)"&gt;   Frame types that should prevent the pipeline from being considered idle. See   <a href="/api-reference/server/pipeline/pipeline-idle-detection">Pipeline Idle   Detection</a> for   details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cancel_on_idle_timeout" type="bool" default="True"&gt;   Whether to automatically cancel the pipeline worker when idle timeout is   reached. See <a href="/api-reference/server/pipeline/pipeline-idle-detection">Pipeline Idle   Detection</a> for   details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_tracing" type="bool" default="False"&gt;   Whether to enable OpenTelemetry tracing. See <a href="/api-reference/server/utilities/opentelemetry">The OpenTelemetry   guide</a> for details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_turn_tracking" type="bool" default="True"&gt;   Whether to enable turn tracking. See <a href="/api-reference/server/utilities/opentelemetry">The OpenTelemetry   guide</a> for details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="conversation_id" type="str | None" default="None"&gt;   Custom ID for the conversation. If not provided, a UUID will be generated. See   <a href="/api-reference/server/utilities/opentelemetry">The OpenTelemetry guide</a> for   details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="additional_span_attributes" type="dict | None" default="None"&gt;   Any additional attributes to add to top-level OpenTelemetry conversation span.   See <a href="/api-reference/server/utilities/opentelemetry">The OpenTelemetry guide</a>   for details. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="app_resources" type="Any" default="None"&gt;   Application-defined bag of resources (database handles, API clients, state,   etc.) shared across tool handlers. Passed by reference to every function   handler via <code>FunctionCallParams.app_resources</code>. The framework never copies or   clears this object; the caller retains their handle and can read mutations   after the worker finishes. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_resources" type="Any" default="None"&gt;   Deprecated alias for <code>app_resources</code>. Use <code>app_resources</code> in new code. &lt;/ParamField&gt;</p>
+<h2>Methods</h2>
+<h3>Worker Lifecycle Management</h3>
+<p>&lt;ResponseField name="run()" type="async"&gt;   Starts and manages the pipeline execution until completion or cancellation. Typically called via <code>WorkerRunner</code> rather than directly:</p>
+<pre><code>  runner = WorkerRunner()
+  await runner.run(worker)</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="stop_when_done()" type="async"&gt;   Sends an EndFrame to the pipeline to gracefully stop the worker after all queued   frames have been processed.</p>
+<pre><code>  await worker.stop_when_done()</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="cancel()" type="async"&gt;   Stops the running pipeline immediately by sending a CancelFrame.</p>
+<pre><code>    await worker.cancel()</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="has_finished()" type="bool"&gt;   Returns whether the worker has finished (all processors have stopped).</p>
+<pre><code>  if worker.has_finished(): print("Worker is complete")</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<h3>Frame Management</h3>
+<p>&lt;ResponseField name="queue_frame(frame, direction=FrameDirection.DOWNSTREAM)" type="async"&gt;   Queues a single frame to be pushed through the pipeline.</p>
+<p>  Downstream frames are pushed from the beginning of the pipeline. Upstream frames are pushed from the end of the pipeline.</p>
+<p>  <strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>frame</code></td><td><code>Frame</code></td><td>(required)</td><td>The frame to be processed</td></tr><tr><td><code>direction</code></td><td><code>FrameDirection</code></td><td><code>FrameDirection.DOWNSTREAM</code></td><td>The direction to push the frame</td></tr></tbody></table></div>
+<pre><code>  # Push a frame downstream (default behavior)
+  await worker.queue_frame(TTSSpeakFrame("Hello!"))
+
+  # Push a frame upstream from the end of the pipeline
+  from pipecat.processors.frame_processor import FrameDirection
+  await worker.queue_frame(UserStoppedSpeakingFrame(), direction=FrameDirection.UPSTREAM)</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="queue_frames(frames, direction=FrameDirection.DOWNSTREAM)" type="async"&gt;   Queues multiple frames to be pushed through the pipeline.</p>
+<p>  Downstream frames are pushed from the beginning of the pipeline. Upstream frames are pushed from the end of the pipeline.</p>
+<p>  <strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>frames</code></td><td>`Iterable[Frame] \</td><td>AsyncIterable[Frame]`</td><td>(required)</td><td>An iterable or async iterable of frames</td></tr><tr><td><code>direction</code></td><td><code>FrameDirection</code></td><td><code>FrameDirection.DOWNSTREAM</code></td><td>The direction to push the frames</td></tr></tbody></table></div>
+<pre><code>  # Push frames downstream (default behavior)
+  frames = [TTSSpeakFrame("Hello!"), TTSSpeakFrame("How are you?")]
+  await worker.queue_frames(frames)
+
+  # Push frames upstream from the end of the pipeline
+  from pipecat.processors.frame_processor import FrameDirection
+  frames = [TranscriptionFrame("user input"), UserStoppedSpeakingFrame()]
+  await worker.queue_frames(frames, direction=FrameDirection.UPSTREAM)</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<h2>Event Handlers</h2>
+<p>PipelineWorker provides event handlers for monitoring pipeline lifecycle and frame flow. Register handlers using the <code>@event_handler</code> decorator.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_pipeline_started</code></td><td>Pipeline has started processing</td></tr><tr><td><code>on_pipeline_finished</code></td><td>Pipeline reached a terminal state</td></tr><tr><td><code>on_pipeline_error</code></td><td>An error frame reached the pipeline worker</td></tr><tr><td><code>on_frame_reached_upstream</code></td><td>A filtered frame type reached the pipeline source</td></tr><tr><td><code>on_frame_reached_downstream</code></td><td>A filtered frame type reached the pipeline sink</td></tr><tr><td><code>on_heartbeat_timeout</code></td><td>No heartbeat received within the monitor timeout (pipeline may stall)</td></tr><tr><td><code>on_idle_timeout</code></td><td>No activity detected within the idle timeout period</td></tr></tbody></table></div>
+<h3>on\_pipeline\_started</h3>
+<p>Fired when the <code>StartFrame</code> has been processed by all processors in the pipeline. This indicates the pipeline is fully initialized and running.</p>
+<pre><code>@worker.event_handler("on_pipeline_started")
+async def on_pipeline_started(worker, frame):
+    print("Pipeline is running!")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr><tr><td><code>frame</code></td><td><code>StartFrame</code></td><td>The start frame that was processed</td></tr></tbody></table></div>
+<h3>on\_pipeline\_finished</h3>
+<p>Fired after the pipeline reaches any terminal state. This includes normal completion (<code>EndFrame</code>), explicit stop (<code>StopFrame</code>), or cancellation (<code>CancelFrame</code>). Use this event for cleanup, logging, or post-processing.</p>
+<pre><code>@worker.event_handler("on_pipeline_finished")
+async def on_pipeline_finished(worker, frame):
+    if isinstance(frame, EndFrame):
+        print("Pipeline ended normally")
+    elif isinstance(frame, CancelFrame):
+        print("Pipeline was cancelled")
+    elif isinstance(frame, StopFrame):
+        print("Pipeline was stopped")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr><tr><td><code>frame</code></td><td><code>Frame</code></td><td>The terminal frame (<code>EndFrame</code>, <code>StopFrame</code>, or <code>CancelFrame</code>)</td></tr></tbody></table></div>
+<h3>on\_pipeline\_error</h3>
+<p>Fired when an <code>ErrorFrame</code> reaches the pipeline worker (upstream from a processor). If the error is fatal, the pipeline will be cancelled after this handler runs.</p>
+<pre><code>@worker.event_handler("on_pipeline_error")
+async def on_pipeline_error(worker, frame):
+    print(f"Pipeline error: {frame.error}")
+    if frame.fatal:
+        print("Fatal error — pipeline will be cancelled")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr><tr><td><code>frame</code></td><td><code>ErrorFrame</code></td><td>The error frame with error details</td></tr></tbody></table></div>
+<h3>on\_frame\_reached\_upstream</h3>
+<p>Fired when a frame of a registered type reaches the pipeline source (the start of the pipeline). You must configure which frame types trigger this event using <code>set_reached_upstream_filter()</code> or <code>add_reached_upstream_filter()</code>.</p>
+<pre><code>from pipecat.frames.frames import TranscriptionFrame
+
+# Configure which frame types to monitor
+worker.set_reached_upstream_filter((TranscriptionFrame,))
+
+@worker.event_handler("on_frame_reached_upstream")
+async def on_frame_reached_upstream(worker, frame):
+    print(f"Frame reached upstream: {frame}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr><tr><td><code>frame</code></td><td><code>Frame</code></td><td>The frame that reached the pipeline source</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   This event only fires for frame types you've explicitly registered. By   default, no frame types are monitored. This is for efficiency — checking every   frame would be wasteful when you typically only care about specific types. &lt;/Note&gt;</p>
+<h3>on\_frame\_reached\_downstream</h3>
+<p>Fired when a frame of a registered type reaches the pipeline sink (the end of the pipeline). You must configure which frame types trigger this event using <code>set_reached_downstream_filter()</code> or <code>add_reached_downstream_filter()</code>.</p>
+<pre><code>from pipecat.frames.frames import TTSAudioRawFrame
+
+# Configure which frame types to monitor
+worker.set_reached_downstream_filter((TTSAudioRawFrame,))
+
+@worker.event_handler("on_frame_reached_downstream")
+async def on_frame_reached_downstream(worker, frame):
+    print(f"Frame reached downstream: {frame}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr><tr><td><code>frame</code></td><td><code>Frame</code></td><td>The frame that reached the pipeline sink</td></tr></tbody></table></div>
+<h3>on\_heartbeat\_timeout</h3>
+<p>Fired when a heartbeat frame is not received within the monitor timeout period. This indicates the pipeline may be stalled or not processing frames. The event fires repeatedly every <code>heartbeats_monitor_secs</code> for as long as the stall persists.</p>
+<pre><code>@worker.event_handler("on_heartbeat_timeout")
+async def on_heartbeat_timeout(worker):
+    print("Heartbeat timeout detected — pipeline may be stalled")
+    # Optionally cancel the pipeline or take other action
+    await worker.cancel()</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Heartbeat monitoring must be enabled by setting <code>enable_heartbeats=True</code> in   <code>PipelineParams</code>. The timeout period is controlled by   <code>heartbeats_monitor_secs</code> (default: 5 seconds). See   <a href="/api-reference/server/pipeline/pipeline-params">PipelineParams</a> for   configuration details. &lt;/Note&gt;</p>
+<h3>on\_idle\_timeout</h3>
+<p>Fired when no activity frames (as specified by <code>idle_timeout_frames</code>) have been received within the idle timeout period. See <a href="/api-reference/server/pipeline/pipeline-idle-detection">Pipeline Idle Detection</a> for configuration details.</p>
+<pre><code>@worker.event_handler("on_idle_timeout")
+async def on_idle_timeout(worker):
+    print("Pipeline has been idle too long")
+    await worker.queue_frame(TTSSpeakFrame("Are you still there?"))</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td><code>PipelineWorker</code></td><td>The pipeline worker instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   If <code>cancel_on_idle_timeout</code> is <code>True</code> (the default), the pipeline will be   automatically cancelled after this handler runs. Set it to <code>False</code> if you want   to handle idle timeouts yourself. &lt;/Note&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-worker">https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-worker</a></p>
+</div></main></div></body></html>

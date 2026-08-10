@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BaseWorker · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>BaseWorker</h1>
+<blockquote>BaseWorker is the core agent class in Pipecat's multi-agent framework: lifecycle, bus access, and messaging.</blockquote>
+<h2>Overview</h2>
+<p><code>BaseWorker</code> is the abstract base class that all agents inherit from. It handles agent lifecycle, parent-child relationships, bus communication, and job coordination.</p>
+<p>A <code>BaseWorker</code> connects to a <a href="/api-reference/server/bus/bus#workerbus"><code>WorkerBus</code></a>, registers itself in the shared registry, accepts activation/deactivation, and exchanges job requests/responses with other agents. Agents that need to run a Pipecat pipeline use a concrete subclass like <a href="/api-reference/server/workers/llm-worker"><code>LLMWorker</code></a>, while <code>BaseWorker</code> itself operates purely through bus messages (e.g. coordinators, orchestrators).</p>
+<pre><code>from pipecat.pipeline.base_worker import BaseWorker, WorkerActivationArgs</code></pre>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="name" type="str | None" default="None"&gt;   Unique name for this agent, used for bus message routing and registry lookup.   If <code>None</code>, an auto-generated name is used (useful for instances that don't   participate in inter-agent communication). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="active" type="bool" default="True"&gt;   Whether the agent starts active. When <code>False</code>, the agent waits for an   <code>activate_worker()</code> call before <code>on_activated</code> fires. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="check_dangling_tasks" type="bool" default="True"&gt;   Whether to warn about tasks left running when the worker finishes. Only   applies when the worker owns its task manager; a worker sharing the runner's   task manager leaves the report to the runner. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task_manager" type="BaseTaskManager | None" default="None"&gt;   Optional task manager for handling asyncio tasks. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   The bus is not passed in the constructor. It is provided by the runner when   the agent is registered with   <a href="/api-reference/server/workers/runner#add_workers"><code>WorkerRunner.add_workers()</code></a>,   which calls <code>attach()</code> internally. &lt;/Note&gt;</p>
+<h2>Properties</h2>
+<h3>bus</h3>
+<pre><code>agent.bus -&gt; WorkerBus</code></pre>
+<p>The bus this agent is attached to. Raises <code>RuntimeError</code> if accessed before <code>attach()</code> has been called.</p>
+<h3>active</h3>
+<pre><code>agent.active -&gt; bool</code></pre>
+<p>Whether this agent is currently active.</p>
+<h3>activation\_args</h3>
+<pre><code>agent.activation_args -&gt; dict | None</code></pre>
+<p>The arguments from the most recent activation, or <code>None</code> if the agent is inactive. The value is cleared when the agent is deactivated.</p>
+<h3>parent</h3>
+<pre><code>agent.parent -&gt; str | None</code></pre>
+<p>The name of the parent agent, or <code>None</code> if this is a root agent.</p>
+<h3>registry</h3>
+<pre><code>agent.registry -&gt; WorkerRegistry</code></pre>
+<p>The shared agent registry this agent is attached to. Raises <code>RuntimeError</code> if accessed before <code>attach()</code> has been called.</p>
+<h3>started\_at</h3>
+<pre><code>agent.started_at -&gt; float | None</code></pre>
+<p>Unix timestamp when this agent became ready, or <code>None</code> if not yet started.</p>
+<h3>bridged</h3>
+<pre><code>agent.bridged -&gt; bool</code></pre>
+<p>Whether this agent is bridged onto the bus (receives pipeline frames from the bus). Always <code>False</code> on <code>BaseWorker</code>; subclasses such as <code>PipelineWorker</code> override it.</p>
+<h3>children</h3>
+<pre><code>agent.children -&gt; list[BaseWorker]</code></pre>
+<p>The list of child agents added via <code>add_workers()</code>.</p>
+<h3>active\_jobs</h3>
+<pre><code>agent.active_jobs -&gt; dict[str, BusJobRequestMessage]</code></pre>
+<p>Active job requests this agent is currently working on, keyed by <code>job_id</code>.</p>
+<h3>job\_groups</h3>
+<pre><code>agent.job_groups -&gt; dict[str, JobGroup]</code></pre>
+<p>Active job groups launched by this agent, keyed by <code>job_id</code>.</p>
+<h2>Lifecycle Hooks</h2>
+<p>Override these methods to react to lifecycle events. Always call <code>super()</code> when overriding.</p>
+<h3>on\_activated</h3>
+<pre><code>async def on_activated(self, args: dict | None) -&gt; None</code></pre>
+<p>Called when this agent is activated. Override to react to activation.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>args</code></td><td>`dict \</td><td>None`</td><td>Optional arguments from the caller</td></tr></tbody></table></div>
+<h3>on\_deactivated</h3>
+<pre><code>async def on_deactivated(self) -&gt; None</code></pre>
+<p>Called when this agent is deactivated.</p>
+<h3>on\_worker\_ready</h3>
+<pre><code>async def on_worker_ready(self, data: WorkerReadyData) -&gt; None</code></pre>
+<p>Called when another agent is ready to receive messages. For local root agents this fires automatically. For remote agents it fires only for agents watched via <code>watch_workers()</code>. For child agents it fires only on the parent.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>data</code></td><td><a href="/api-reference/server/workers/types#workerreadydata"><code>WorkerReadyData</code></a></td><td>Information about the ready agent</td></tr></tbody></table></div>
+<h3>on\_worker\_failed</h3>
+<pre><code>async def on_worker_failed(self, data: WorkerErrorData) -&gt; None</code></pre>
+<p>Called when a child agent reports an error.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>data</code></td><td><a href="/api-reference/server/workers/types#workererrordata"><code>WorkerErrorData</code></a></td><td>Information about the error</td></tr></tbody></table></div>
+<h2>Agent Management</h2>
+<h3>add\_workers</h3>
+<pre><code>async def add_workers(self, *workers: BaseWorker, watch: bool = True) -&gt; None</code></pre>
+<p>Register one or more child agents under this parent. Each child's lifecycle (end, cancel) is automatically managed by this parent agent. By default the children are also watched, so the parent receives <code>on_worker_ready</code> when each one starts.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>*workers</code></td><td><code>BaseWorker</code></td><td></td><td>One or more child agent instances to add</td></tr><tr><td><code>watch</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to watch each newly added child for <code>on_worker_ready</code></td></tr></tbody></table></div>
+<h3>activate\_worker</h3>
+<pre><code>async def activate_worker(
+    self,
+    worker_name: str,
+    *,
+    args: WorkerActivationArgs | None = None,
+    deactivate_self: bool = False,
+) -&gt; None</code></pre>
+<p>Activate an agent by name. The target agent's <code>on_activated</code> hook will be called with the provided arguments. To hand off (deactivate this agent and activate the target), pass <code>deactivate_self=True</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td></td><td>Name of the agent to activate</td></tr><tr><td><code>args</code></td><td>`WorkerActivationArgs \</td><td>None`</td><td><code>None</code></td><td>Arguments forwarded to <code>on_activated</code></td></tr><tr><td><code>deactivate_self</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether to deactivate this agent before activating the target</td></tr></tbody></table></div>
+<h3>deactivate\_worker</h3>
+<pre><code>async def deactivate_worker(self, worker_name: str) -&gt; None</code></pre>
+<p>Deactivate an agent by name. The target agent's <code>on_deactivated</code> hook will be called.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td>Name of the agent to deactivate</td></tr></tbody></table></div>
+<h3>watch\_workers</h3>
+<pre><code>async def watch_workers(self, *worker_names: str) -&gt; None</code></pre>
+<p>Request notification when one or more agents register. For each name: if the agent is already registered, <code>on_worker_ready</code> fires immediately. Otherwise it fires when the agent eventually registers.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>*worker_names</code></td><td><code>str</code></td><td>Names of the agents to watch for</td></tr></tbody></table></div>
+<h3>end</h3>
+<pre><code>async def end(self, *, reason: str | None = None) -&gt; None</code></pre>
+<p>Request a graceful end of the session.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>reason</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Human-readable reason for ending</td></tr></tbody></table></div>
+<h3>cancel</h3>
+<pre><code>async def cancel(self, *, reason: str | None = None) -&gt; None</code></pre>
+<p>Request an immediate cancellation of all agents.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>reason</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Human-readable reason for cancelling</td></tr></tbody></table></div>
+<h3>wait</h3>
+<pre><code>async def wait(self) -&gt; None</code></pre>
+<p>Wait for this agent to finish.</p>
+<h2>Job Coordination</h2>
+<h3>request\_job</h3>
+<pre><code>async def request_job(
+    self,
+    worker_name: str,
+    *,
+    name: str | None = None,
+    payload: dict | None = None,
+    timeout: float | None = None,
+) -&gt; str</code></pre>
+<p>Send a job request to a single agent (fire-and-forget). Waits for the agent to be ready before sending the request. Does not wait for the job to complete; use callbacks (<code>on_job_response</code>, <code>on_job_completed</code>) or <code>job()</code> for that.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td></td><td>Name of the agent to send the job to</td></tr><tr><td><code>name</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Job name for routing to a named <code>@job</code> handler</td></tr><tr><td><code>payload</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Structured data describing the work</td></tr><tr><td><code>timeout</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Timeout in seconds; auto-cancels after this duration</td></tr></tbody></table></div>
+<p><strong>Returns:</strong> The generated <code>job_id</code>.</p>
+<h3>job</h3>
+<pre><code>def job(
+    self,
+    worker_name: str,
+    *,
+    name: str | None = None,
+    payload: dict | None = None,
+    timeout: float | None = None,
+) -&gt; JobContext</code></pre>
+<p>Create a single-agent job context manager. Waits for the agent to be ready, sends a job request, and waits for the response on exit. Supports <code>async for</code> inside the block to receive intermediate events.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td></td><td>Name of the agent to send the job to</td></tr><tr><td><code>name</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Job name for routing to a named <code>@job</code> handler</td></tr><tr><td><code>payload</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Structured data describing the work</td></tr><tr><td><code>timeout</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Timeout in seconds</td></tr></tbody></table></div>
+<p><strong>Returns:</strong> A <a href="/api-reference/server/workers/types#jobcontext"><code>JobContext</code></a> to use with <code>async with</code>.</p>
+<pre><code>async with self.job("worker", payload=data) as j:
+    async for event in j:
+        if event.type == JobEvent.UPDATE:
+            print(event.data)
+
+print(j.response)</code></pre>
+<h3>request\_job\_group</h3>
+<pre><code>async def request_job_group(
+    self,
+    *worker_names: str,
+    name: str | None = None,
+    payload: dict | None = None,
+    timeout: float | None = None,
+    cancel_on_error: bool = True,
+) -&gt; str</code></pre>
+<p>Send a job request to multiple agents (fire-and-forget). Waits for all agents to be ready before sending requests.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>*worker_names</code></td><td><code>str</code></td><td></td><td>Names of the agents to send the job to</td></tr><tr><td><code>name</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Job name for routing to named <code>@job</code> handlers</td></tr><tr><td><code>payload</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Structured data describing the work</td></tr><tr><td><code>timeout</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Timeout in seconds</td></tr><tr><td><code>cancel_on_error</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to cancel the group if a worker errors</td></tr></tbody></table></div>
+<p><strong>Returns:</strong> The generated <code>job_id</code> shared by all agents in the group.</p>
+<h3>job\_group</h3>
+<pre><code>def job_group(
+    self,
+    *worker_names: str,
+    name: str | None = None,
+    payload: dict | None = None,
+    timeout: float | None = None,
+    cancel_on_error: bool = True,
+) -&gt; JobGroupContext</code></pre>
+<p>Create a job group context manager. Waits for agents to be ready, sends job requests, and waits for all responses on exit. Supports <code>async for</code> inside the block to receive intermediate events.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>*worker_names</code></td><td><code>str</code></td><td></td><td>Names of the agents to send the job to</td></tr><tr><td><code>name</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Job name for routing to named <code>@job</code> handlers</td></tr><tr><td><code>payload</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Structured data describing the work</td></tr><tr><td><code>timeout</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Timeout in seconds</td></tr><tr><td><code>cancel_on_error</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to cancel the group if a worker errors</td></tr></tbody></table></div>
+<p><strong>Returns:</strong> A <a href="/api-reference/server/workers/types#jobgroupcontext"><code>JobGroupContext</code></a> to use with <code>async with</code>.</p>
+<pre><code>async with self.job_group("w1", "w2", payload=data) as jg:
+    async for event in jg:
+        if event.type == JobGroupEvent.UPDATE:
+            print(f"{event.worker_name}: {event.data}")
+
+for name, result in jg.responses.items():
+    print(name, result)</code></pre>
+<h3>cancel\_job\_group</h3>
+<pre><code>async def cancel_job_group(self, job_id: str, *, reason: str | None = None) -&gt; None</code></pre>
+<p>Cancel a running job group.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job identifier to cancel</td></tr><tr><td><code>reason</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Human-readable reason for cancellation</td></tr></tbody></table></div>
+<h3>request\_job\_update</h3>
+<pre><code>async def request_job_update(self, job_id: str, worker_name: str) -&gt; None</code></pre>
+<p>Request a progress update from a worker agent.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td>The job identifier</td></tr><tr><td><code>worker_name</code></td><td><code>str</code></td><td>Name of the agent to request an update from</td></tr></tbody></table></div>
+<h3>send\_job\_response</h3>
+<pre><code>async def send_job_response(
+    self,
+    job_id: str,
+    response: dict | None = None,
+    *,
+    status: JobStatus = JobStatus.COMPLETED,
+    urgent: bool = False,
+) -&gt; None</code></pre>
+<p>Send a job response back to the requester. After sending, the job is removed from the set of active jobs.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job being responded to</td></tr><tr><td><code>response</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Result data</td></tr><tr><td><code>status</code></td><td><a href="/api-reference/server/workers/types#jobstatus"><code>JobStatus</code></a></td><td><code>COMPLETED</code></td><td>Completion status</td></tr><tr><td><code>urgent</code></td><td><code>bool</code></td><td><code>False</code></td><td>Deliver with system priority</td></tr></tbody></table></div>
+<h3>send\_job\_update</h3>
+<pre><code>async def send_job_update(
+    self,
+    job_id: str,
+    update: dict | None = None,
+    *,
+    urgent: bool = False,
+) -&gt; None</code></pre>
+<p>Send a progress update to the requester.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job being updated</td></tr><tr><td><code>update</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Progress data</td></tr><tr><td><code>urgent</code></td><td><code>bool</code></td><td><code>False</code></td><td>Deliver with system priority</td></tr></tbody></table></div>
+<h3>send\_job\_stream\_start</h3>
+<pre><code>async def send_job_stream_start(self, job_id: str, data: dict | None = None) -&gt; None</code></pre>
+<p>Begin streaming job results back to the requester.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job being streamed</td></tr><tr><td><code>data</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Optional metadata about the stream</td></tr></tbody></table></div>
+<h3>send\_job\_stream\_data</h3>
+<pre><code>async def send_job_stream_data(self, job_id: str, data: dict | None = None) -&gt; None</code></pre>
+<p>Send a streaming chunk to the requester.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job being streamed</td></tr><tr><td><code>data</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>The chunk payload</td></tr></tbody></table></div>
+<h3>send\_job\_stream\_end</h3>
+<pre><code>async def send_job_stream_end(self, job_id: str, data: dict | None = None) -&gt; None</code></pre>
+<p>End the current stream and mark this agent's job as complete.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>The job being streamed</td></tr><tr><td><code>data</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Optional final metadata</td></tr></tbody></table></div>
+<h3>create\_job\_group\_and\_request\_job</h3>
+<pre><code>async def create_job_group_and_request_job(
+    self,
+    worker_names: list[str],
+    *,
+    name: str | None = None,
+    payload: dict | None = None,
+    timeout: float | None = None,
+    cancel_on_error: bool = True,
+) -&gt; JobGroup</code></pre>
+<p>Wait for agents to be ready, create a job group, and send requests. Does not wait for the group to complete; call <code>group.wait()</code> or use <code>job_group()</code> for that. Used internally by <code>job()</code> and <code>job_group()</code>.</p>
+<p><strong>Returns:</strong> The created <a href="/api-reference/server/workers/types#jobgroup"><code>JobGroup</code></a>.</p>
+<h2>Job Hooks</h2>
+<p>Override these methods to handle job events. Always call <code>super()</code> when overriding.</p>
+<h3>on\_job\_request</h3>
+<pre><code>async def on_job_request(self, message: BusJobRequestMessage) -&gt; None</code></pre>
+<p>Called when this agent receives a job request that does not match a named <code>@job</code> handler. Override to perform work. Use <code>send_job_update()</code> to report progress and <code>send_job_response()</code> to return results.</p>
+<h3>on\_job\_response</h3>
+<pre><code>async def on_job_response(self, message: BusJobResponseMessage) -&gt; None</code></pre>
+<p>Called when a worker agent sends a response. Override to process individual results as they arrive.</p>
+<h3>on\_job\_update</h3>
+<pre><code>async def on_job_update(self, message: BusJobUpdateMessage) -&gt; None</code></pre>
+<p>Called when a worker agent sends a progress update.</p>
+<h3>on\_job\_update\_requested</h3>
+<pre><code>async def on_job_update_requested(self, message: BusJobUpdateRequestMessage) -&gt; None</code></pre>
+<p>Called when the requester asks for a progress update. Override to send back a progress update via <code>send_job_update()</code>.</p>
+<h3>on\_job\_completed</h3>
+<pre><code>async def on_job_completed(self, result: JobGroupResponse) -&gt; None</code></pre>
+<p>Called when all agents in a job group have responded.</p>
+<h3>on\_job\_error</h3>
+<pre><code>async def on_job_error(self, message: BusJobResponseMessage) -&gt; None</code></pre>
+<p>Called when a job group is cancelled due to a worker error. Fires when a worker responds with <code>ERROR</code> or <code>FAILED</code> status and <code>cancel_on_error</code> is set.</p>
+<h3>on\_job\_stream\_start</h3>
+<pre><code>async def on_job_stream_start(self, message: BusJobStreamStartMessage) -&gt; None</code></pre>
+<p>Called when a worker agent begins streaming.</p>
+<h3>on\_job\_stream\_data</h3>
+<pre><code>async def on_job_stream_data(self, message: BusJobStreamDataMessage) -&gt; None</code></pre>
+<p>Called for each streaming chunk from a worker agent.</p>
+<h3>on\_job\_stream\_end</h3>
+<pre><code>async def on_job_stream_end(self, message: BusJobStreamEndMessage) -&gt; None</code></pre>
+<p>Called when a worker agent finishes streaming.</p>
+<h3>on\_job\_cancelled</h3>
+<pre><code>async def on_job_cancelled(self, message: BusJobCancelMessage) -&gt; None</code></pre>
+<p>Called when this agent's job is cancelled by the requester. Override to clean up resources or stop in-progress work.</p>
+<h2>Bus</h2>
+<h3>send\_bus\_message</h3>
+<pre><code>async def send_bus_message(self, message: BusMessage) -&gt; None</code></pre>
+<p>Send a message on the bus.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><a href="/api-reference/server/bus/messages"><code>BusMessage</code></a></td><td>The bus message to send</td></tr></tbody></table></div>
+<h3>send\_bus\_error\_message</h3>
+<pre><code>async def send_bus_error_message(self, error: str) -&gt; None</code></pre>
+<p>Report an error on the bus. Child agents send a local-only message to the parent. Root agents broadcast over the network.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>error</code></td><td><code>str</code></td><td>Description of the error</td></tr></tbody></table></div>
+<h3>on\_bus\_message</h3>
+<pre><code>async def on_bus_message(self, message: BusMessage) -&gt; None</code></pre>
+<p>Called for every bus message after built-in lifecycle handling. Override to handle custom message types.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><a href="/api-reference/server/bus/messages"><code>BusMessage</code></a></td><td>The bus message to process</td></tr></tbody></table></div>
+<h2>Decorators</h2>
+<h3>@job</h3>
+<p>Mark an agent method as a job handler. Decorated methods are automatically collected at initialization and dispatched when matching job requests arrive. Each request runs in its own asyncio task so the bus message loop is never blocked.</p>
+<pre><code>from pipecat.pipeline.job_decorator import job</code></pre>
+<p>The decorator requires a <code>name</code> argument:</p>
+<pre><code>@job(name="research")
+async def on_research(self, message):
+    result = await do_research(message.payload)
+    await self.send_job_response(message.job_id, result)
+
+
+@job(name="write", sequential=True)
+async def on_write(self, message):
+    result = await do_write(message.payload)
+    await self.send_job_response(message.job_id, result)</code></pre>
+<p>&lt;ParamField path="name" type="str" required&gt;   Job name to match. The handler only receives requests with a matching name. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sequential" type="bool" default="False"&gt;   When <code>True</code>, requests with this name run one at a time in FIFO order. When   <code>False</code> (the default), multiple requests run concurrently. The wait time   counts against the requester's timeout. &lt;/ParamField&gt;</p>
+<p>Job handler methods receive a <a href="/api-reference/server/bus/messages#busjobrequestmessage"><code>BusJobRequestMessage</code></a>.</p>
+<h3>@worker\_ready</h3>
+<p>Mark a method as a handler for a specific agent becoming ready. Decorated methods are collected at initialization; when the agent starts, it calls <code>watch_workers</code> for each handler, and the method is called when the watched agent registers.</p>
+<pre><code>from pipecat.pipeline.worker_ready_decorator import worker_ready</code></pre>
+<pre><code>@worker_ready(name="greeter")
+async def on_greeter_ready(self, data: WorkerReadyData) -&gt; None:
+    await self.activate_worker("greeter", args=...)</code></pre>
+<p>&lt;ParamField path="name" type="str" required&gt;   The name of the agent to watch. &lt;/ParamField&gt;</p>
+<p>The handler receives a <a href="/api-reference/server/workers/types#workerreadydata"><code>WorkerReadyData</code></a> instance.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/workers/base-worker">https://docs.pipecat.ai/api-reference/server/workers/base-worker</a></p>
+</div></main></div></body></html>

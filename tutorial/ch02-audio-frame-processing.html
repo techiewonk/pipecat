@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 2 — Audio &amp; Frame Processing · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Chapter 2 · Part A — Core</div>
+      <h1>Audio &amp; Frame Processing — the production media stack</h1>
+      <div class="meta"><span class="pill">⏱ 70 min</span><span class="pill grey">Level: intermediate</span><span class="pill grey">Production-critical</span></div>
+      <p class="lead">This is the chapter that separates a demo from a shippable product. Every knob that touches raw audio — voice detection, resampling, noise removal, background beds, muting, DTMF, recording — plus the general-purpose frame-processing toolbox lives here, each explained once.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="chain">The audio signal chain</h2>
+      <div class="box concept">
+        <p class="title">🎯 Where each piece sits</p>
+        <p>Incoming audio passes through an optional <strong>noise filter</strong> and <strong>resampler</strong> before <strong>VAD</strong> and STT. Outgoing audio can be blended with a <strong>mixer</strong> (background bed) before playback. <strong>Muting</strong> gates whether user audio is processed at all. These are configured on <code>TransportParams</code> and on the user aggregator — not by rewriting the pipeline.</p>
+      </div>
+      <pre class="diagram">IN :  mic ─▶ [audio_in_filter: noise cancel] ─▶ [resampler] ─▶ [VAD] ─▶ STT ─▶ ...
+                         (muting can drop user audio here, before it's processed)
+OUT:  ... TTS ─▶ [audio_out_mixer: background bed] ─▶ speaker
+REC:  [AudioBufferProcessor] taps the stream to disk</pre>
+
+      <h2 id="vad">2.1 Voice Activity Detection (VAD)</h2>
+      <p>VAD answers "is this speech or silence?" — the fastest turn signal (<a href="ch01-turn-taking.html">Chapter 1</a> uses it). Pipecat ships several engines plus tunable parameters and a controller.</p>
+      <pre><code class="language-python">from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
+
+vad = SileroVADAnalyzer(params=VADParams(
+    confidence=0.7,      # how sure before calling it "speech"
+    start_secs=0.2,      # speech must persist this long to start a turn
+    stop_secs=0.8,       # silence this long ends the turn
+    min_volume=0.6,
+))</code></pre>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Engine</th><th>Import</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td><code>SileroVADAnalyzer</code></td><td><code>pipecat.audio.vad.silero</code></td><td>Default. Fast, local, free, good enough for most apps.</td></tr>
+          <tr><td><code>AICVADAnalyzer</code></td><td><code>pipecat.audio.vad.aic_vad</code></td><td>ai-coustics VAD, pairs with their noise filter.</td></tr>
+          <tr><td><code>AICQuailVADAnalyzer</code></td><td><code>pipecat.audio.vad.aic_quail_vad</code></td><td>ai-coustics "Quail" model; see <code>voice-aicoustics-vad-only.py</code>.</td></tr>
+          <tr><td><code>KrispVivaVadAnalyzer</code></td><td><code>pipecat.audio.vad.krisp_viva_vad</code></td><td>Krisp VAD (paid); bundles well with Krisp noise/turn.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Helpers: <code>VADParams</code> (tuning), <code>VADController</code> (drives state transitions), <code>VADProcessor</code> (<code>pipecat.processors.audio.vad_processor</code>) to place VAD explicitly in a pipeline (see <code>transcription-deepgram.py</code>), and <code>VADState</code> (SPEAKING / QUIET).</p>
+
+      <h2 id="resample">2.2 Resampling (the "sampler")</h2>
+      <p>Services and transports run at different sample rates (8&nbsp;kHz phone audio vs. 16/24&nbsp;kHz models). A <strong>resampler</strong> converts between them so nothing sounds chipmunked or clips. Usually automatic, but you can choose the engine for quality vs. speed.</p>
+      <pre><code class="language-python">from pipecat.audio.resamplers.soxr_resampler import SOXRAudioResampler
+resampler = SOXRAudioResampler()          # high quality, batch
+# streaming variant for realtime: SOXRStreamAudioResampler
+# lightweight alternative:         ResampyResampler</code></pre>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Resampler</th><th>Import</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>SOXRAudioResampler</code></td><td><code>pipecat.audio.resamplers.soxr_resampler</code></td><td>High-quality SoX resampling; good default.</td></tr>
+          <tr><td><code>SOXRStreamAudioResampler</code></td><td><code>pipecat.audio.resamplers.soxr_stream_resampler</code></td><td>Streaming SoX — for continuous realtime audio.</td></tr>
+          <tr><td><code>ResampyResampler</code></td><td><code>pipecat.audio.resamplers.resampy_resampler</code></td><td>Pure-Python fallback; fewer native deps.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="noise">2.3 Noise cancellation filters</h2>
+      <p>A noise filter cleans the <em>incoming</em> mic stream (removes background hum, keyboard, room noise) before VAD/STT — a big quality win for real calls. Attach one via <code>audio_in_filter</code> on the transport params.</p>
+      <pre><code class="language-python">from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
+# in transport_params:
+"webrtc": lambda: TransportParams(
+    audio_in_enabled=True,
+    audio_out_enabled=True,
+    audio_in_filter=KrispVivaFilter(),     # clean the mic before anything else
+)</code></pre>
+      <div class="box errors">
+        <p class="title">⚠️ Licensing — read before choosing</p>
+        <p>Three of the four need a paid SDK/key; only RNNoise is open. Pick accordingly:</p>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Filter</th><th>Import</th><th>License / key</th></tr></thead>
+        <tbody>
+          <tr><td><code>RNNoiseFilter</code></td><td><code>pipecat.audio.filters.rnnoise_filter</code></td><td><strong>Open / free.</strong> Good first choice; classic RNN denoiser.</td></tr>
+          <tr><td><code>KrispVivaFilter</code></td><td><code>pipecat.audio.filters.krisp_viva_filter</code></td><td>Krisp SDK — commercial license/key required. Strong quality; see <code>voice-krisp-viva.py</code>.</td></tr>
+          <tr><td><code>KoalaFilter</code></td><td><code>pipecat.audio.filters.koala_filter</code></td><td>Picovoice Koala — needs an access key (free tier available).</td></tr>
+          <tr><td><code>AICFilter</code></td><td><code>pipecat.audio.filters.aic_filter</code></td><td>ai-coustics — API key; see <code>voice-aicoustics.py</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <p>All subclass <code>BaseAudioFilter</code>, so writing your own is possible.</p>
+
+      <h2 id="mixer">2.4 Background audio (mixers)</h2>
+      <p>A mixer blends a sound file under the bot's speech — hold music, ambience, a "we're thinking" bed. Attach via <code>audio_out_mixer</code>, then control it live with frames.</p>
+      <pre><code class="language-python">from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer
+from pipecat.frames.frames import MixerEnableFrame, MixerUpdateSettingsFrame
+
+"webrtc": lambda: TransportParams(
+    audio_out_enabled=True,
+    audio_out_mixer=SoundfileMixer(sound_files={"office": "assets/office-ambience.mp3"},
+                                   default_sound="office", volume=0.3),
+)
+# later, at runtime:
+await worker.queue_frame(MixerUpdateSettingsFrame({"volume": 0.5}))   # duck/boost
+await worker.queue_frame(MixerEnableFrame(False))                     # turn bed off</code></pre>
+      <p>Reference example: <code>audio/audio-bot-background-sound.py</code>.</p>
+
+      <h2 id="mute">2.5 Muting (mic-off) — server-side strategies</h2>
+      <div class="box concept">
+        <p class="title">🎯 What "mute" means here</p>
+        <p>Rather than a client button, Pipecat mutes on the <strong>server</strong>: it drops user audio during moments where listening would cause bugs — while the greeting plays, or while a function call is running. You declare <em>strategies</em> and Pipecat applies them.</p>
+      </div>
+      <pre><code class="language-python">from pipecat.turns.user_mute import (
+    MuteUntilFirstBotCompleteUserMuteStrategy,
+    FunctionCallUserMuteStrategy,
+)
+
+user_params=LLMUserAggregatorParams(
+    user_mute_strategies=[
+        MuteUntilFirstBotCompleteUserMuteStrategy(),   # ignore mic until the intro finishes
+        FunctionCallUserMuteStrategy(),                # ignore mic while a tool runs
+    ],
+    vad_analyzer=SileroVADAnalyzer(),
+)
+
+@user_aggregator.event_handler("on_user_mute_started")
+async def _(aggregator): logger.info("mic muted")
+@user_aggregator.event_handler("on_user_mute_stopped")
+async def _(aggregator): logger.info("mic live")</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Python note — declarative, not imperative</p>
+        <p>You don't write "if bot_speaking: drop_audio()". You add strategy objects to a list and subscribe to <code>on_user_mute_started/stopped</code> events for UI feedback. Reference: <code>turn-management-user-mute-strategy.py</code>.</p>
+      </div>
+
+      <h2 id="dtmf">2.6 DTMF &amp; volume</h2>
+      <p>On phone calls, <strong>DTMF</strong> is the keypad tones ("press 1 for sales"). Pipecat represents presses as <code>KeypadEntry</code> (<code>pipecat.audio.dtmf</code>) and can drive menus — see <code>features/features-dtmf-menu.py</code>. Output loudness is handled by <code>pipecat.audio.volume</code>.</p>
+
+      <h2 id="record">2.7 Recording the conversation</h2>
+      <p>Insert an <code>AudioBufferProcessor</code> (<code>pipecat.processors.audio.audio_buffer_processor</code>) to tap the audio stream and save it to disk without altering playback. Reference: <code>audio/audio-recording.py</code>.</p>
+
+      <h2 id="toolbox">2.8 The frame-processing toolbox</h2>
+      <p>Beyond audio, Pipecat ships general-purpose processors you'll reuse constantly. A custom processor is just a class with one method:</p>
+      <pre><code class="language-python">from pipecat.processors.frame_processor import FrameProcessor
+
+class TranscriptionLogger(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)   # 1. always call super first
+        if isinstance(frame, TranscriptionFrame):        # 2. react only to what you care about
+            logger.info(f"User said: {frame.text}")
+        await self.push_frame(frame, direction)          # 3. always forward the frame</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Python note — the two mandatory calls</p>
+        <p>Every <code>process_frame</code> override must call <code>super().process_frame(...)</code> first and <code>push_frame(...)</code> to forward. Forgetting <code>push_frame</code> "swallows" frames and stalls the pipeline.</p>
+      </div>
+      <p>Built-in processors and filters you can drop in instead of writing your own:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Class</th><th>Import (under <code>pipecat.processors</code>)</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>FrameFilter</code></td><td><code>filters.frame_filter</code></td><td>Pass only chosen frame types downstream.</td></tr>
+          <tr><td><code>FunctionFilter</code></td><td><code>filters.function_filter</code></td><td>Keep/drop frames via your own predicate function.</td></tr>
+          <tr><td><code>IdentityFilter</code></td><td><code>filters.identity_filter</code></td><td>Pass everything through (a placeholder/splice point).</td></tr>
+          <tr><td><code>NullFilter</code></td><td><code>filters.null_filter</code></td><td>Drop everything (mute a branch).</td></tr>
+          <tr><td><code>WakeCheckFilter</code></td><td><code>filters.wake_check_filter</code></td><td>Block input until a wake phrase is heard.</td></tr>
+          <tr><td><code>WakeNotifierFilter</code></td><td><code>filters.wake_notifier_filter</code></td><td>Fire a callback when a phrase appears (no blocking).</td></tr>
+          <tr><td><code>IdleFrameProcessor</code></td><td><code>idle_frame_processor</code></td><td>Run a callback when the pipeline goes idle.</td></tr>
+          <tr><td><code>FrameLogger</code></td><td><code>logger</code></td><td>Log frames passing a point — the fastest debug tool.</td></tr>
+          <tr><td><code>StatelessTextTransformer</code></td><td><code>text_transformer</code></td><td>Rewrite text frames (censor, reformat, translate hooks).</td></tr>
+          <tr><td><code>ProducerProcessor</code> / <code>ConsumerProcessor</code></td><td><code>producer_processor</code> / <code>consumer_processor</code></td><td>Move frames between two pipelines/branches.</td></tr>
+          <tr><td><code>AsyncGeneratorProcessor</code></td><td><code>async_generator</code></td><td>Feed frames from an async generator source.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Docs: <a href="reference/pipecat__fundamentals__custom__frame__processor.html" target="_blank" rel="noopener">Custom FrameProcessor</a>.</p>
+
+      <div class="box start">
+        <p class="title">▶️ Run it</p>
+        <pre><code class="language-bash">uv run python audio/audio-bot-background-sound.py        # background bed + live mixer control
+uv run python turn-management/turn-management-user-mute-strategy.py   # server-side muting
+uv run python voice/voice-krisp-viva.py                  # noise-cancelled mic (Krisp key)
+uv run python audio/audio-recording.py                   # save the call to disk</code></pre>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Modify it</p>
+        <p>(1) Add <code>audio_in_filter=RNNoiseFilter()</code> to <code>getting-started/06</code> and test in a noisy room. (2) Swap the mixer's sound file for your own MP3 and duck it to 0.15 while the bot speaks. (3) Add a <code>FrameLogger</code> after <code>stt</code> to watch transcripts, then a <code>StatelessTextTransformer</code> that upper-cases replies.</p>
+      </div>
+      <div class="box errors">
+        <p class="title">⚠️ Common errors</p>
+        <p>Pipeline stalls after adding a custom processor → missing <code>push_frame</code>. Noise filter import fails → that vendor's SDK/key isn't installed (use <code>RNNoiseFilter</code> to test the wiring first). Chipmunk/robot audio → sample-rate mismatch; let the resampler run or set the transport rate to match the service.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Which transport param cleans the incoming mic, and which adds a background bed?</summary><p><code>audio_in_filter</code> (noise filter) and <code>audio_out_mixer</code> (background mixer).</p></details>
+      <details><summary>2. Which noise filter has no licensing cost?</summary><p><code>RNNoiseFilter</code> — open/free. Krisp, Koala, and ai-coustics need keys/licenses.</p></details>
+      <details><summary>3. How is server-side muting expressed?</summary><p>As a list of <code>user_mute_strategies</code> on <code>LLMUserAggregatorParams</code>, with <code>on_user_mute_started/stopped</code> events.</p></details>
+
+      <h2 id="files">Example files (audio)</h2>
+      <div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>audio-bot-background-sound.py</code></td><td>audio bot background sound</td></tr><tr><td><code>audio-recording.py</code></td><td>Audio Recording Example with Pipecat</td></tr><tr><td><code>audio-sound-effects.py</code></td><td>audio sound effects</td></tr></tbody></table></div>
+      <p>Related: noise-filter and VAD-only agents live in the <a href="ch03-speech-io.html">voice catalog</a> (<code>voice-krisp-viva.py</code>, <code>voice-aicoustics.py</code>, <code>voice-aicoustics-vad-only.py</code>); muting and smart-turn live in <a href="ch01-turn-taking.html#files">Chapter 1's</a> turn-management table.</p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

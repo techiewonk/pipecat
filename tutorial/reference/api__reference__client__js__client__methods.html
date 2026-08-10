@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Methods · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Client Methods</h1>
+<blockquote>PipecatClient methods for starting bots, managing sessions, sending messages, and controlling devices in the JavaScript SDK.</blockquote>
+<p>export const TransportTable = rows =&gt; {   const headers = ["", "DailyTransport", "SmallWebRTCTransport", "RNDailyTransport", "WebSocketTransport", "OpenAIRealTimeWebRTCTransport", "GeminiLiveWebsocketTransport"];   if (!rows || !rows.rows || !Array.isArray(rows.rows)) {     return &lt;div&gt;Error: Invalid rows data&lt;/div&gt;;   }   return &lt;table className="compatibility-table"&gt;       &lt;tr&gt;         {headers.map(header =&gt; &lt;th key={header}&gt;{header}&lt;/th&gt;)}       &lt;/tr&gt;       {rows.rows.map(entry =&gt; &lt;tr key={entry.name}&gt;           &lt;td&gt;             {entry.name}() {entry.deprecated ? "⚠️ DEPRECATED" : ""}           &lt;/td&gt;           &lt;td className={entry.dt ? "supported" : "unsupported"}&gt;             {entry.dt || "❌"}           &lt;/td&gt;           &lt;td className={entry.swrtc ? "supported" : "unsupported"}&gt;             {entry.swrtc || "❌"}           &lt;/td&gt;           &lt;td className={entry.rn ? "supported" : "unsupported"}&gt;             {entry.rn || "❌"}           &lt;/td&gt;           &lt;td className={entry.ws ? "supported" : "unsupported"}&gt;             {entry.ws || "❌"}           &lt;/td&gt;           &lt;td className={entry.oai ? "supported" : "unsupported"}&gt;             {entry.oai || "❌"}           &lt;/td&gt;           &lt;td className={entry.gem ? "supported" : "unsupported"}&gt;             {entry.gem || "❌"}           &lt;/td&gt;         &lt;/tr&gt;)}     &lt;/table&gt;; };</p>
+<p>export const methods = () =&gt; {   return [{     name: "startBot",     dt: "1.2.0",     swrtc: "1.2.0",     rn: "1.2.0",     ws: "1.2.0"   }, {     name: "connect",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "startBotAndConnect",     dt: "1.2.0",     swrtc: "1.2.0",     rn: "1.2.0",     ws: "1.2.0"   }, {     name: "disconnect",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "disconnectBot",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0"   }, {     name: "sendClientMessage",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0"   }, {     name: "sendClientRequest",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0"   }, {     name: "initDevices",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "getAllMics",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "getAllCams",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     oai: "1.0.0"   }, {     name: "getAllSpeakers",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "selectedMic",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "selectedCam",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     oai: "1.0.0"   }, {     name: "selectedSpeaker",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "updateMic",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "updateCam",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     oai: "1.0.0"   }, {     name: "updateSpeaker",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "enableMic",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "enableCam",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     oai: "1.0.0"   }, {     name: "enableScreenShare",     dt: "1.0.0",     swrtc: "1.3.0",     rn: "1.0.0"   }, {     name: "isMicEnabled",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "isCamEnabled",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     oai: "1.0.0"   }, {     name: "isSharingScreen",     dt: "1.0.0",     swrtc: "1.3.0",     rn: "1.0.0"   }, {     name: "tracks",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "sendText",     dt: "1.4.0",     swrtc: "1.5.0",     ws: "1.4.0",     oai: "1.3.0",     gem: "1.3.0"   }, {     name: "appendToContext",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "registerFunctionCallHandler",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0"   }, {     name: "transport",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }, {     name: "setLogLevel",     dt: "1.0.0",     swrtc: "1.0.0",     rn: "1.0.0",     ws: "1.0.0",     oai: "1.0.0",     gem: "1.0.0"   }]; };</p>
+<p>The Pipecat JavaScript client provides a comprehensive set of methods for managing bot interactions and media handling. These core methods are documented below.</p>
+<h2>Session connectivity</h2>
+<h3>startBot()</h3>
+<p><code>async startBot(startBotParams: APIEndpoint): Promise&lt;TransportConnectionParams | unknown&gt;</code></p>
+<p>This method hits your server endpoint to start the bot and optionally obtain the connection parameters needed for <code>connect()</code> to connect the <code>Transport</code>. It returns a Promise that resolves with the response from the server.</p>
+<p>&lt;ParamField path="startBotParams" type="APIEndpoint" required&gt;   The <code>APIEndpoint</code> object should have the following shape:</p>
+<p>  &lt;Expandable title="APIEndpoint" defaultOpen="true"&gt;     &lt;ParamField path="endpoint" type="string" required&gt;       The URL of the endpoint to connect to. This should be a valid REST endpoint.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="headers" type="Headers"&gt;       Optional headers to include in the request to the endpoint. This can be used to pass authentication tokens or other necessary headers.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="requestData" type="object"&gt;       Optional request data to include in the request to the endpoint. This can be used to pass additional data to your server-side endpoint. Oftentimes, this is used to pass the initial prompt or other configuration data to initialize the bot.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="timeout" type="number"&gt;       Optional timeout in milliseconds for the request to the endpoint.     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<p>During the <code>startBot()</code> process, the transport state will transition through the states: "authenticating" and "authenticated".</p>
+<pre><code>try {
+  await pcClient.startBot({
+    endpoint: "/api/start", // Your server endpoint to start the bot
+    requestData: {
+      initial_prompt: "You are a pirate captain",
+      llm_provider: "openai",
+    },
+  });
+} catch (error) {
+  console.error("Error starting the bot:", error);
+}</code></pre>
+<h3>connect()</h3>
+<p><code>async connect(connectParams): Promise&lt;BotReadyData&gt;</code></p>
+<p>This method initiates the connection process, optionally passing parameters that your transport class requires to establish a connection or an endpoint to your server for obtaining those parameters.</p>
+<p>&lt;ParamField path="connectParams" type="TransportConnectionParams"&gt;   An object containing the <code>TransportConnectionParams</code> your Transport expects.</p>
+<p>  Check your transport class documentation for the expected shape of <code>TransportConnectionParams</code>. For example, the DailyTransport expects a <code>url</code> and <code>token</code>.</p>
+<p>  &lt;Warning&gt;     In 1.2.0 we deprecated support for passing a <code>ConnectionEndpoint</code> object directly to <code>connect()</code>. Instead, you should use the <code>startBot()</code> or <code>startBotAndConnect()</code> methods to fetch connection parameters from your server endpoint and then pass those parameters directly to <code>connect()</code>.   &lt;/Warning&gt; &lt;/ParamField&gt;</p>
+<p>This method can be try / catched to handle errors at startup:</p>
+<pre><code>try {
+  await pcClient.connect({
+    webrtcUrl: "http://my-server/api/offer",
+  });
+} catch (error) {
+  console.error("Error connecting to the bot:", error);
+}</code></pre>
+<p>During the connection process, the transport state will transition through the following states: "connecting", "connected", "ready".</p>
+<p>&lt;Note&gt;   Calling <code>connect()</code> asynchronously will resolve when the bot and client signal   that they are ready. If you want to call <code>connect()</code> without <code>await</code>, you can   use the <code>onBotReady</code> callback or <code>BotReady</code> event to know when you can   interact with the bot. &lt;/Note&gt;</p>
+<p>&lt;Warning&gt;   Attempting to call <code>connect()</code> when the transport is already in a 'connected'   or 'ready' state will throw an error. You should <a href="#disconnect">disconnect</a>   from a session first before attempting to connect again. &lt;/Warning&gt;</p>
+<h3>startBotAndConnect()</h3>
+<p><code>async startBotAndConnect(startBotParams: APIEndpoint): Promise&lt;BotReadyData&gt;</code></p>
+<p>This method combines the functionality of <code>startBot()</code> and <code>connect()</code>. It first starts the bot by hitting your server endpoint and then connects the transport passing the response from the endpoint to the transport as connection parameters.</p>
+<pre><code>try {
+  await pcClient.startBotAndConnect({
+    endpoint: "/api/start", // Your server endpoint to start the bot
+    requestData: {
+      initial_prompt: "You are a pirate captain",
+      llm_provider: "openai",
+    },
+  });
+} catch (error) {
+  console.error("Error starting up:", error);
+}</code></pre>
+<p>It's equivalent to: <code>pcClient.startBot(...).then((resp) =&gt; pcClient.connect(resp))</code>.</p>
+<h3>disconnect()</h3>
+<p><code>async disconnect(): Promise&lt;void&gt;</code></p>
+<p>Disconnects from the active session. The transport state will transition to "disconnecting" and then "disconnected".</p>
+<p>It is common practice for bots to exit and cleanup when the client disconnects.</p>
+<pre><code>await pcClient.disconnect();</code></pre>
+<h3>disconnectBot()</h3>
+<p><code>disconnectBot(): void</code></p>
+<p>Triggers the bot to disconnect from the session, leaving the client connected.</p>
+<pre><code>await pcClient.disconnectBot();</code></pre>
+<h2>Messages</h2>
+<p>Custom messaging between the client and the bot. This is useful for sending data to the bot, triggering specific actions, reacting to server events, or querying the server.</p>
+<p>For more, see the <a href="/client/guides/custom-messaging">Custom Messaging</a> guide.</p>
+<h3>sendClientMessage()</h3>
+<p><code>sendClientMessage(msgType: string, data?: unknown): void</code></p>
+<p>Sends a custom message to the bot and does not expect a response. This is useful for sending data to the bot or triggering specific actions.</p>
+<p>&lt;ParamField path="msgType" type="string" required&gt;   A string identifying the message. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="data" type="unknown"&gt;   Optional data to send with the message. This can be any JSON-serializable   object. &lt;/ParamField&gt;</p>
+<h3>sendClientRequest()</h3>
+<p><code>async sendClientRequest(msgType: string, data: unknown, timeout?: number): Promise&lt;unknown&gt;</code></p>
+<p>Sends a custom request to the bot and expects a response. This is useful for querying the server or triggering specific actions that require a response. The method returns a Promise that resolves with the data from response.</p>
+<p>&lt;ParamField path="msgType" type="string" required&gt;   A string identifying the message. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="data" type="unknown"&gt;   Optional data to send with the message. This can be any JSON-serializable   object. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timeout" type="number" default="10000"&gt;   Optional timeout in milliseconds for the request. If the request does not   receive a response within this time, it will reject with an RTVIMessage of   type <code>'error-response'</code>. &lt;/ParamField&gt;</p>
+<h2>Devices</h2>
+<h3>initDevices()</h3>
+<p><code>async initDevices(): Promise&lt;void&gt;</code></p>
+<p>Initializes the media device selection machinery, based on <code>enableCam</code>/<code>enableMic</code> selections and defaults (i.e. turns on the local cam/mic). This method can be called before <code>connect()</code> to test and switch between camera and microphone sources.</p>
+<pre><code>await pcClient.initDevices();</code></pre>
+<h3>getAllMics()</h3>
+<p><code>async getAllMics(): Promise&lt;MediaDeviceInfo[]&gt;</code></p>
+<p>Returns a list of available microphones in the form of [<code>MediaDeviceInfo[]</code>](https://developer.mozilla.org/en-US/docs/Web/API/MediaDeviceInfo).</p>
+<pre><code>mic_device_list = pcClient.getAllMics();</code></pre>
+<h3>getAllCams()</h3>
+<p><code>async getAllCams(): Promise&lt;MediaDeviceInfo[]&gt;</code></p>
+<p>Returns a list of available cameras in the form of [<code>MediaDeviceInfo[]</code>](https://developer.mozilla.org/en-US/docs/Web/API/MediaDeviceInfo).</p>
+<pre><code>cam_device_list = pcClient.getAllCams();</code></pre>
+<h3>getAllSpeakers()</h3>
+<p><code>async getAllSpeakers(): Promise&lt;MediaDeviceInfo[]&gt;</code></p>
+<p>Returns a list of available speakers in the form of [<code>MediaDeviceInfo[]</code>](https://developer.mozilla.org/en-US/docs/Web/API/MediaDeviceInfo).</p>
+<pre><code>speaker_device_list = pcClient.getAllSpeakers();</code></pre>
+<h3>selectedMic</h3>
+<p><code>selectedMic: MediaDeviceInfo | {}</code></p>
+<p>The currently selected microphone, represented as a <code>MediaDeviceInfo</code> object. If no microphone is selected, it returns an empty object.</p>
+<pre><code>current_mic = pcClient.selectedMic;</code></pre>
+<h3>selectedCam</h3>
+<p><code>selectedCam: MediaDeviceInfo | {}</code></p>
+<p>The currently selected camera, represented as a <code>MediaDeviceInfo</code> object. If no camera is selected, it returns an empty object.</p>
+<pre><code>current_cam = pcClient.selectedCam;</code></pre>
+<h3>selectedSpeaker</h3>
+<p><code>selectedSpeaker: MediaDeviceInfo | {}</code></p>
+<p>The currently selected speaker, represented as a <code>MediaDeviceInfo</code> object. If no speaker is selected, it returns an empty object.</p>
+<pre><code>current_speaker = pcClient.selectedSpeaker;</code></pre>
+<h3>updateMic()</h3>
+<p><code>updateMic(micId: string): void</code></p>
+<p>Switches to the microphone identified by the provided <code>micId</code>, which should match a <code>deviceId</code> in the list returned from <a href="#getallmics"><code>getAllMics()</code></a>.</p>
+<p>&lt;ParamField path="micId" type="string"&gt;   deviceId &lt;/ParamField&gt;</p>
+<pre><code>pcClient.updateMic(deviceId);</code></pre>
+<h3>updateCam()</h3>
+<p><code>updateCam(camId: string): void</code></p>
+<p>Switches to the camera identified by the provided <code>camId</code>, which should match a <code>deviceId</code> in the list returned from <a href="#getallcams"><code>getAllCams()</code></a>.</p>
+<p>&lt;ParamField path="camId" type="string"&gt;   deviceId &lt;/ParamField&gt;</p>
+<pre><code>pcClient.updateCam(deviceId);</code></pre>
+<h3>updateSpeaker()</h3>
+<p><code>updateSpeaker(speakerId: string): void</code></p>
+<p>Switches to the speaker identified by the provided <code>speakerId</code>, which should match a <code>deviceId</code> in the list returned from <a href="#getallspeakers"><code>getAllSpeakers()</code></a>.</p>
+<p>&lt;ParamField path="speakerId" type="string"&gt;   deviceId &lt;/ParamField&gt;</p>
+<pre><code>pcClient.updateSpeaker(deviceId);</code></pre>
+<h3>enableMic(enable: boolean)</h3>
+<p><code>enableMic(enable: boolean): void</code></p>
+<p>Turn on or off (unmute or mute) the client mic input.</p>
+<p>&lt;ParamField path="enable" type="boolean" required&gt;   A boolean indicating whether to enable (<code>true</code>) or disable (<code>false</code>) the   microphone. &lt;/ParamField&gt;</p>
+<pre><code>pcClient.enableMic(true);</code></pre>
+<h3>enableCam(enable: boolean)</h3>
+<p><code>enableCam(enable: boolean): void</code></p>
+<p>Turn on or off the client cam input.</p>
+<p>&lt;ParamField path="enable" type="boolean" required&gt;   A boolean indicating whether to enable (<code>true</code>) or disable (<code>false</code>) the   camera. &lt;/ParamField&gt;</p>
+<pre><code>pcClient.enableCam(true);</code></pre>
+<h3>enableScreenShare(enable: boolean)</h3>
+<p><code>enableScreenShare(enable: boolean): void</code></p>
+<p>Start a screen share from the client's device.</p>
+<p>&lt;ParamField path="enable" type="boolean" required&gt;   A boolean indicating whether to enable (<code>true</code>) or disable (<code>false</code>) screen   sharing. &lt;/ParamField&gt;</p>
+<pre><code>pcClient.enableScreenShare(true);</code></pre>
+<h3>isMicEnabled</h3>
+<p><code>isMicEnabled: boolean</code></p>
+<p>An accessor to determine if the client's microphone is enabled.</p>
+<pre><code>mic_enabled = pcClient.isMicEnabled;</code></pre>
+<h3>isCamEnabled</h3>
+<p><code>isCamEnabled: boolean</code></p>
+<p>An accessor to determine if the client's camera is enabled.</p>
+<pre><code>cam_enabled = pcClient.isCamEnabled;</code></pre>
+<h3>isSharingScreen</h3>
+<p>An accessor to determine if the client is sharing their screen.</p>
+<pre><code>screen_sharing = pcClient.isSharingScreen;</code></pre>
+<h2>Tracks (audio and video)</h2>
+<h3>tracks()</h3>
+<p><code>tracks(): Tracks</code></p>
+<p>Returns a <code>Tracks</code> object with available <code>MediaStreamTrack</code> objects for both the client and the bot.</p>
+<pre><code>live_tracks_list = pcClient.tracks();</code></pre>
+<p><strong>Tracks Type</strong></p>
+<pre><code>{
+  local: {
+    audio?: MediaStreamTrack;
+    video?: MediaStreamTrack;
+  },
+  bot?: {
+    audio?: MediaStreamTrack;
+    video?: MediaStreamTrack;
+  }
+}</code></pre>
+<h2>Advanced LLM Interactions</h2>
+<h3>sendText()</h3>
+<p><code>async sendText(content: string, options?: SendTextOptions = {}): void</code></p>
+<p>A method to append text to the user's context. This is useful for providing text input as an alternative to audio input for the user.</p>
+<p>&lt;ParamField path="content" type="string" required&gt;   The text content to send to the bot. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="options" type="SendTextOptions"&gt;   An optional set of options for how the bot should handle the text input.</p>
+<p>  &lt;Expandable title="SendTextOptions" defaultOpen="true"&gt;     &lt;ParamField path="run_immediately" type="boolean" default="true"&gt;       Whether to immediately run the bot with the updated context. If <code>false</code>,       the context will be updated but the bot will not be run until the next       message or action that triggers the bot to run (like the user speaking).     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="audio_response" type="boolean" default="true"&gt;       Whether the bot should respond with audio. If <code>true</code>, the bot's response       will be processed by TTS and be spoken. If <code>false</code>, the bot will bypass       the TTS and respond with text only.     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<h3>registerFunctionCallHandler()</h3>
+<p><code>registerFunctionCallHandler(functionName: string, callback: FunctionCallCallback): void</code></p>
+<p>Registers a function call handler that will be called when the bot requests a function call. This is useful for when the server-side function handler needs information from the client to execute the function call or when the client needs to perform some action based on the running of function call.</p>
+<p>&lt;ParamField path="functionName" type="string" required&gt;   The name of the function to handle. This should match the function name in the bot's context. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="callback" type="FunctionCallCallback" required&gt;   <code>type FunctionCallCallback = (fn: FunctionCallParams) =&gt; Promise&lt;LLMFunctionCallResult | void&gt;</code></p>
+<p>  The callback function to call when the bot sends a function call request. This function should accept the following parameters:</p>
+<p>  &lt;Expandable title="FunctionCallParams" defaultOpen="true"&gt;     &lt;ParamField path="functionName" type="string" required&gt;       The name of the function being called. It should always match the name you       registered the handler under.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="arguments" type="Record&lt;string, unknown&gt;" required&gt;       The arguments passed to the function call. This is a key-value object where       the keys are the argument names and the values are the argument values.     &lt;/ParamField&gt;   &lt;/Expandable&gt;</p>
+<p>  The callback should return a Promise that resolves with the result of the function call or void if no result is needed. If returning a result, it should be a <code>string</code> or <code>Record&lt;string, unknown&gt;</code>. &lt;/ParamField&gt;</p>
+<h2>Other</h2>
+<h3>transport</h3>
+<p><code>transport: Transport</code></p>
+<p>A safe accessor for the transport instance used by the client. This is useful for accessing transport-specific methods or properties that are not exposed directly on the client.</p>
+<pre><code>const transport = pcClient.transport as DailyTransport;
+transport.getSessionInfo();</code></pre>
+<h3>setLogLevel()</h3>
+<p><code>setLogLevel(level: LogLevel): void</code></p>
+<p>Sets the log level for the client. This is useful for debugging and controlling the verbosity of logs. The log levels are defined in the <code>LogLevel</code> enum:</p>
+<pre><code>export enum LogLevel {
+  NONE = 0,
+  ERROR = 1,
+  WARN = 2,
+  INFO = 3,
+  DEBUG = 4,
+}</code></pre>
+<p>By default, the log level is set to <code>LogLevel.DEBUG</code>.</p>
+<pre><code>pcClient.setLogLevel(LogLevel.INFO);</code></pre>
+<h2>User interface</h2>
+<p>These methods voice-enable a UI: the client streams the screen to a server-side <a href="/api-reference/server/workers/ui-worker"><code>UIWorker</code></a> and forwards UI events, while the bot drives the page with commands (handled via the <a href="/api-reference/client/js/callbacks#user-interface-events"><code>UICommand</code> event</a>). See <a href="/client/rtvi-standard#user-interface">the RTVI standard</a> for the wire payloads and <a href="/pipecat/learn/ui-worker">Controlling the UI</a> for the patterns.</p>
+<h3>startUISnapshotStream()</h3>
+<p><code>startUISnapshotStream(options?: A11ySnapshotStreamerOptions): void</code></p>
+<p>Streams accessibility snapshots of the page to the bot as <code>ui-snapshot</code> messages. Emits an initial snapshot, then re-emits on DOM, form-control, focus, scroll, resize, and visibility changes, coalesced by <code>debounceMs</code>. Calling it again replaces the existing stream.</p>
+<p>&lt;ParamField path="options" type="A11ySnapshotStreamerOptions"&gt;   &lt;Expandable title="A11ySnapshotStreamerOptions"&gt;     &lt;ParamField path="debounceMs" type="number" default="300"&gt;       Coalesce window before emitting a snapshot.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="trackViewport" type="boolean" default="true"&gt;       Tag off-screen nodes <code>offscreen</code> so the bot scrolls before acting on them.     &lt;/ParamField&gt;</p>
+<p>    &lt;ParamField path="logSnapshots" type="boolean" default="false"&gt;       Log each emitted snapshot to the console.     &lt;/ParamField&gt;   &lt;/Expandable&gt; &lt;/ParamField&gt;</p>
+<h3>stopUISnapshotStream()</h3>
+<p><code>stopUISnapshotStream(): void</code></p>
+<p>Stops the managed snapshot stream and tears down its observers. Idempotent.</p>
+<h3>sendUIEvent()</h3>
+<p><code>sendUIEvent(event: string, payload?: unknown): void</code></p>
+<p>Sends an app-defined UI event to the bot (routed to the worker's <code>@ui_event</code> handlers).</p>
+<p>&lt;ParamField path="event" type="string" required&gt;   App-defined event name (e.g. <code>"note_click"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="payload" type="unknown"&gt;   Optional schemaless payload. &lt;/ParamField&gt;</p>
+<h3>cancelUIJobGroup()</h3>
+<p><code>cancelUIJobGroup(jobId: string, reason?: string): void</code></p>
+<p>Asks the bot to cancel an in-flight job group (only honored for groups the server marked <code>cancellable</code>). The <code>jobId</code> comes from the <code>group_started</code> envelope on the <a href="/api-reference/client/js/callbacks#user-interface-events"><code>UIJobGroup</code> event</a>.</p>
+<p>&lt;ParamField path="jobId" type="string" required&gt;   The job group id. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="reason" type="string"&gt;   Optional human-readable reason. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   To act on the bot's commands, resolve its snapshot refs against the live DOM   with the exported helpers <code>findElementByRef(ref)</code>, <code>findRefForElement(el)</code>,   <code>snapshotDocument(root?, options?)</code>, and <code>serializeSelection()</code>. &lt;/Note&gt;</p>
+<h2>Transport Compatibility</h2>
+<p>&lt;TransportTable rows={methods()} /&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/client-methods">https://docs.pipecat.ai/api-reference/client/js/client-methods</a></p>
+</div></main></div></body></html>

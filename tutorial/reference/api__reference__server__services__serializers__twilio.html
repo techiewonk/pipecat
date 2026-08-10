@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twilio Frame Serializer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Twilio Frame Serializer</h1>
+<blockquote>TwilioFrameSerializer integrates Pipecat with Twilio's Media Streams WebSocket protocol for phone call audio.</blockquote>
+<h2>Overview</h2>
+<p><code>TwilioFrameSerializer</code> enables integration with Twilio's Media Streams WebSocket protocol, allowing your Pipecat application to handle phone calls via Twilio's voice services with bidirectional audio conversion, DTMF event handling, and automatic call termination.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Twilio Serializer API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.serializers.twilio.html"&gt;     Pipecat's API methods for Twilio Media Streams integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/twilio-chatbot"&gt;     Complete telephony examples with Twilio   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Twilio Documentation" icon="book" href="https://www.twilio.com/docs/voice/media-streams"&gt;     Official Twilio Media Streams documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Twilio Console" icon="microphone" href="https://console.twilio.com/"&gt;     Manage phone numbers and Media Stream configuration   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>The <code>TwilioFrameSerializer</code> does not require any additional dependencies beyond the core Pipecat library:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Twilio Account Setup</h3>
+<p>Before using TwilioFrameSerializer, you need:</p>
+<ol><li><strong>Twilio Account</strong>: Sign up at <a href="https://console.twilio.com/">Twilio Console</a></li><li><strong>Phone Number</strong>: Purchase a Twilio phone number with voice capabilities</li><li><strong>Media Streams</strong>: Configure your phone number to use Media Streams</li><li><strong>Webhook Configuration</strong>: Set up webhook endpoints for call handling</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>TWILIO_ACCOUNT_SID</code>: Your Twilio Account SID for authentication</li><li><code>TWILIO_AUTH_TOKEN</code>: Your Twilio Auth Token for API operations</li></ul>
+<h3>Required Configuration</h3>
+<ul><li><strong>Stream SID</strong>: Provided by Twilio during Media Stream connection</li><li><strong>Call SID</strong>: Required for automatic call termination (optional)</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Bidirectional Audio</strong>: Convert between Pipecat and Twilio audio formats</li><li><strong>DTMF Handling</strong>: Process touch-tone events from callers</li><li><strong>Auto Hang-up</strong>: Terminate calls via Twilio's REST API</li><li><strong>μ-law Encoding</strong>: Handle Twilio's standard audio encoding format</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="stream_sid" type="str" required&gt;   The Twilio Media Stream SID. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="call_sid" type="str" default="None"&gt;   The associated Twilio Call SID. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="account_sid" type="str" default="None"&gt;   Twilio account SID. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auth_token" type="str" default="None"&gt;   Twilio auth token. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" default="None"&gt;   Twilio region (e.g., <code>"au1"</code>, <code>"ie1"</code>). Must be specified together with <code>edge</code>   when <code>base_url</code> is not provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="edge" type="str" default="None"&gt;   Twilio edge location (e.g., <code>"sydney"</code>, <code>"dublin"</code>). Must be specified   together with <code>region</code> when <code>base_url</code> is not provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="None"&gt;   REST API base URL (scheme + host, e.g., <code>https://api.twilio.com</code>) used for   auto hang-up. Defaults to the host derived from <code>region</code>/<code>edge</code>. Set this to   target a Twilio-API-compatible backend or a self-hosted server. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None"&gt;   Configuration parameters for audio and hang-up behavior. See   <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>twilio_sample_rate</code></td><td><code>int</code></td><td><code>8000</code></td><td>Sample rate used by Twilio (Hz).</td></tr><tr><td><code>sample_rate</code></td><td><code>int</code></td><td><code>None</code></td><td>Optional override for pipeline input sample rate. When <code>None</code>, uses the pipeline's configured rate.</td></tr><tr><td><code>auto_hang_up</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to automatically terminate the call on <code>EndFrame</code> or <code>CancelFrame</code>.</td></tr><tr><td><code>ignore_rtvi_messages</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to ignore RTVI protocol messages during serialization.</td></tr><tr><td><code>resampler_clear_after_secs</code></td><td>`float \</td><td>None`</td><td><code>0.2</code></td><td>Seconds of inactivity after which the stream resampler clears its internal history to avoid audio artefacts. Set to <code>None</code> to never clear (recommended for telephony providers with irregular gaps).</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.serializers.twilio import TwilioFrameSerializer
+from pipecat.transports.network.websocket_server import WebSocketServerTransport
+
+serializer = TwilioFrameSerializer(
+    stream_sid=stream_sid,
+    call_sid=call_sid,
+    account_sid=os.getenv("TWILIO_ACCOUNT_SID"),
+    auth_token=os.getenv("TWILIO_AUTH_TOKEN"),
+)
+
+transport = WebSocketServerTransport(
+    params=WebSocketServerParams(
+        audio_out_enabled=True,
+        add_wav_header=False,
+        serializer=serializer,
+    )
+)</code></pre>
+<h3>Without Auto Hang-up</h3>
+<pre><code>serializer = TwilioFrameSerializer(
+    stream_sid=stream_sid,
+    params=TwilioFrameSerializer.InputParams(
+        auto_hang_up=False,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Auto hang-up requires credentials</strong>: When <code>auto_hang_up</code> is enabled (the default), you must provide <code>call_sid</code>, <code>account_sid</code>, and <code>auth_token</code>. A <code>ValueError</code> is raised at initialization if any are missing.</li><li><strong>Region and edge pairing</strong>: When <code>base_url</code> is not provided, both <code>region</code> and <code>edge</code> must be specified together if either is set. Twilio's API uses the FQDN format <code>api.{edge}.{region}.twilio.com</code>. This requirement does not apply when <code>base_url</code> is provided, since <code>base_url</code> is used verbatim and ignores <code>region</code>/<code>edge</code>.</li><li><strong>Audio format</strong>: Twilio uses 8kHz mu-law (PCMU) audio encoding. The serializer automatically converts between this format and Pipecat's PCM audio.</li><li><strong>DTMF support</strong>: Touch-tone digit events from callers are converted to <code>InputDTMFFrame</code> objects.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/serializers/twilio">https://docs.pipecat.ai/api-reference/server/services/serializers/twilio</a></p>
+</div></main></div></body></html>

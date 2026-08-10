@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rime Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Rime Text-to-Speech</h1>
+<blockquote>TTS with RimeTTSService (WebSocket streaming with word timing and interruptions) and RimeHttpTTSService for batch synthesis.</blockquote>
+<h2>Overview</h2>
+<p>Rime AI provides two TTS service implementations: <code>RimeTTSService</code> (WebSocket-based) with word-level timing and interruption support, and <code>RimeHttpTTSService</code> (HTTP-based) for simpler use cases. <code>RimeTTSService</code> is recommended for real-time interactive applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Rime TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.rime.tts.html"&gt;     Pipecat's API methods for Rime TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-rime.py"&gt;     Complete example with word timestamps   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Rime Documentation" icon="book" href="https://docs.rime.ai/api-reference/coda/websockets-json"&gt;     Official Rime WebSocket and HTTP API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Models" icon="microphone" href="https://docs.rime.ai/"&gt;     Explore available voice models and features   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Rime services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[rime]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Rime Account Setup</h3>
+<p>Before using Rime TTS services, you need:</p>
+<ol><li><strong>Rime Account</strong>: Sign up at <a href="https://docs.rime.ai/">Rime AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Selection</strong>: Choose from available voice models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>RIME_API_KEY</code>: Your Rime API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>RimeTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Rime API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   ID of the voice to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://users-ws.rime.ai/ws3"&gt;   Rime WebSocket API endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="coda" deprecated&gt;   Model ID to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries, producing more natural   speech. <code>TOKEN</code> streams tokens directly for lower latency. Import from   <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None"&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=RimeTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="RimeTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#rimettsservice-settings">RimeTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>RimeHttpTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Rime API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   ID of the voice to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="coda" deprecated&gt;   Model ID to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeHttpTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=RimeHttpTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="RimeHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#rimettsservice-settings">RimeTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>RimeNonJsonTTSService</h3>
+<p>A non-JSON WebSocket service for models like Arcana that use plain text messages.</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Rime API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   ID of the voice to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeNonJsonTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://users.rime.ai/ws"&gt;   Rime WebSocket API endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="arcana" deprecated&gt;   Model ID to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=RimeNonJsonTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_format" type="str" default="pcm"&gt;   Audio output format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries. <code>TOKEN</code> streams tokens   directly for lower latency. Import from <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None" deprecated&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=RimeNonJsonTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="RimeNonJsonTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#rimenonjsonttsservice-settings">RimeNonJsonTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>RimeTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>RimeTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>segment</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Segment type for synthesis.</td></tr><tr><td><code>speedAlpha</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speed alpha parameter.</td></tr><tr><td><code>reduceLatency</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to reduce latency.</td></tr><tr><td><code>pauseBetweenBrackets</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Pause between brackets.</td></tr><tr><td><code>phonemizeBetweenBrackets</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Phonemize between brackets.</td></tr><tr><td><code>noTextNormalization</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Disable text normalization.</td></tr><tr><td><code>saveOovs</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Save out-of-vocabulary words.</td></tr><tr><td><code>inlineSpeedAlpha</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Inline speed alpha.</td></tr><tr><td><code>repetition_penalty</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Token repetition penalty (arcana only, 1.0-2.0).</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Sampling temperature (arcana only, 0.0-1.0).</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Cumulative probability threshold (arcana only, 0.0-1.0).</td></tr><tr><td><code>timeScaleFactor</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Audio playback speed factor (arcana, mistv3, and coda only). Values above 1.0 slow down the audio; values below 1.0 speed it up.</td></tr></tbody></table></div>
+<h4>RimeNonJsonTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>RimeNonJsonTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>segment</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Segment type for synthesis.</td></tr><tr><td><code>repetition_penalty</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Token repetition penalty.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Sampling temperature.</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Cumulative probability threshold.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup (WebSocket)</h3>
+<pre><code>from pipecat.services.rime import RimeTTSService
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    settings=RimeTTSService.Settings(
+        voice="cove",
+    ),
+)</code></pre>
+<h3>With Customization (WebSocket)</h3>
+<pre><code>from pipecat.services.rime import RimeTTSService
+from pipecat.transcriptions.language import Language
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    settings=RimeTTSService.Settings(
+        voice="cove",
+        model="mistv2",
+        language=Language.ES,
+        speedAlpha=1.2,
+        reduceLatency=True,
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>import aiohttp
+from pipecat.services.rime import RimeHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = RimeHttpTTSService(
+        api_key=os.getenv("RIME_API_KEY"),
+        settings=RimeHttpTTSService.Settings(
+            voice="cove",
+        ),
+        aiohttp_session=session,
+    )</code></pre>
+<h3>Non-JSON WebSocket (Arcana)</h3>
+<pre><code>from pipecat.services.rime import RimeNonJsonTTSService
+
+tts = RimeNonJsonTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    settings=RimeNonJsonTTSService.Settings(
+        voice="cove",
+        model="arcana",
+    ),
+)</code></pre>
+<h2>Customizing Speech</h2>
+<p><code>RimeTTSService</code> provides a set of helper methods for implementing Rime-specific customizations, meant to be used as part of text transformers. These include methods for spelling out text, adjusting speech rate, and modifying pitch. See the <a href="/pipecat/learn/text-to-speech#text-transforms">Text Transformers for TTS</a> section in the Text-to-Speech guide for usage examples.</p>
+<h3>RimeTTSService.SPELL(text: str) -&gt; str</h3>
+<p>Static method that implements <a href="https://docs.rime.ai/api-reference/spell">Rime's spell function</a> to spell out text character by character. Call this method on the class, not on an instance.</p>
+<pre><code># Text transformers for TTS
+# This will insert Rime's spell tags around the provided text.
+async def spell_out_text(text: str, type: str) -&gt; str:
+    return RimeTTSService.SPELL(text)
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    text_transforms=[
+        ("phone_number", spell_out_text),
+    ],
+)</code></pre>
+<h3>RimeTTSService.PAUSE\_TAG(seconds: float) -&gt; str</h3>
+<p>Static method that implements <a href="https://docs.rime.ai/api-reference/custom-pauses">Rime's custom pause functionality</a> to generate a properly formatted pause tag you can insert into the text. Call this method on the class, not on an instance.</p>
+<pre><code># Text transformers for TTS
+# This will insert a one second pause after questions.
+async def pause_after_questions(text: str, type: str) -&gt; str:
+    if text.endswith("?"):
+        return f"{text}{RimeTTSService.PAUSE_TAG(1.0)}"
+    return text
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    text_transforms=[
+        ("sentence", pause_after_questions), # Only apply to sentence aggregations
+    ],
+)</code></pre>
+<h3>PRONOUNCE(self, text: str, word: str, phoneme: str) -&gt; str:</h3>
+<p>Convenience method to support Rime's <a href="https://docs.rime.ai/api-reference/custom-pronunciation">custom pronunciations feature</a>. It takes a word and its desired phoneme representation, returning the text with the provided word replaced by the appropriate phoneme tag.</p>
+<pre><code># Text transformers for TTS
+# This will a phoneme in place of the word "potato" to define how it
+# should be pronounced.
+async def maybe_say_potato_all_fancylike(text: str, type: str) -&gt; str:
+    if using_fancy_voice:
+        return RimeTTSService.PRONOUNCE(text, "potato", "potato")
+    else:
+        return RimeTTSService.PRONOUNCE(text, "potato", "poteto")
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    text_transforms=[
+        ("*", maybe_say_potato_all_fancylike), # Apply to all text
+    ],
+)</code></pre>
+<h3>INLINE\_SPEED(self, text: str, speed: float) -&gt; str:</h3>
+<p>A convenience method to support Rime's <a href="https://docs.rime.ai/api-reference/speed">inline speed adjustment feature</a>. It will wrap the provided text in the <code>[]</code> tags and add the provided speed to the <code>inlineSpeedAlpha</code> field in the request metadata.</p>
+<pre><code># Text transformers for TTS
+# This will make the word slow always be spoken more slowly.
+async def slow_down_slow_words(text: str, type: str) -&gt; str:
+    return text.replace(
+        "slow",
+        RimeTTSService.INLINE_SPEED("slow", speed=0.5)
+    )
+
+tts = RimeTTSService(
+    api_key=os.getenv("RIME_API_KEY"),
+    text_transforms=[
+        ("*", slow_down_slow_words), # Apply to all text
+    ],
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Word-level timestamps</strong>: <code>RimeTTSService</code> provides word-level timing information, enabling synchronized text highlighting.</li><li><strong>WebSocket vs HTTP</strong>: The WebSocket service supports word-level timestamps, interruption handling, and maintains context across messages within a turn. The HTTP service is simpler but lacks these features.</li><li><strong>Non-JSON WebSocket</strong>: <code>RimeNonJsonTTSService</code> is for models like Arcana that use plain text messages instead of JSON. It does not support word-level timestamps.</li></ul>
+<h2>Event Handlers</h2>
+<p>Rime WebSocket TTS services support the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Rime WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Rime WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Rime")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/rime">https://docs.pipecat.ai/api-reference/server/services/tts/rime</a></p>
+</div></main></div></body></html>

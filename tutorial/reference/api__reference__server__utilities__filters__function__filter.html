@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FunctionFilter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>FunctionFilter</h1>
+<blockquote>FunctionFilter filters frames in a Pipecat pipeline using a custom filter function for flexible frame control.</blockquote>
+<h2>Overview</h2>
+<p><code>FunctionFilter</code> is a flexible processor that uses a custom async function to determine which frames to pass through. This allows for complex, dynamic filtering logic beyond simple type checking.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="filter" type="Callable[[Frame], Awaitable[bool]]" required&gt;   Async function that examines each frame and returns True to allow it or False   to filter it out &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="direction" type="FrameDirection" default="FrameDirection.DOWNSTREAM"&gt;   Which direction of frames to filter (DOWNSTREAM or UPSTREAM) &lt;/ParamField&gt;</p>
+<h2>Functionality</h2>
+<p>When a frame passes through the processor:</p>
+<ol><li>System frames and end frames are always passed through</li><li>Frames moving in a different direction than specified are always passed through</li><li>Other frames are passed to the filter function</li><li>If the filter function returns True, the frame is passed through</li></ol>
+<h2>Output Frames</h2>
+<p>The processor conditionally passes through frames based on:</p>
+<ul><li>Frame type (system frames and end frames always pass)</li><li>Frame direction (only filters in the specified direction)</li><li>Result of the custom filter function</li></ul>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.frames.frames import TextFrame, Frame
+from pipecat.processors.filters import FunctionFilter
+from pipecat.processors.frame_processor import FrameDirection
+
+# Create filter that only allows TextFrames with more than 10 characters
+async def long_text_filter(frame: Frame) -&gt; bool:
+    if isinstance(frame, TextFrame):
+        return len(frame.text) &gt; 10
+    return False
+
+# Apply filter to downstream frames only
+text_length_filter = FunctionFilter(
+    filter=long_text_filter,
+    direction=FrameDirection.DOWNSTREAM
+)
+
+# Add to pipeline
+pipeline = Pipeline([
+    source,
+    text_length_filter,  # Filters out short text frames
+    destination
+])</code></pre>
+<h2>Frame Flow</h2>
+<pre><code>graph TD
+    A[Input Frames] --&gt; B[FunctionFilter]
+    B --&gt; C{System/End Frame?}
+    C --&gt;|Yes| F[Output Frame]
+    C --&gt;|No| D{Correct Direction?}
+    D --&gt;|No| F
+    D --&gt;|Yes| E{Filter Function}
+    E --&gt;|Returns True| F
+    E --&gt;|Returns False| G[Dropped]</code></pre>
+<h2>Notes</h2>
+<ul><li>Provides maximum flexibility for complex filtering logic</li><li>Can incorporate dynamic conditions that change at runtime</li><li>Only filters frames moving in the specified direction</li><li>Always passes through system frames for proper pipeline operation</li><li>Can be used to create sophisticated content-based filters</li><li>Supports async filter functions for complex processing</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/filters/function-filter">https://docs.pipecat.ai/api-reference/server/utilities/filters/function-filter</a></p>
+</div></main></div></body></html>

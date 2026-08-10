@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groq Whisper Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Groq Whisper Speech-to-Text</h1>
+<blockquote>GroqSTTService runs VAD-segmented STT on Groq's hosted Whisper API, pairing Whisper accuracy with ultra-fast inference.</blockquote>
+<h2>Overview</h2>
+<p><code>GroqSTTService</code> provides high-accuracy speech recognition using Groq's hosted Whisper API with ultra-fast inference speeds. It uses Voice Activity Detection (VAD) to process speech segments efficiently for optimal performance and accuracy.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Groq STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.groq.stt.html"&gt;     Pipecat's API methods for Groq STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-groq.py"&gt;     Complete example with Groq ecosystem integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Groq Documentation" icon="book" href="https://console.groq.com/docs/api-reference#audio-transcription"&gt;     Official Groq STT documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Groq Console" icon="microphone" href="https://console.groq.com/keys"&gt;     Access API keys and Whisper models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Groq services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[groq]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Groq Account Setup</h3>
+<p>Before using Groq STT services, you need:</p>
+<ol><li><strong>Groq Account</strong>: Sign up at <a href="https://console.groq.com/">Groq Console</a></li><li><strong>API Key</strong>: Generate an API key from your console dashboard</li><li><strong>Model Access</strong>: Ensure access to Whisper transcription models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GROQ_API_KEY</code>: Your Groq API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="model" type="str" default="whisper-large-v3-turbo" deprecated&gt;   Whisper model to use for transcription. *Deprecated in v0.0.105. Use   <code>settings=GroqSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Groq API key. If not provided, uses <code>GROQ_API_KEY</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.groq.com/openai/v1"&gt;   API base URL. Override for custom or proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_client" type="httpx.AsyncClient" default="None"&gt;   Custom <code>httpx.AsyncClient</code> for API requests, e.g. one with a longer request   timeout. Prefer <code>openai.DefaultAsyncHttpxClient</code>, which keeps the SDK's   connection limits and redirect handling; a bare <code>httpx.AsyncClient</code> uses   httpx's defaults instead. Defaults to <code>None</code>, which lets the SDK build its own   client. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language of the audio input. *Deprecated in v0.0.105. Use   <code>settings=GroqSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="prompt" type="str" default="None" deprecated&gt;   Optional text to guide the model's style or continue a previous segment.   *Deprecated in v0.0.105. Use <code>settings=GroqSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="temperature" type="float" default="None" deprecated&gt;   Sampling temperature between 0 and 1. Lower values are more deterministic.   Defaults to 0.0. *Deprecated in v0.0.105. Use   <code>settings=GroqSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GroqSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="GROQ_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="push_empty_transcripts" type="bool" default="False"&gt;   If true, allow empty <code>TranscriptionFrame</code> frames to be pushed downstream   instead of discarding them. This is intended for situations where VAD fires   even though the user did not speak. In these cases, it is useful to know that   nothing was transcribed so that the agent can resume speaking, instead of   waiting longer for a transcription. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GroqSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"whisper-large-v3-turbo"</code></td><td>Whisper model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language of the audio input. *(Inherited from base STT settings.)*</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>None</code></td><td>Optional text to guide the model's style or continue a previous segment.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>None</code></td><td>Sampling temperature between 0 and 1.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.groq.stt import GroqSTTService
+
+stt = GroqSTTService(
+    api_key=os.getenv("GROQ_API_KEY"),
+)</code></pre>
+<h3>With Custom Model and Language</h3>
+<pre><code>from pipecat.services.groq.stt import GroqSTTService
+from pipecat.transcriptions.language import Language
+
+stt = GroqSTTService(
+    api_key=os.getenv("GROQ_API_KEY"),
+    settings=GroqSTTService.Settings(
+        model="whisper-large-v3-turbo",
+        language=Language.ES,
+    ),
+)</code></pre>
+<h3>With Prompt and Temperature</h3>
+<pre><code>from pipecat.services.groq.stt import GroqSTTService
+
+stt = GroqSTTService(
+    api_key=os.getenv("GROQ_API_KEY"),
+    settings=GroqSTTService.Settings(
+        prompt="This is a conversation about artificial intelligence and machine learning.",
+        temperature=0.0,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Segmented processing</strong>: <code>GroqSTTService</code> inherits from <code>SegmentedSTTService</code> (via <code>BaseWhisperSTTService</code>), which buffers audio during speech (detected by VAD) and sends complete segments for transcription. This means it does not provide interim results -- only final transcriptions after each speech segment.</li><li><strong>Whisper API compatible</strong>: Groq uses the OpenAI-compatible Whisper API format. The service sends audio in WAV format and receives JSON transcription responses.</li><li><strong>Ultra-fast inference</strong>: Groq's LPU (Language Processing Unit) infrastructure provides significantly faster inference than CPU/GPU-based Whisper deployments, making it suitable for real-time applications despite the segmented processing approach.</li><li><strong>Prompt guidance</strong>: Use the <code>prompt</code> parameter to provide context that helps the model with domain-specific terminology or to maintain consistency across segments.</li><li><strong>Multilingual support</strong>: Whisper supports 99+ languages. The default is <code>Language.EN</code> (English). Set <code>language=None</code> in settings to enable automatic language detection, which will transcribe whatever language the user speaks.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/groq">https://docs.pipecat.ai/api-reference/server/services/stt/groq</a></p>
+</div></main></div></body></html>

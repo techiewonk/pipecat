@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>List Builds · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>List Builds</h1>
+<blockquote>GET /builds lists all Pipecat Cloud builds for your organization, with optional filters.</blockquote>
+<h2>Filtering Builds</h2>
+<p>Use query parameters to filter and paginate your build list:</p>
+<pre><code># List all successful builds
+curl "https://api.pipecat.daily.co/v1/builds?status=success" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY"
+
+# List builds in a specific region
+curl "https://api.pipecat.daily.co/v1/builds?region=us-west&amp;limit=10" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY"
+
+# Find builds with a specific context hash
+curl "https://api.pipecat.daily.co/v1/builds?contextHash=a1b2c3d4e5f6a7b8" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY"</code></pre>
+<h2>Pagination</h2>
+<p>Results are paginated with <code>limit</code> and <code>offset</code> parameters:</p>
+<pre><code># Get page 2 (items 21-40)
+curl "https://api.pipecat.daily.co/v1/builds?limit=20&amp;offset=20" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY"</code></pre>
+<p>The response includes <code>total</code> to help calculate pagination:</p>
+<pre><code>{
+  "builds": [...],
+  "total": 142,
+  "limit": 20,
+  "offset": 20
+}</code></pre>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /builds:
+    get:
+      summary: List builds
+      description: List all builds for your organization with optional filters.
+      operationId: listBuilds
+      parameters:
+        - name: status
+          in: query
+          description: Filter by build status.
+          schema:
+            type: string
+            enum:
+              - pending
+              - building
+              - success
+              - failed
+              - timeout
+        - name: region
+          in: query
+          description: Filter by region.
+          schema:
+            type: string
+          example: us-west
+        - name: contextHash
+          in: query
+          description: Filter by context hash.
+          schema:
+            type: string
+          example: a1b2c3d4e5f6a7b8
+        - name: limit
+          in: query
+          description: Maximum number of builds to return.
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of builds to skip for pagination.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of builds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListBuildsResponse'
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    ListBuildsResponse:
+      type: object
+      properties:
+        builds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Build'
+          description: Array of build objects.
+        total:
+          type: integer
+          description: Total number of builds matching the filters.
+          example: 42
+        limit:
+          type: integer
+          description: Maximum number of builds returned.
+          example: 20
+        offset:
+          type: integer
+          description: Number of builds skipped.
+          example: 0
+    Build:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the build.
+          example: 123e4567-e89b-12d3-a456-426614174000
+        organizationId:
+          type: string
+          description: Organization that owns this build.
+          example: org_abc123
+        status:
+          type: string
+          enum:
+            - pending
+            - building
+            - success
+            - failed
+            - timeout
+          description: Current status of the build.
+          example: success
+        region:
+          type: string
+          description: Region where the build ran.
+          example: us-west
+        contextHash:
+          type: string
+          description: Hash of the build context.
+          example: a1b2c3d4e5f6a7b8
+        dockerfilePath:
+          type: string
+          description: Path to the Dockerfile used for this build.
+          example: Dockerfile
+        imageUri:
+          type: string
+          description: &gt;-
+            URI of the built image. Use this value when deploying an agent. Only
+            present when status is 'success'.
+          example: &gt;-
+            123456789.dkr.ecr.us-west-2.amazonaws.com/pipecat-cloud/org_abc123:a1b2c3d4e5f6a7b8
+        logsUrl:
+          type: string
+          format: uri
+          description: URL to view build logs in the cloud console.
+          example: https://console.aws.amazon.com/codebuild/...
+        errorMessage:
+          type: string
+          description: &gt;-
+            Detailed error message if the build failed. Includes information
+            from the build phases to help diagnose issues.
+          example: 'Docker build failed: COPY failed - file not found: requirements.txt'
+        contextSizeBytes:
+          type: integer
+          description: Size of the uploaded context in bytes.
+          example: 10485760
+        imageSizeBytes:
+          type: integer
+          description: &gt;-
+            Size of the built Docker image in bytes. Only present for successful
+            builds.
+          example: 524288000
+        buildDurationSeconds:
+          type: integer
+          description: &gt;-
+            Total build duration in seconds. Only present when build is
+            complete.
+          example: 120
+        startedAt:
+          type: string
+          format: date-time
+          description: When the build started executing.
+          example: '2026-02-20T12:00:00.000Z'
+        completedAt:
+          type: string
+          format: date-time
+          description: When the build completed (success, failed, or timeout).
+          example: '2026-02-20T12:02:00.000Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the build record was created.
+          example: '2026-02-20T12:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the build record was last updated.
+          example: '2026-02-20T12:02:00.000Z'
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Authentication using a Pipecat Cloud API token.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-list">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-list</a></p>
+</div></main></div></body></html>

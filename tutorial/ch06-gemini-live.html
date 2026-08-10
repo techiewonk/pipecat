@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 6 — Gemini Live · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 6 · Part B — Modalities &amp; knowledge</div>
+<h1>Gemini Live: realtime speech-to-speech</h1>
+<div class="meta"><span class="pill">⏱ 60 min</span><span class="pill grey">Level: intermediate</span><span class="pill">Capstone engine</span></div>
+<p class="lead">Realtime models collapse STT + LLM + TTS into a single speech-to-speech service — lower latency, server-side turns. This is the engine our A2A capstone standardizes on.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">One model instead of three</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>Instead of chaining STT → LLM → TTS, you send audio to Gemini Live and get audio back. Fewer swappable parts, but much lower latency, and the model manages turns itself. Other realtime engines: OpenAI Realtime, AWS Nova Sonic, Grok, Inworld, Ultravox.</p></div>
+<pre class="diagram">[transport.input] ─▶ [ Gemini Live: speech-in ➜ think ➜ speech-out ] ─▶ [transport.output]
+                       (one service replaces STT + LLM + TTS)</pre>
+
+<h2 id="build">Gemini Live with tools + search</h2>
+<pre><code class="language-python">from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import AdapterType, ToolsSchema
+from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+
+weather_function = FunctionSchema(
+    name="get_current_weather", description="Get the current weather",
+    properties={"location": {"type": "string", "description": "City, State"},
+                "format": {"type": "string", "enum": ["celsius", "fahrenheit"]}},
+    required=["location", "format"], handler=fetch_weather_from_api)
+
+search_tool = {"google_search": {}}                       # Gemini-native tool
+tools = ToolsSchema(standard_tools=[weather_function],
+                    custom_tools={AdapterType.GEMINI: [search_tool]})
+
+llm = GeminiLiveLLMService(
+    api_key=os.environ["GOOGLE_API_KEY"],
+    settings=GeminiLiveLLMService.Settings(
+        system_instruction=system_instruction,
+        voice="Aoede"),                                   # Puck, Charon, Kore, Fenrir, Aoede
+    tools=tools)</code></pre>
+<div class="box py"><p class="title">🐍 Python note — explicit schemas</p>
+<p>In Chapter 5 the docstring was the schema. Realtime providers want an explicit <code>FunctionSchema</code> (name, <code>properties</code>, <code>required</code>, <code>handler</code>), and provider-native tools go under <code>custom_tools</code>.</p></div>
+<div class="box errors"><p class="title">⚠️ Known quirk (from the example's own comment)</p>
+<p>With <code>GeminiVertexLiveLLMService</code> you currently can't combine <code>google_search</code> with other tools — use the non-Vertex <code>GeminiLiveLLMService</code> for the combined setup.</p></div>
+<div class="box py"><p class="title">🐍 Note — turns</p>
+<p>Gemini Live drives turns server-side and does <em>not</em> emit <code>UserStartedSpeaking</code>/<code>Stopped</code> frames. Context aggregation still works; just don't rely on those frames for custom turn logic.</p></div>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python realtime/realtime-gemini-live.py    # needs GOOGLE_API_KEY
+# ask something that needs search ("latest news on X?") and a tool ("weather in Tokyo?")</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Change <code>voice="Aoede"</code>; add a third <code>FunctionSchema</code>; try <code>realtime-gemini-live-video.py</code> (show it your camera) and <code>realtime-gemini-live-locally-driven-turns.py</code> (control turns yourself).</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>What three services does one realtime model replace, and where do native tools go?</summary><p>STT, LLM, and TTS. Provider-native tools go in <code>ToolsSchema(custom_tools={AdapterType.GEMINI: [...]})</code>.</p></details>
+
+<h2 id="files">Example files</h2><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>realtime-aws-nova-sonic.py</code></td><td>Realtime speech-to-speech — AWS</td></tr><tr><td><code>realtime-aws-nova-sonic-async-tool.py</code></td><td>Example: async function call with the AWS Nova Sonic LLM service</td></tr><tr><td><code>realtime-azure.py</code></td><td>Realtime speech-to-speech — Azure</td></tr><tr><td><code>realtime-azure-async-tool.py</code></td><td>Example: async function call with the Azure Realtime LLM service</td></tr><tr><td><code>realtime-gemini-live.py</code></td><td>Realtime speech-to-speech — gemini-live</td></tr><tr><td><code>realtime-gemini-live-async-tool.py</code></td><td>Example: async function call with the Gemini Live LLM service</td></tr><tr><td><code>realtime-gemini-live-files-api.py</code></td><td>Realtime speech-to-speech — gemini-live-files-api — Files API</td></tr><tr><td><code>realtime-gemini-live-google-search.py</code></td><td>Realtime speech-to-speech — Google — web search</td></tr><tr><td><code>realtime-gemini-live-graceful-end.py</code></td><td>Realtime speech-to-speech — gemini-live-graceful-end</td></tr><tr><td><code>realtime-gemini-live-grounding-metadata.py</code></td><td>Realtime speech-to-speech — gemini-live-grounding-metadata — grounding metadata</td></tr><tr><td><code>realtime-gemini-live-locally-driven-turns.py</code></td><td>Gemini Live with locally-driven turn detection</td></tr><tr><td><code>realtime-gemini-live-vertex.py</code></td><td>Realtime speech-to-speech — Google Vertex — via Vertex AI</td></tr><tr><td><code>realtime-gemini-live-video.py</code></td><td>Realtime speech-to-speech — gemini-live-video — with video/vision</td></tr><tr><td><code>realtime-grok.py</code></td><td>Grok Voice Agent Realtime Example</td></tr><tr><td><code>realtime-grok-async-tool.py</code></td><td>Example: async function call with the Grok Realtime LLM service</td></tr><tr><td><code>realtime-grok-locally-driven-turns.py</code></td><td>Grok Realtime with locally-driven turn detection</td></tr><tr><td><code>realtime-inworld.py</code></td><td>Inworld Realtime Example</td></tr><tr><td><code>realtime-inworld-locally-driven-turns.py</code></td><td>Inworld Realtime with locally-driven turn detection</td></tr><tr><td><code>realtime-openai.py</code></td><td>Realtime speech-to-speech — OpenAI</td></tr><tr><td><code>realtime-openai-async-tool.py</code></td><td>Example: async function call with the OpenAI Realtime LLM service</td></tr><tr><td><code>realtime-openai-live-video.py</code></td><td>Realtime speech-to-speech — OpenAI — with video/vision</td></tr><tr><td><code>realtime-openai-locally-driven-turns.py</code></td><td>OpenAI Realtime with locally-driven turn detection</td></tr><tr><td><code>realtime-openai-text.py</code></td><td>Realtime speech-to-speech — OpenAI</td></tr><tr><td><code>realtime-ultravox.py</code></td><td>Realtime speech-to-speech — Ultravox</td></tr><tr><td><code>realtime-ultravox-async-tool.py</code></td><td>Example: async function call with the Ultravox Realtime LLM service</td></tr><tr><td><code>realtime-ultravox-text.py</code></td><td>Realtime speech-to-speech — Ultravox</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

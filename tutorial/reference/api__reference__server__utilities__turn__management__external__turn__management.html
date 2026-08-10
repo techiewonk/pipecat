@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>External Turn Management · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>External Turn Management</h1>
+<blockquote>Handle turn detection externally using UserTurnProcessor or external services</blockquote>
+<h2>Overview</h2>
+<p>In some scenarios, turn detection happens externally, either through a dedicated processor or an external service. Pipecat provides <code>ExternalUserTurnStrategies</code>, a <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">user turn strategy</a> that defers turn handling to these external sources.</p>
+<p>External turn management might be needed when:</p>
+<ul><li><strong>Multiple context aggregators</strong>: Parallel pipelines with multiple LLMs need a single, shared source of turn events</li><li><strong>External services with turn detection</strong>: Services like <a href="/api-reference/server/services/stt/deepgram">Deepgram Flux</a> or <a href="/api-reference/server/services/stt/speechmatics">Speechmatics</a> provide their own turn detection</li></ul>
+<p>In both cases, you need to configure your context aggregators with <code>ExternalUserTurnStrategies</code> to defer turn handling to the external source.</p>
+<h2>External Services</h2>
+<p>Some speech-to-text services provide built-in turn detection. When using these services, configure your context aggregator with <code>ExternalUserTurnStrategies</code> to let the service handle turn management:</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
+
+# Configure aggregator to use external turn strategies
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=ExternalUserTurnStrategies()
+    ),
+)</code></pre>
+<p>&lt;Note&gt;   When the STT service is driving turn detection, a VAD in the transport (such   as <code>SileroVADAnalyzer</code>) is optional. It's not needed for core turn management,   but including one enables useful STT metrics. Drop it if you don't care about   those metrics. &lt;/Note&gt;</p>
+<h2>Realtime (Speech-to-Speech) Services</h2>
+<p>Realtime (speech-to-speech) LLM services — OpenAI Realtime, Azure Realtime, Grok/xAI Realtime, Inworld, Gemini Live, AWS Nova Sonic, and Ultravox — consume user audio directly and manage their own conversation flow. For these, pass <code>realtime_service_mode=True</code> to <code>LLMContextAggregatorPair</code>:</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    realtime_service_mode=True,
+)</code></pre>
+<p>Setting <code>realtime_service_mode=True</code> adapts the pair's behavior in three ways:</p>
+<ol><li><strong>Context writes are decoupled from <code>UserStoppedSpeakingFrame</code>.</strong> Instead, the assistant response start triggers the user message write. This keeps the context correct even when the realtime service provides no turn frames and local turn detection (VAD) is disabled.</li><li><strong><code>UserStoppedSpeakingFrame</code> can fire without waiting for transcripts.</strong> When local turn detection drives the conversation, this frame triggers the assistant response — letting it fire earlier reduces latency. The pair flips <code>wait_for_transcript=False</code> on the <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#stop-strategies">stop strategies</a> that support it.</li><li><strong>Default turn strategies are replaced with external strategies when the service emits its own turn frames.</strong> Services that emit <code>UserStartedSpeakingFrame</code> / <code>UserStoppedSpeakingFrame</code> (OpenAI Realtime, Azure, Grok, Inworld) drive <code>on_user_turn_started</code> / <code>on_user_turn_stopped</code> from those server-emitted frames. Services that don't emit them — either because they never do (Gemini Live, Nova Sonic, Ultravox) or because server-side turn detection was disabled at runtime (e.g. OpenAI Realtime with <code>turn_detection=False</code>) — keep the defaults so locally-driven turn detection (e.g. local VAD) can fire the events. Passing custom <code>user_turn_strategies</code> opts out of this swap.</li></ol>
+<p>&lt;Note&gt;   In realtime mode, subscribe to   <a href="/api-reference/server/utilities/turn-management/turn-events#on_user_turn_message_added"><code>on_user_turn_message_added</code></a>   to receive the finalized user message. <code>on_user_turn_stopped</code> still fires but   its <code>UserTurnStoppedMessage.content</code> is <code>None</code>, since the message isn't   finalized until the assistant response starts. &lt;/Note&gt;</p>
+<h2>UserTurnProcessor</h2>
+<p><code>UserTurnProcessor</code> is a frame processor for managing user turn lifecycle when you need a single source of turn events shared across multiple context aggregators. It emits <code>UserStartedSpeakingFrame</code> and <code>UserStoppedSpeakingFrame</code> frames and handles interruptions.</p>
+<p>&lt;Note&gt;   <code>UserTurnProcessor</code> only manages user turn start and end events. It does not   handle transcription aggregation, that remains the responsibility of the   context aggregators. &lt;/Note&gt;</p>
+<h3>Constructor Parameters</h3>
+<p>&lt;ParamField path="user_turn_strategies" type="UserTurnStrategies" default="UserTurnStrategies()"&gt;   Configured strategies for starting and stopping user turns. See <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn   Strategies</a>   for available options. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_turn_stop_timeout" type="float" default="5.0"&gt;   Timeout in seconds to automatically stop a user turn if no stop strategy   triggers. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_idle_timeout" type="float" default="0"&gt;   Timeout in seconds for detecting user idle state. The processor will emit an   <code>on_user_turn_idle</code> event when the user has been idle (not speaking) for this   duration after the bot finishes speaking. Set to <code>0</code> to disable idle   detection. See <a href="/pipecat/fundamentals/detecting-user-idle">Detecting Idle   Users</a> for details. &lt;/ParamField&gt;</p>
+<h3>Event Handlers</h3>
+<p><code>UserTurnProcessor</code> provides event handlers for turn lifecycle events:</p>
+<pre><code>@user_turn_processor.event_handler("on_user_turn_started")
+async def on_user_turn_started(processor, strategy):
+    # Called when a user turn starts
+    pass
+
+@user_turn_processor.event_handler("on_user_turn_stopped")
+async def on_user_turn_stopped(processor, strategy):
+    # Called when a user turn stops
+    pass
+
+@user_turn_processor.event_handler("on_user_turn_stop_timeout")
+async def on_user_turn_stop_timeout(processor):
+    # Called if no stop strategy triggers before timeout
+    pass</code></pre>
+<h3>Usage with Parallel Pipelines</h3>
+<p>When using parallel pipelines with multiple context aggregators, place <code>UserTurnProcessor</code> before the parallel pipeline and configure each context aggregator with <code>ExternalUserTurnStrategies</code>:</p>
+<pre><code>from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.pipeline.parallel_pipeline import ParallelPipeline
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_turn_processor import UserTurnProcessor
+from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
+
+# Create the external user turn processor with your preferred strategies
+user_turn_processor = UserTurnProcessor(
+    user_turn_strategies=UserTurnStrategies(
+        stop=[
+            TurnAnalyzerUserTurnStopStrategy(
+                turn_analyzer=LocalSmartTurnAnalyzerV3()
+            )
+        ]
+    ),
+)
+
+# Create contexts for each LLM
+openai_context = LLMContext(openai_messages)
+groq_context = LLMContext(groq_messages)
+
+# Configure aggregators to use external turn strategies
+openai_context_aggregator = LLMContextAggregatorPair(
+    openai_context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=ExternalUserTurnStrategies()
+    ),
+)
+groq_context_aggregator = LLMContextAggregatorPair(
+    groq_context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=ExternalUserTurnStrategies()
+    ),
+)
+
+# Build the pipeline with UserTurnProcessor before the parallel branches
+pipeline = Pipeline(
+    [
+        transport.input(),
+        stt,
+        user_turn_processor,  # Handles turn management for all branches
+        ParallelPipeline(
+            [
+                openai_context_aggregator.user(),
+                openai_llm,
+                transport.output(),
+                openai_context_aggregator.assistant(),
+            ],
+            [
+                groq_context_aggregator.user(),
+                groq_llm,
+                groq_context_aggregator.assistant(),
+            ],
+        ),
+    ]
+)</code></pre>
+<h2>Related</h2>
+<ul><li><a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn Strategies</a> - Configure turn detection strategies</li><li><a href="/api-reference/server/pipeline/parallel-pipeline">Parallel Pipeline</a> - Run multiple pipeline branches concurrently</li><li><a href="/api-reference/server/utilities/turn-management/turn-events">Turn Events</a> - Handle turn lifecycle events</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-management/external-turn-management">https://docs.pipecat.ai/api-reference/server/utilities/turn-management/external-turn-management</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Worker Bus · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>The Worker Bus</h1>
+<blockquote>How Pipecat workers communicate through the shared message bus: publish, subscribe, and message flow between agents.</blockquote>
+<h2>What is the bus?</h2>
+<p>The worker bus is the communication backbone of every multi-worker system. All workers connect to the same bus and exchange typed messages for frame routing, lifecycle events, and job coordination.</p>
+<p>Think of it as an internal event bus -- workers publish messages and other workers receive them through their subscriptions. The bus handles priority queuing so that urgent messages (like cancellations) are delivered before queued data.</p>
+<h2>Bus implementations</h2>
+<p>Pipecat provides three bus implementations:</p>
+<h3>AsyncQueueBus (local)</h3>
+<p>The default bus, created automatically by <code>WorkerRunner</code> when you don't provide one. It uses asyncio queues for in-process communication with no serialization overhead.</p>
+<pre><code>runner = WorkerRunner()  # Creates AsyncQueueBus automatically</code></pre>
+<p>This is all you need for single-process applications where all workers run together.</p>
+<h3>RedisBus (distributed)</h3>
+<p>For distributed setups where workers run in separate processes or on different machines, use <code>RedisBus</code>. It uses Redis pub/sub to relay messages across process boundaries.</p>
+<pre><code>from redis.asyncio import Redis
+from pipecat.bus.network.redis import RedisBus
+
+redis = Redis.from_url("redis://localhost:6379")
+bus = RedisBus(redis=redis, channel="pipecat:my-app")
+runner = WorkerRunner(bus=bus)</code></pre>
+<p>All processes that share the same Redis channel can exchange messages. The programming model stays the same -- your agent code doesn't change between local and distributed setups.</p>
+<p>&lt;Info&gt;<code>RedisBus</code> requires the <code>redis</code> extra: <code>uv add "pipecat-ai[redis]"</code>&lt;/Info&gt;</p>
+<h3>PgmqBus (distributed)</h3>
+<p>An alternative distributed bus backed by PGMQ (PostgreSQL Message Queue). Each instance creates its own queue and broadcasts to peer queues.</p>
+<pre><code>from pgmq.async_queue import PGMQueue
+from pipecat.bus.network.pgmq import PgmqBus
+
+pgmq = PGMQueue(
+    host="localhost",
+    port="5432",
+    database="postgres",
+    username="postgres",
+    password="...",
+    pool_size=4,
+)
+await pgmq.init()
+bus = PgmqBus(pgmq=pgmq, channel="pipecat:my-app")
+runner = WorkerRunner(bus=bus)</code></pre>
+<p>&lt;Info&gt;<code>PgmqBus</code> requires the <code>pgmq</code> extra: <code>uv add "pipecat-ai[pgmq]"</code>&lt;/Info&gt;</p>
+<h2>Message types</h2>
+<p>Messages on the bus fall into four categories:</p>
+<h3>Data messages</h3>
+<p>Normal-priority messages that carry data between agents. The most important one is <code>BusFrameMessage</code>, which wraps a Pipecat frame (audio, text, etc.) for transport across the bus.</p>
+<h3>System messages</h3>
+<p>High-priority messages for lifecycle events: activation, deactivation, shutdown, and worker readiness. These are delivered before data messages in the queue.</p>
+<h3>Job messages</h3>
+<p>Messages for coordinating work between agents: job requests, responses, progress updates, streaming, and cancellation.</p>
+<h3>Local messages</h3>
+<p>Some messages are local-only and never cross process boundaries. For example, child agent errors stay local to the parent. This keeps internal state from leaking across distributed runners.</p>
+<h2>Message routing</h2>
+<p>Messages have <code>source</code> and <code>target</code> fields:</p>
+<ul><li><strong>Targeted messages</strong> (with a specific <code>target</code>) are delivered only to the named agent</li><li><strong>Broadcast messages</strong> (with no <code>target</code>) are delivered to all subscribers</li></ul>
+<p>The bus handles this routing automatically. When you call <code>activate_worker("greeter")</code>, it sends a <code>BusActivateWorkerMessage</code> targeted at <code>"greeter"</code> -- only that agent receives it.</p>
+<h2>The agent registry</h2>
+<p>The runner maintains a <code>WorkerRegistry</code> that tracks which agents are available. To get notified when an agent is ready, use the <code>@worker_ready</code> decorator (or call <code>watch_workers()</code> explicitly):</p>
+<pre><code>from pipecat.pipeline.base_worker import BaseWorker
+from pipecat.pipeline.worker_ready_decorator import worker_ready
+from pipecat.registry.types import WorkerReadyData
+
+class MainAgent(BaseWorker):
+    @worker_ready(name="greeter")
+    async def on_greeter_ready(self, data: WorkerReadyData) -&gt; None:
+        await self.activate_worker("greeter")</code></pre>
+<p>The framework automatically calls <code>watch_workers()</code> for each <code>@worker_ready</code> handler when the agent starts. If the watched agent is already registered, the handler fires immediately, so you don't need to worry about race conditions.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/fundamentals/agent-bus">https://docs.pipecat.ai/pipecat/fundamentals/agent-bus</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DTMFAggregator · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>DTMFAggregator</h1>
+<blockquote>Aggregates DTMF (phone keypad) input into meaningful sequences for LLM processing</blockquote>
+<h2>Overview</h2>
+<p><code>DTMFAggregator</code> processes incoming DTMF (Dual-Tone Multi-Frequency) frames from phone keypad input and aggregates them into complete sequences that can be understood by LLM services. It buffers individual digit presses and flushes them as transcription frames when a termination digit is pressed, a timeout occurs, or an interruption happens.</p>
+<p>This aggregator is essential for telephony applications where users interact via phone keypad buttons, converting raw DTMF input into structured text that LLMs can process alongside voice transcriptions.</p>
+<h2>Constructor</h2>
+<pre><code>aggregator = DTMFAggregator(
+    timeout=2.0,
+    termination_digit=KeypadEntry.POUND,
+    prefix="DTMF: "
+)</code></pre>
+<p>&lt;ParamField path="timeout" type="float" default="2.0"&gt;   Idle timeout in seconds before flushing the aggregated digits &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="termination_digit" type="KeypadEntry" default="KeypadEntry.POUND"&gt;   Digit that triggers immediate flush of the aggregation &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="prefix" type="str" default="DTMF: "&gt;   Prefix added to DTMF sequence in the output transcription &lt;/ParamField&gt;</p>
+<h2>Input Frames</h2>
+<p>&lt;ParamField path="InputDTMFFrame" type="Frame"&gt;   Contains a single keypad button press with a KeypadEntry value &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="EndFrame" type="Frame"&gt;   Flushes pending aggregation and stops the aggregation task &lt;/ParamField&gt;</p>
+<h2>Output Frames</h2>
+<p>&lt;ParamField path="TranscriptionFrame" type="Frame"&gt;   Contains the aggregated DTMF sequence as text with the configured prefix. The   frame is marked as <code>finalized=True</code> to ensure proper integration with   user-turn stop strategies. &lt;/ParamField&gt;</p>
+<p>All input frames are passed through downstream, including the original <code>InputDTMFFrame</code> instances.</p>
+<h2>Keypad Entries</h2>
+<p>The aggregator processes these standard phone keypad entries:</p>
+<div class="tablewrap"><table><thead><tr><th>KeypadEntry</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>ZERO</code> through <code>NINE</code></td><td><code>"0"</code> - <code>"9"</code></td><td>Numeric digits</td></tr><tr><td><code>STAR</code></td><td><code>"*"</code></td><td>Star/asterisk key</td></tr><tr><td><code>POUND</code></td><td><code>"#"</code></td><td>Pound/hash key</td></tr></tbody></table></div>
+<h2>Aggregation Behavior</h2>
+<p>The aggregator flushes (emits a TranscriptionFrame) when:</p>
+<ol><li><strong>Termination digit</strong>: The configured termination digit is pressed (default: <code>#</code>)</li><li><strong>Timeout</strong>: No new digits received within the timeout period (default: 2 seconds)</li><li><strong>Interruption</strong>: A <code>InterruptionFrame</code> is received</li><li><strong>Pipeline end</strong>: An <code>EndFrame</code> is received</li></ol>
+<h2>Usage Examples</h2>
+<h3>Basic Telephony Integration</h3>
+<pre><code>from pipecat.processors.aggregators.dtmf_aggregator import DTMFAggregator
+from pipecat.serializers.twilio import TwilioFrameSerializer
+
+# Create DTMF aggregator with default settings
+dtmf_aggregator = DTMFAggregator()
+
+# Set up Twilio serializer for phone integration
+serializer = TwilioFrameSerializer(
+    stream_sid=stream_sid,
+    call_sid=call_sid,
+    account_sid=os.getenv("TWILIO_ACCOUNT_SID"),
+    auth_token=os.getenv("TWILIO_AUTH_TOKEN")
+)
+
+# Create pipeline with DTMF processing
+pipeline = Pipeline([
+    transport.input(),      # Websocket input from Twilio
+    dtmf_aggregator,       # Process DTMF before STT
+    stt,                   # Speech-to-text service
+    context_aggregator.user(),
+    llm,                   # LLM processes both voice and DTMF
+    tts,                   # Text-to-speech
+    transport.output(),
+    context_aggregator.assistant(),
+])</code></pre>
+<h3>Custom Configuration for Menu Systems</h3>
+<pre><code># Configure for menu system with star termination
+menu_dtmf = DTMFAggregator(
+    timeout=5.0,                    # Longer timeout for menu selection
+    termination_digit=KeypadEntry.STAR,  # Use * to confirm selection
+    prefix="Menu selection: "       # Clear prefix for LLM
+)
+
+# Update system prompt to handle DTMF input
+messages = [
+    {
+        "role": "developer",
+        "content": """You are a phone menu assistant.
+
+When you receive input starting with "Menu selection:", this represents
+button presses on the phone keypad:
+- Single digits (1-9): Menu options
+- 0: Often "speak to operator"
+- *: Confirmation or "go back"
+- #: Usually "repeat menu"
+
+Respond appropriately to both voice and keypad input."""
+    }
+]</code></pre>
+<h2>Sequence Examples</h2>
+<div class="tablewrap"><table><thead><tr><th>User Input</th><th>Aggregation Trigger</th><th>Output TranscriptionFrame</th></tr></thead><tbody><tr><td><code>1</code>, <code>2</code>, <code>3</code>, <code>#</code></td><td>Termination digit</td><td><code>"DTMF: 123#"</code></td></tr><tr><td><code>*</code>, <code>0</code></td><td>2-second timeout</td><td><code>"DTMF: *0"</code></td></tr><tr><td><code>5</code>, interruption</td><td>InterruptionFrame</td><td><code>"DTMF: 5"</code></td></tr><tr><td><code>9</code>, <code>9</code>, EndFrame</td><td>Pipeline shutdown</td><td><code>"DTMF: 99"</code></td></tr></tbody></table></div>
+<h2>Frame Flow</h2>
+<pre><code>graph TD
+    A[Twilio WebSocket] --&gt; B[TwilioFrameSerializer]
+    B --&gt; C[DTMFAggregator]
+    C --&gt; D[STT Service]
+    C --&gt; E[TranscriptionFrame]
+    E --&gt; F[LLM Context Aggregator]
+    D --&gt; F
+    F --&gt; G[LLM Service]</code></pre>
+<h2>Error Handling</h2>
+<p>The aggregator gracefully handles:</p>
+<ul><li>Invalid DTMF digits (logged and ignored)</li><li>Pipeline interruptions (flushes pending sequences)</li><li>Rapid key presses (buffers efficiently)</li><li>Mixed voice and DTMF input (processes independently)</li></ul>
+<h2>Best Practices</h2>
+<ol><li><strong>System Prompt Design</strong>: Train your LLM to recognize and respond to DTMF prefixed input</li><li><strong>Timeout Configuration</strong>: Use shorter timeouts (1-2s) for rapid entry, longer (3-5s) for menu selection</li><li><strong>Termination Strategy</strong>: Use <code>#</code> for confirmation, <code>*</code> for cancel/back operations</li><li><strong>Pipeline Placement</strong>: Always place before the user context aggregator to ensure proper frame ordering</li></ol>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/dtmf-aggregator">https://docs.pipecat.ai/api-reference/server/utilities/dtmf-aggregator</a></p>
+</div></main></div></body></html>

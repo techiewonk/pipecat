@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inception LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Inception LLM</h1>
+<blockquote>InceptionLLMService serves Inception's Mercury-2 diffusion-based reasoning model via an OpenAI-compatible interface.</blockquote>
+<h2>Overview</h2>
+<p><code>InceptionLLMService</code> provides access to Inception's Mercury-2 diffusion-based reasoning model through an OpenAI-compatible interface. It inherits from <code>OpenAILLMService</code> and supports streaming responses, function calling, and context management with advanced reasoning capabilities.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Inception LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.inception.llm.html"&gt;     Pipecat's API methods for Inception integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-inception.py"&gt;     Complete example with function calling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Inception Labs" icon="microphone" href="https://inceptionlabs.ai/"&gt;     Access models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Inception services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[inception]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Inception Account Setup</h3>
+<p>Before using Inception LLM services, you need:</p>
+<ol><li><strong>Inception Account</strong>: Sign up at <a href="https://inceptionlabs.ai/">Inception Labs</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Selection</strong>: Access to Mercury-2, Inception's diffusion-based reasoning model</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>INCEPTION_API_KEY</code>: Your Inception API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Inception API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.inceptionlabs.ai/v1"&gt;   Base URL for Inception API endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="InceptionLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>InceptionLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<p>This service extends <code>OpenAILLMService.Settings</code> with Inception-specific parameters:</p>
+<p>&lt;ParamField path="model" type="str" default="mercury-2"&gt;   Model identifier to use. Defaults to "mercury-2", Inception's diffusion-based   reasoning model. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="reasoning_effort" type="Literal['instant', 'low', 'medium', 'high'] | None" default="None"&gt;   Controls how much reasoning the model applies. Options are "instant", "low",   "medium", or "high". When unset, the parameter is omitted and Inception's   server-side default applies. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="realtime" type="bool | None" default="None"&gt;   When True, reduces time to first diffusion block (TTFT) for faster initial   response times. &lt;/ParamField&gt;</p>
+<p>For additional settings inherited from OpenAI, see <a href="/api-reference/server/services/llm/openai#settings">OpenAI LLM Settings</a>.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.inception import InceptionLLMService
+
+llm = InceptionLLMService(
+    api_key=os.getenv("INCEPTION_API_KEY"),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.inception import InceptionLLMService
+
+llm = InceptionLLMService(
+    api_key=os.getenv("INCEPTION_API_KEY"),
+    settings=InceptionLLMService.Settings(
+        model="mercury-2",
+        reasoning_effort="instant",
+        realtime=True,
+        temperature=0.7,
+        max_tokens=2048,
+    ),
+)</code></pre>
+<h3>With Function Calling</h3>
+<pre><code>from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.services.inception import InceptionLLMService
+from pipecat.services.llm_service import FunctionCallParams
+
+# A direct function: schema is auto-derived from the signature and docstring
+async def get_weather(params: FunctionCallParams, location: str):
+    """Get the current weather.
+
+    Args:
+        location: The city and state, e.g. "San Francisco, CA".
+    """
+    await params.result_callback({"temperature": "75", "conditions": "sunny"})
+
+llm = InceptionLLMService(
+    api_key=os.getenv("INCEPTION_API_KEY"),
+    settings=InceptionLLMService.Settings(
+        reasoning_effort="low",
+    ),
+)
+
+context = LLMContext(tools=[get_weather])</code></pre>
+<h2>Notes</h2>
+<ul><li>Inception does not support the <code>"developer"</code> message role. Use <code>"system"</code> instead.</li><li>The Mercury-2 model uses a diffusion-based reasoning approach, which can be controlled via the <code>reasoning_effort</code> parameter.</li><li>Setting <code>realtime=True</code> optimizes for lower time-to-first-token at the potential cost of reasoning depth.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/inception">https://docs.pipecat.ai/api-reference/server/services/llm/inception</a></p>
+</div></main></div></body></html>

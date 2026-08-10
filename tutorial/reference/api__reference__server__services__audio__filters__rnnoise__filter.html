@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RNNoise Audio Filter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>RNNoise Audio Filter</h1>
+<blockquote>RNNoiseFilter suppresses background noise in real-time audio with the RNNoise recurrent neural network.</blockquote>
+<h2>Overview</h2>
+<p><code>RNNoiseFilter</code> is an audio processor that reduces background noise in real-time audio streams using RNNoise, a recurrent neural network for audio noise reduction. It inherits from <code>BaseAudioFilter</code> and processes audio frames via the <code>pyrnnoise</code> library.</p>
+<p>RNNoise is a free, open-source noise suppression solution that requires no API keys or external services.</p>
+<h2>Installation</h2>
+<p>The RNNoise filter requires additional dependencies:</p>
+<pre><code>uv add "pipecat-ai[rnnoise]"</code></pre>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="resampler_quality" type="str" default="&amp;#x22;QQ&amp;#x22;"&gt;   Quality of the internal resampler used when the transport sample rate differs   from 48kHz. One of <code>"VHQ"</code> (Very High Quality), <code>"HQ"</code> (High Quality), <code>"MQ"</code>   (Medium Quality), <code>"LQ"</code> (Low Quality), or <code>"QQ"</code> (Quick). Defaults to <code>"QQ"</code>   for lowest latency. &lt;/ParamField&gt;</p>
+<h2>Input Frames</h2>
+<p>&lt;ParamField path="FilterEnableFrame" type="Frame"&gt;   Specific control frame to toggle filtering on/off</p>
+<pre><code>  from pipecat.frames.frames import FilterEnableFrame
+
+  # Disable noise suppression
+  await worker.queue_frame(FilterEnableFrame(False))
+
+  # Re-enable noise suppression
+  await worker.queue_frame(FilterEnableFrame(True))</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter
+from pipecat.transports.services.daily import DailyTransport, DailyParams
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Respond bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_in_filter=RNNoiseFilter(),  # Enable RNNoise noise suppression
+        audio_out_enabled=True,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li>No API key or external service required (fully local processing)</li><li>RNNoise operates at 48kHz internally; automatic resampling is applied for other sample rates</li><li>Handles 16-bit PCM audio format</li><li>Can be dynamically enabled/disabled via <code>FilterEnableFrame</code></li><li>Buffers audio to match RNNoise's required frame length (480 samples)</li><li>When resampling is needed, uses SOXR (install with <code>uv add "pipecat-ai[soxr]"</code>)</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/audio-filters/rnnoise-filter">https://docs.pipecat.ai/api-reference/server/services/audio-filters/rnnoise-filter</a></p>
+</div></main></div></body></html>

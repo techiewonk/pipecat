@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L4 · FrameProcessor & custom processors — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 4 · Part I — Principles</div>
+      <h1>FrameProcessor & custom processors</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: beginner → intermediate</span></div>
+      <p class="lead">One base class powers the entire framework. Every service, transport, aggregator, and filter is a <code>FrameProcessor</code>. Learn its contract and you can read — and extend — anything.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="contract">The contract</h2>
+      <p>A processor implements one method and obeys two rules: call <code>super()</code> first, and <code>push_frame()</code> to forward. It does not <em>consume</em> frames — it passes them along, optionally emitting new ones.</p>
+      <div class="pcflow" data-dur="6"
+           data-stages="upstream|process_frame()|(inspect / transform)|push_frame()|downstream"
+           data-caption="A frame arrives from the previous processor|process_frame(frame, direction) runs|you react only to the frame types you care about|push_frame() sends it (or a new frame) onward|the next processor receives it in order">
+      </div>
+      <pre><code class="language-python">from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
+from pipecat.frames.frames import TranscriptionFrame
+
+class TranscriptionLogger(FrameProcessor):
+    async def process_frame(self, frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)     # 1. ALWAYS call super first
+        if isinstance(frame, TranscriptionFrame):          # 2. handle only what you care about
+            print(f"User said: {frame.text}")
+        await self.push_frame(frame, direction)            # 3. ALWAYS forward the frame</code></pre>
+      <div class="box errors">
+        <p class="title">⚠️ The #1 beginner bug</p>
+        <p>Forgetting <code>push_frame()</code> "swallows" frames and stalls the pipeline. Forgetting <code>super().process_frame()</code> breaks lifecycle handling. Every override needs both.</p>
+      </div>
+
+      <h2 id="direction">Direction & interruptions</h2>
+      <p><code>FrameDirection.DOWNSTREAM</code> is the normal flow (input → output); <code>UPSTREAM</code> carries things back toward the source (e.g. a processor asking the transport for a user image). Interruptions are propagated by the base class via <code>_start_interruption()</code> and an <code>InterruptionFrame</code> on the system lane — your processor usually just forwards them.</p>
+
+      <h2 id="toolbox">Don't reinvent — the built-in toolbox</h2>
+      <p>Before writing a processor, check whether one exists. These ship in <code>processors/</code>:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Class</th><th>Import (under <code>pipecat.processors</code>)</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><code>FrameFilter</code></td><td><code>filters.frame_filter</code></td><td>Pass only chosen frame types.</td></tr>
+          <tr><td><code>FunctionFilter</code></td><td><code>filters.function_filter</code></td><td>Keep/drop via your predicate.</td></tr>
+          <tr><td><code>NullFilter</code> / <code>IdentityFilter</code></td><td><code>filters.null_filter</code> / <code>filters.identity_filter</code></td><td>Drop everything / pass everything (a splice point).</td></tr>
+          <tr><td><code>WakeCheckFilter</code></td><td><code>filters.wake_check_filter</code></td><td>Block input until a wake phrase.</td></tr>
+          <tr><td><code>FrameLogger</code></td><td><code>logger</code></td><td>Log frames at a point (fastest debug tool).</td></tr>
+          <tr><td><code>StatelessTextTransformer</code></td><td><code>text_transformer</code></td><td>Rewrite text frames.</td></tr>
+          <tr><td><code>ProducerProcessor</code>/<code>ConsumerProcessor</code></td><td><code>producer_processor</code>/<code>consumer_processor</code></td><td>Move frames between branches/pipelines.</td></tr>
+          <tr><td><code>IdleFrameProcessor</code></td><td><code>idle_frame_processor</code></td><td>Run a callback when idle.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/frame_processor.py</code> — <code>FrameDirection</code> (57), <code>process_frame</code> (720), <code>push_frame</code> (807), <code>link</code> (577), <code>_start_interruption</code> (941). The toolbox lives in <code>processors/filters/*</code> and the top-level <code>processors/*.py</code>. Docs: <a href="https://docs.pipecat.ai/pipecat/learn/pipeline" target="_blank" rel="noopener">Pipeline & frame processing</a>.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Write a <code>Censor</code> processor that replaces a banned word in every <code>TranscriptionFrame</code> before pushing it. (2) Swap it for a <code>StatelessTextTransformer</code> doing the same — notice you didn't need a class. (3) Add a <code>FrameLogger</code> after <code>stt</code> and read the live stream.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What two calls must every <code>process_frame</code> override make?</summary><p><code>super().process_frame(frame, direction)</code> first, and <code>push_frame(frame, direction)</code> to forward.</p></details>
+      <details><summary>2. Do processors consume frames?</summary><p>No — they pass them along (optionally emitting new ones), which is what lets multiple processors use the same stream.</p></details>
+      <details><summary>3. You need to log frames without risk of breaking the flow — processor or something else?</summary><p>Prefer an <em>observer</em> (Lesson 23) which watches read-only; a <code>FrameLogger</code> processor also works but sits in the flow.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l05-pipeline-workers.html">Lesson 5 — Pipeline, workers & runner →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

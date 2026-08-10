@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errors · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Errors</h1>
+<blockquote>Error types thrown by the Pipecat JavaScript client: RTVIError and its subclasses, and how to catch and handle each.</blockquote>
+<h2>RTVIError Type</h2>
+<p>Base <code>PipecatClient</code> error type, extends <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error"><code>Error</code></a> and primarily introduces the <code>status</code> field. Most methods will try to throw an error of this type when something goes wrong. This is different from the RTVI error event and its corresponding <a href="./callbacks#param-on-error"><code>onError</code> callback</a>, which are used for communicating errors that are sent by the bot.</p>
+<p>&lt;ParamField path="status" type="number"&gt;   A unique identifier (or HTTP code if applicable) for the error. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="message" type="string"&gt;   A human-readable message describing the error. &lt;/ParamField&gt;</p>
+<h2>Pre-defined RTVIErrors</h2>
+<h3>ConnectionTimeoutError</h3>
+<p>Emitted when the bot does not enter a ready state within the specified timeout period during the <code>connect()</code> method call.</p>
+<h3>StartBotError</h3>
+<p>Emitted from <code>startBot()</code> or <code>startBotAndConnect()</code> when the endpoint responds with an error or the <code>fetch</code> itself fails. This may be due to the endpoint being unavailable, or the server failing to parse the provided data.</p>
+<p>&lt;ParamField path="error" type="string" required&gt;   All <code>StartBotError</code> instances will have an <code>error</code> field set to   <code>invalid-request-error</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="status" type="number"&gt;   HTTP status code returned by the endpoint, if applicable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="message" type="string"&gt;   Verbose error message returned by the endpoint, if provided. To take advantage   of this, the endpoint should return an error response with a JSON object with   an <code>info</code> field containing the error message. &lt;/ParamField&gt;</p>
+<h3>TransportStartError</h3>
+<p>Emitted when the Transport is not able to connect. You may need to check the connection parameters provided or returned from you endpoint.</p>
+<h3>BotNotReadyError</h3>
+<p>Emitted when the client attempts to perform an action or method that requires the bot to be in a ready state, but the bot is not ready. You must call <code>connect()</code> first and wait for the bot to be ready before performing such actions.</p>
+<h3>DeviceError</h3>
+<p>Emitted when there is an issue with acquiring or using a media device, such as a camera or microphone. This could be due to permissions issues, device unavailability, or other related problems.</p>
+<p>&lt;ParamField path="devices" type="array&lt;'cam' | 'mic' | 'speaker'&gt;" required&gt;   List of media devices, <code>'cam'</code>, <code>'mic'</code>, and/or <code>'speaker'</code>, that are   unavailable or could not be accessed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="type" type="string" required&gt;   The <code>type</code> field will indicate what type of device error occurred. Options include:</p>
+<ul><li><code>"in-use"</code>: A device is currently in use by another application and cannot be accessed. *windows only*</li><li><code>"permissions"</code>: The user has not granted permission to access the media device.</li><li><code>"undefined-mediadevices"</code>: <code>getUserMedia()</code> is not an available API on the current platform or browser.</li><li><code>"not-found"</code>: The specified media device could not be found.</li><li><code>"constraints"</code>: The media device could not be configured with the specified constraints.</li><li><code>"unknown"</code>: An unknown error occurred while accessing the media device.</li></ul>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="details" type="object"&gt;   Additional details about the device error, if available. &lt;/ParamField&gt;</p>
+<h3>UnsupportedFeatureError</h3>
+<p>Not all Transports are created equal, and some may not support certain features. This error is thrown when a feature is requested that the current Transport does not support.</p>
+<p>&lt;ParamField path="feature" type="string" required&gt;   This custom field will contain the name of the unsupported feature. &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/errors">https://docs.pipecat.ai/api-reference/client/js/errors</a></p>
+</div></main></div></body></html>

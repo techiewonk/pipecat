@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roark Call Analytics · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Roark Call Analytics</h1>
+<blockquote>RoarkObserver sends Pipecat call analytics to Roark: call lifecycle, transcripts, tool calls, and recordings from one observer.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="roarkhq" maintainerUrl="https://github.com/roarkhq" repo="https://github.com/roarkhq/sdk-roark-analytics-python-pipecat" /&gt;</p>
+<h2>Overview</h2>
+<p><code>RoarkObserver</code> is a <a href="https://roark.ai">Roark</a> analytics observer for Pipecat. Drop one observer into your pipeline and Roark captures the call lifecycle, transcripts, tool calls, and a stereo audio recording — no other code changes required.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/roarkhq/sdk-roark-analytics-python-pipecat"&gt;     Source code, examples, and issues for the Roark integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-roark/"&gt;     The <code>pipecat-roark</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Roark" icon="book" href="https://roark.ai"&gt;     Learn more about Roark call analytics   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Documentation" icon="book" href="https://docs.roark.ai/documentation/integrations/pipecat"&gt;     Roark's full setup guide for the Pipecat integration   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-roark</code></pre>
+<h2>Prerequisites</h2>
+<h3>Roark Account Setup</h3>
+<p>Before using the Roark observer, you need:</p>
+<ol><li><strong>Roark Account</strong>: Sign up at <a href="https://roark.ai">Roark</a></li><li><strong>API Key</strong>: Create one on the API keys page in your Roark project</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>ROARK_API_KEY</code>: Your Roark API key (e.g. <code>rk_live_...</code>). It can also be</li></ul>
+<p>  passed directly as the <code>api_key</code> argument to <code>RoarkObserver</code>.</p>
+<h2>Configuration</h2>
+<p><code>RoarkObserver</code> is configured through its constructor:</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Roark API key (e.g. <code>rk_live_...</code>). Sent as a bearer token to the Roark API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_id" type="str" required&gt;   Customer-stable agent identifier. Roark lazy-registers the agent the first   time it sees a given <code>agent_id</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_name" type="str" default="None"&gt;   Display name for the agent on the Roark dashboard. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_prompt" type="str" default="None"&gt;   System prompt for the agent. Persisted as the agent's prompt revision. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_buffer_processor" type="AudioBufferProcessor" default="None"&gt;   Bring-your-own <code>AudioBufferProcessor</code> to control sample rate, channels, or   buffer size. If omitted, the observer creates a default (stereo, \~256 KB   chunks; sample rate adopted from the pipeline's <code>StartFrame</code>) accessible via   <code>observer.audio_processor</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="pipecat_call_id" type="str" default="random UUID"&gt;   Stable call identifier carried on Roark records as <code>pipecatCallId</code>. Pass the   same value to <code>PipelineTask(conversation_id=...)</code> when OpenTelemetry tracing   is enabled to correlate Roark calls with traces. &lt;/ParamField&gt;</p>
+<h2>Setup</h2>
+<p>Drop <code>RoarkObserver</code> into your pipeline's <code>observers=[...]</code> list. Splice the auto-created <code>roark.audio_processor</code> <strong>after <code>transport.output()</code></strong> so it sees the bot's audio post-TTS:</p>
+<pre><code>from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat_roark import RoarkObserver
+
+roark = RoarkObserver(
+    api_key="rk_live_...",
+    agent_id="support-bot-v3",
+    agent_name="Support Bot v3",
+    agent_prompt=SYSTEM_PROMPT,
+)
+
+pipeline = Pipeline([
+    transport.input(), stt, context_aggregator.user(), llm, tts,
+    transport.output(),
+    roark.audio_processor,          # after transport.output() — L=user, R=bot
+    context_aggregator.assistant(),
+])
+
+task = PipelineTask(pipeline, params=PipelineParams(observers=[roark]))</code></pre>
+<p>That's it — transcripts, tool calls, and the stereo recording flow to Roark automatically. The observer never raises into the pipeline; failures are logged and swallowed so your call keeps running even if Roark is unreachable.</p>
+<p>&lt;Note&gt;   <code>RoarkObserver</code> is runtime-agnostic — the same observer wiring works whether   your Pipecat agent runs self-hosted or is deployed to Pipecat Cloud. See the   <a href="https://github.com/roarkhq/sdk-roark-analytics-python-pipecat">source   repository</a> for   advanced topics such as bringing your own <code>AudioBufferProcessor</code>, handling   WebRTC disconnects with <code>aflush()</code>, and correlating with OpenTelemetry   tracing. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.108 (compatible with <code>&gt;= 0.0.40, &lt; 1</code>) and Python 3.10+. Check the <a href="https://github.com/roarkhq/sdk-roark-analytics-python-pipecat">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/analytics/roark">https://docs.pipecat.ai/api-reference/server/services/analytics/roark</a></p>
+</div></main></div></body></html>

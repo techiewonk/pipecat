@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenAI Realtime WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>OpenAI Realtime WebRTC Transport</h1>
+<blockquote>OpenAIRealTimeWebRTCTransport for the JavaScript SDK: connect directly to the OpenAI Realtime API over WebRTC.</blockquote>
+<h2>Overview</h2>
+<p>The <code>OpenAIRealTimeWebRTCTransport</code> is a fully functional <a href="/api-reference/client/js/transports/transport">Pipecat <code>Transport</code></a>. It provides a framework for implementing real-time communication directly with the <a href="https://platform.openai.com/docs/guides/realtime-webrtc">OpenAI Realtime API using WebRTC</a> voice-to-voice service. It handles media device management, audio/video streams, and state management for the connection.</p>
+<p>&lt;Note&gt;   Transports of this type are designed primarily for development and testing   purposes. For production applications, you will need to build a server   component with a server-friendly transport, like the   <a href="./daily">DailyTransport</a>, to securely handle API keys. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import { OpenAIRealTimeWebRTCTransport, OpenAIServiceOptions } from '@pipecat-ai/openai-realtime-webrtc-transport';
+import { PipecatClient } from '@pipecat-ai/client-js';
+
+const options: OpenAIServiceOptions = {
+  api_key: 'YOUR_API_KEY',
+  settings: {
+    instructions: 'You are a confused jellyfish.',
+  },
+  initial_messages: [{ role: "user", content: "Blub blub!" }],
+};
+
+let pcClient = new PipecatClient({
+  transport: new OpenAIRealTimeWebRTCTransport (options),
+  ...
+});
+pcClient.connect();</code></pre>
+<h2>API Reference</h2>
+<h3>Constructor Options</h3>
+<p>Below is the transport's type definition for the OpenAI Session configuration you need to pass in to the <code>create()</code> method. See the <a href="https://platform.openai.com/docs/api-reference/realtime-client-events/session/update">OpenAI Realtime API documentation</a> for more details on each of the options and their defaults.</p>
+<pre><code>export type OpenAIFunctionTool = {
+  type: "function";
+  name: string;
+  description: string;
+  parameters: JSONSchema;
+};
+
+export type OpenAIServerVad = {
+  type: "server_vad";
+  create_response?: boolean;
+  interrupt_response?: boolean;
+  prefix_padding_ms?: number;
+  silence_duration_ms?: number;
+  threshold?: number;
+};
+
+export type OpenAISemanticVAD = {
+  type: "semantic_vad";
+  eagerness?: "low" | "medium" | "high" | "auto";
+  create_response?: boolean; // defaults to true
+  interrupt_response?: boolean; // defaults to true
+};
+
+export type OpenAISessionConfig = Partial&lt;{
+  modalities?: string;
+  instructions?: string;
+  voice?:
+    | "alloy"
+    | "ash"
+    | "ballad"
+    | "coral"
+    | "echo"
+    | "sage"
+    | "shimmer"
+    | "verse";
+  input_audio_noise_reduction?: {
+    type: "near_field" | "far_field";
+  } | null; // defaults to null/off
+  input_audio_transcription?: {
+    model: "whisper-1" | "gpt-4o-transcribe" | "gpt-4o-mini-transcribe";
+    language?: string;
+    prompt?: string[] | string; // gpt-4o models take a string
+  } | null; // we default this to gpt-4o-transcribe
+  turn_detection?: OpenAIServerVad | OpenAISemanticVAD | null; // defaults to server_vad
+  temperature?: number;
+  max_tokens?: number | "inf";
+  tools?: Array&lt;OpenAIFunctionTool&gt;;
+}&gt;;
+
+export interface OpenAIServiceOptions {
+  api_key: string;
+  model?: string;
+  initial_messages?: LLMContextMessage[];
+  settings?: OpenAISessionConfig;
+}</code></pre>
+<h3>TransportConnectionParams</h3>
+<p>The <code>OpenAIRealTimeWebRTCTransport</code> does not take connection parameters. It connects directly to the OpenAI Realtime API using the API key provided as part of the initial configuration.</p>
+<h3>Events</h3>
+<p>The transport implements the various <a href="/api-reference/client/js/callbacks"><code>PipecatClient</code> event handlers</a>. Check out the docs or samples for more info.</p>
+<h2>More Information</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-client-web-transports/tree/main/examples/directToLLMTransports"&gt;     OpenAI Realtime Basic Demo   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-web-transports/tree/main/transports/openai-realtime-webrtc-transport"&gt;     <code>OpenAIRealTimeWebRTCTransport</code>   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card horizontal title="Package" icon="browser" href="https://www.npmjs.com/package/@pipecat-ai/openai-realtime-webrtc-transport"&gt;   <code>@pipecat-ai/openai-realtime-webrtc-transport</code> &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/transports/openai-webrtc">https://docs.pipecat.ai/api-reference/client/js/transports/openai-webrtc</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Small WebRTC Transport</h1>
+<blockquote>The Small WebRTC transport for the Android SDK: direct peer-to-peer WebRTC between Kotlin clients and a Pipecat bot.</blockquote>
+<p>The Small WebRTC transport enables real-time audio communication with a Pipecat bot over a direct WebRTC connection, with no third-party account required.</p>
+<h2>Installation</h2>
+<p>Add the transport dependency to your <code>app/build.gradle.kts</code>:</p>
+<pre><code>dependencies {
+    implementation("ai.pipecat:small-webrtc-transport:1.2.0")
+}</code></pre>
+<p>Add the microphone permission to <code>AndroidManifest.xml</code>:</p>
+<pre><code>&lt;uses-permission android:name="android.permission.RECORD_AUDIO" /&gt;</code></pre>
+<h2>Usage</h2>
+<pre><code>import ai.pipecat.client.PipecatClientOptions
+import ai.pipecat.client.PipecatEventCallbacks
+import ai.pipecat.client.small_webrtc_transport.PipecatClientSmallWebRTC
+import ai.pipecat.client.small_webrtc_transport.SmallWebRTCTransport
+import ai.pipecat.client.small_webrtc_transport.SmallWebRTCTransportConnectParams
+import ai.pipecat.client.types.APIRequest
+import ai.pipecat.client.types.BotReadyData
+import ai.pipecat.client.types.Value
+
+val callbacks = object : PipecatEventCallbacks() {
+    override fun onBackendError(message: String) {
+        Log.e(TAG, "Backend error: $message")
+    }
+
+    override fun onBotReady(data: BotReadyData) {
+        Log.d(TAG, "Bot is ready")
+    }
+}
+
+val options = PipecatClientOptions(callbacks = callbacks, enableMic = true)
+val client = PipecatClientSmallWebRTC(SmallWebRTCTransport(context), options)
+
+// Connect via your server's /start endpoint (recommended)
+client.startBotAndConnect(
+    APIRequest(
+        endpoint = "https://your-server.com/start",
+        // Pipecat Cloud and the Pipecat development runner use these fields
+        // to decide how to run the bot; unknown fields are ignored
+        requestData = Value.Object(
+            "transport" to Value.Str("webrtc"),
+            "enableDefaultIceServers" to Value.Bool(true),
+        )
+    )
+).withCallback { result -&gt;
+    result.errorOrNull?.let { Log.e(TAG, "Connection failed: $it") }
+}
+
+// Or connect with coroutines
+// client.startBotAndConnect(...).await()</code></pre>
+<p>To connect directly to a WebRTC offer endpoint instead (bypassing <code>/start</code>), pass <code>SmallWebRTCTransportConnectParams</code> to <code>connect()</code>:</p>
+<pre><code>client.connect(
+    SmallWebRTCTransportConnectParams(
+        webrtcRequestParams = APIRequest(
+            endpoint = "https://your-server.com/api/offer",
+            requestData = Value.Object()
+        )
+    )
+)</code></pre>
+<h2>Configuration</h2>
+<h3>IceConfig</h3>
+<p>Pass custom ICE servers for TURN/STUN support:</p>
+<pre><code>val iceConfig = IceConfig(
+    iceServers = listOf(
+        IceServer(
+            urls = listOf("turn:your-turn-server.com:3478"),
+            username = "user",
+            credential = "pass"
+        )
+    )
+)
+
+val transport = SmallWebRTCTransport(context, iceConfig = iceConfig)</code></pre>
+<h3>Audio devices</h3>
+<p>The transport exposes static constants for audio routing:</p>
+<pre><code>// Route audio to speakerphone (default) or earpiece
+client.updateMic(SmallWebRTCTransport.AudioDevices.Speakerphone.id)
+client.updateMic(SmallWebRTCTransport.AudioDevices.Earpiece.id)</code></pre>
+<h3>Camera selection</h3>
+<pre><code>// Switch between front and rear cameras
+client.updateCam(SmallWebRTCTransport.Cameras.Front.id)
+client.updateCam(SmallWebRTCTransport.Cameras.Rear.id)</code></pre>
+<h2>Resources</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/video-transform/client/android"&gt;     Demo App   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-android-transports/"&gt;     Client Transports   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card title="Pipecat Android Client Reference" icon="book-open" href="https://docs-android.rtvi.ai/"&gt;   Complete API documentation for the Pipecat Android client. &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/android/transports/small-webrtc">https://docs.pipecat.ai/api-reference/client/android/transports/small-webrtc</a></p>
+</div></main></div></body></html>

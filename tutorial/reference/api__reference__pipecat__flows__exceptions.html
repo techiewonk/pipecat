@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exceptions · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Exceptions</h1>
+<blockquote>The Pipecat Flows exception hierarchy: FlowError and subclasses raised during flow execution, and how to handle each.</blockquote>
+<h2>Overview</h2>
+<p>Pipecat Flows defines a hierarchy of exceptions for handling errors during flow execution. All exceptions inherit from <code>FlowError</code>, making it possible to catch all flow-related errors with a single handler.</p>
+<pre><code>from pipecat.flows import (
+    FlowError,
+    FlowInitializationError,
+    FlowTransitionError,
+    InvalidFunctionError,
+    ActionError,
+)</code></pre>
+<h2>Exception Hierarchy</h2>
+<pre><code>FlowError
+├── FlowInitializationError
+├── FlowTransitionError
+├── InvalidFunctionError
+└── ActionError</code></pre>
+<h2>FlowError</h2>
+<pre><code>class FlowError(Exception)</code></pre>
+<p>Base exception for all flow-related errors. Use this for generic flow errors or as a catch-all for any flow exception.</p>
+<pre><code>try:
+    await flow_manager.initialize(initial_node)
+except FlowError as e:
+    logger.error(f"Flow error: {e}")</code></pre>
+<h2>FlowInitializationError</h2>
+<pre><code>class FlowInitializationError(FlowError)</code></pre>
+<p>Raised when flow manager initialization fails. Common causes include invalid configuration, missing dependencies, or calling <code>initialize()</code> with an invalid node config.</p>
+<p><strong>Raised by:</strong> <code>FlowManager.initialize()</code></p>
+<h2>FlowTransitionError</h2>
+<pre><code>class FlowTransitionError(FlowError)</code></pre>
+<p>Raised when a node transition fails. This typically occurs when attempting to transition before the flow manager is initialized, or when a target node configuration is invalid.</p>
+<p><strong>Raised by:</strong> <code>FlowManager.set_node_from_config()</code>, internal node transition logic</p>
+<h2>InvalidFunctionError</h2>
+<pre><code>class InvalidFunctionError(FlowError)</code></pre>
+<p>Raised when a function cannot be registered or executed. Common causes include functions not found in the main module, invalid function signatures, direct functions that don't return a tuple, or missing docstrings on direct functions.</p>
+<p><strong>Raised by:</strong> Function registration, <code>FlowsDirectFunctionWrapper.validate_function()</code></p>
+<h2>ActionError</h2>
+<pre><code>class ActionError(FlowError)</code></pre>
+<p>Raised when an action execution fails. This includes both built-in actions (<code>tts_say</code>, <code>end_conversation</code>, <code>function</code>) and custom registered actions. Common causes include missing required fields (e.g., <code>text</code> for <code>tts_say</code>), unregistered action types, or handler execution errors.</p>
+<p><strong>Raised by:</strong> <code>ActionManager.execute_actions()</code>, action handler registration</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-flows/exceptions">https://docs.pipecat.ai/api-reference/pipecat-flows/exceptions</a></p>
+</div></main></div></body></html>

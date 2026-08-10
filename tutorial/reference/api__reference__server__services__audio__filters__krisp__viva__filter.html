@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krisp VIVA Audio Filter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Krisp VIVA Audio Filter</h1>
+<blockquote>KrispVivaFilter isolates the user's voice in real-time audio using the Krisp VIVA model in Pipecat pipelines.</blockquote>
+<h2>Overview</h2>
+<p><code>KrispVivaFilter</code> is an audio processor that isolates the user's voice in real-time audio streams using Krisp VIVA SDK. It inherits from <code>BaseAudioFilter</code> and processes audio frames to improve audio quality by filtering out background noise and other voices using Krisp's voice isolation algorithms.</p>
+<p>Optionally supports TTS detection to delay voice isolation until bot speech playback has stopped, preventing suppression artifacts on subsequent human speech. Enable this feature by providing <code>tts_model_path</code> or setting the <code>KRISP_VIVA_TTS_MODEL_PATH</code> environment variable.</p>
+<p>To use Krisp, you need a Krisp SDK license. Get started at <a href="https://krisp.ai/developers/">Krisp.ai</a>.</p>
+<h2>Installation</h2>
+<p>See the <a href="/pipecat/features/krisp-viva">Krisp guide</a> to learn how to install the Krisp VIVA SDK.</p>
+<h2>Environment Variables</h2>
+<p>You need to provide the path to the Krisp noise cancellation model file (.kef extension). This can either be done by setting the <code>KRISP_VIVA_FILTER_MODEL_PATH</code> environment variable or by setting the <code>model_path</code> in the constructor.</p>
+<p>For SDK v1.6.1+, you also need to provide a Krisp API key via the <code>api_key</code> constructor parameter or the <code>KRISP_VIVA_API_KEY</code> environment variable.</p>
+<p>Optionally, provide a TTS detection model path via <code>KRISP_VIVA_TTS_MODEL_PATH</code> or the <code>tts_model_path</code> constructor parameter to enable delayed voice isolation.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="model_path" type="str" default="None"&gt;   Path to the Krisp NC model file (.kef extension).</p>
+<p>  You can set the <code>model_path</code> directly. Alternatively, you can set the <code>KRISP_VIVA_FILTER_MODEL_PATH</code> environment variable to the model file path. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="noise_suppression_level" type="int" default="100"&gt;   Voice isolation level for the filter &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Krisp SDK API key for licensing (required for SDK v1.6.1+). If empty, falls   back to the <code>KRISP_VIVA_API_KEY</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tts_model_path" type="str" default="None"&gt;   Path to the Krisp TTS detection model file (.kef extension). If <code>None</code>, uses <code>KRISP_VIVA_TTS_MODEL_PATH</code> environment variable. When not set, TTS detection is disabled and NC starts immediately. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tts_threshold" type="float" default="0.5"&gt;   Probability threshold (0–1) above which a frame is classified as containing TTS. Only used when <code>tts_model_path</code> is set. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tts_detection_timeout" type="float" default="3.0"&gt;   Seconds to wait for TTS before starting NC. If no TTS is detected within this window the NC filter activates immediately. Only used when <code>tts_model_path</code> is set. &lt;/ParamField&gt;</p>
+<h2>Supported Sample Rates</h2>
+<p>The filter supports the following sample rates:</p>
+<ul><li>8000 Hz</li><li>16000 Hz</li><li>24000 Hz</li><li>32000 Hz</li><li>44100 Hz</li><li>48000 Hz</li></ul>
+<h2>Notes</h2>
+<p>When TTS detection is enabled (<code>tts_model_path</code> is set), the filter passes audio through unmodified until bot speech clears or the timeout expires. This prevents the noise cancellation filter from suppressing real human speech that immediately follows bot TTS playback. Once TTS is no longer detected (or the timeout elapses), noise cancellation activates for the remainder of the session.</p>
+<h2>Input Frames</h2>
+<p>&lt;ParamField path="FilterEnableFrame" type="Frame"&gt;   Specific control frame to toggle filtering on/off</p>
+<pre><code>  from pipecat.frames.frames import FilterEnableFrame
+
+  # Disable voice isolation
+  await worker.queue_frame(FilterEnableFrame(False))
+
+  # Re-enable voice isolation
+  await worker.queue_frame(FilterEnableFrame(True))</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
+from pipecat.transports.daily.transport import DailyParams, DailyTransport
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Respond bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_in_filter=KrispVivaFilter(), # Enable Krisp voice isolation
+        audio_out_enabled=True,
+    ),
+)</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/audio-filters/krisp-viva-filter">https://docs.pipecat.ai/api-reference/server/services/audio-filters/krisp-viva-filter</a></p>
+</div></main></div></body></html>

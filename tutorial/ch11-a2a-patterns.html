@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 11 — Multi-agent A2A · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 11 · Part C — Production &amp; A2A</div>
+<h1>Multi-agent A2A patterns</h1>
+<div class="meta"><span class="pill">⏱ 2–3 h</span><span class="pill grey">Level: advanced</span><span class="pill">Capstone prep</span></div>
+<p class="lead">Everything so far was one agent. Pipecat is also a multi-agent system: one <code>WorkerRunner</code> coordinates many agents talking over a shared <strong>bus</strong>. A normal bot is just the one-agent case — so every app is already A2A-ready.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">Agents on a bus</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>A <strong>worker</strong> is a unit of work on a shared message bus. The <strong>main</strong> worker owns the transport (STT/TTS) and bridges audio to the bus; specialist workers (each an <code>LLMWorker</code> with its own LLM + context) sit on the bus. The six patterns below are all built from this.</p></div>
+<pre class="diagram">                    ┌──────────── shared bus ────────────┐
+ [main PipelineWorker]        [LLMWorker: greeter]   [LLMWorker: support]
+ STT/TTS + transport          (own LLM + context)    (own LLM + context)
+ bridges audio to bus ── activate/deactivate = "who's talking now"</pre>
+<p>Docs: <a href="reference/pipecat__learn__agent__handoff.html" target="_blank" rel="noopener">Agent Handoff</a>, <a href="reference/pipecat__learn__job__coordination.html" target="_blank" rel="noopener">Job Coordination</a>, <a href="reference/pipecat__learn__distributed__agents.html" target="_blank" rel="noopener">Distributed Agents</a>, <a href="reference/pipecat__learn__proxy__agents.html" target="_blank" rel="noopener">Proxy Agents</a>, <a href="reference/pipecat__learn__ui__worker.html" target="_blank" rel="noopener">UI Worker</a>, <a href="reference/pipecat__fundamentals__agent__bus.html" target="_blank" rel="noopener">The Worker Bus</a>.</p>
+
+<h2 id="handoff">Pattern 1 — Handoff</h2>
+<p>Several LLM agents swap "who's talking" on one audio pipeline (greeter → support).</p>
+<pre><code class="language-python">class AcmeLLMTask(LLMWorker):
+    @tool                                              # a tool exposed to THIS agent's LLM
+    async def transfer_to_agent(self, params, agent: str, reason: str):
+        await self.activate_worker(agent,              # hand control to another agent…
+            args=LLMWorkerActivationArgs(...),
+            deactivate_self=True)                       # …and step aside
+
+# in run_bot:
+runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+main = PipelineWorker(pipeline, bus=runner.bus)        # main bridges transport <-> bus
+await runner.add_workers(build_greeter(), build_support(), main)   # many agents, one runner
+await runner.run()</code></pre>
+<div class="box py"><p class="title">🐍 Python note — handoff is activation, not a call</p>
+<p>Agents don't call each other like functions. The greeter <em>activates</em> support and <em>deactivates</em> itself, flipping which agent owns the shared audio.</p></div>
+
+<h2 id="fanout">Pattern 2 — Parallel fan-out (job coordination)</h2>
+<p>One agent dispatches a job to several peers at once and synthesizes the results.</p>
+<pre><code class="language-python">async def debate(params, topic: str):
+    async with params.pipeline_worker.job_group(       # dispatch to several peers at once
+        DebateWorker("advocate"), DebateWorker("critic"), DebateWorker("analyst"),
+    ) as group:
+        results = await group.run(topic)               # wait for all three
+    # main agent then synthesizes `results` into one spoken answer</code></pre>
+<div class="box py"><p class="title">🐍 Python note — <code>async with … as group</code></p>
+<p>An async context manager sets up the job group and guarantees cleanup; <code>await group.run(...)</code> gathers every peer's result before continuing.</p></div>
+
+<h2 id="rest">Patterns 3–6 — sidecar, distributed, proxy, UI</h2>
+<ul>
+<li><strong>Sidecar:</strong> the main pipeline delegates to a long-lived peer via <code>job(...)</code> — a codebase agent (<code>code-assistant/</code>) or a hardware controller (<code>sensor-controller/</code>).</li>
+<li><strong>Distributed:</strong> the same handoff across processes/machines over a network bus — <code>redis-handoff/</code> and <code>pgmq-handoff/</code>. Only <code>bus=</code> changes.</li>
+<li><strong>Proxy:</strong> two WebSocket proxies bridge a local transport to a remote LLM worker, no shared bus (<code>remote-proxy-assistant/</code>).</li>
+<li><strong>UI worker:</strong> an agent bridges the bus to a web client (snapshot, deixis "explain this", form-fill, async job progress) — the <code>ui-worker/</code> examples.</li>
+</ul>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">cd examples/multi-worker && cp env.example .env
+uv run python local-handoff/local-handoff-two-agents.py    # ask something only "support" handles
+uv run python parallel-debate/parallel-debate.py           # give a topic, hear 3 views synthesized</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Add a third agent ("billing") to the handoff with a <code>transfer_to_agent</code> path. Add a fourth <code>DebateWorker("historian")</code>. Point the handoff at a <code>RedisBus</code> to split agents across processes.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>Handoff silent → main worker isn't bridging to <code>runner.bus</code>, or no agent is active on connect. Job group hangs → a peer never returns. Redis/PGMQ fails → the bus service isn't running or its URL is unset.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>1. What makes an app multi-agent?</summary><p>More than one worker on the shared bus, coordinated by one <code>WorkerRunner</code>.</p></details>
+<details><summary>2. How does control move in handoff?</summary><p>By activating another worker and deactivating the current one — not a function call.</p></details>
+<details><summary>3. What does <code>job_group</code> add?</summary><p>Parallel dispatch to multiple peers and collection of all results before answering.</p></details>
+
+<h2 id="files">Example files</h2>
+<h3>Local (single process, in-memory bus)</h3>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>local-handoff-two-agents.py</code></td><td>Two LLM workers with a main worker bridging transport to the bus</td></tr><tr><td><code>local-handoff-two-agents-tts.py</code></td><td>Two LLM workers with per-worker TTS voices</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>parallel-debate.py</code></td><td>Parallel debate using job groups</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>code-assistant.py</code></td><td>Voice code assistant powered by Claude Agent SDK</td></tr><tr><td><code>code_worker.py</code></td><td>Code worker that explores a codebase using Claude Agent SDK</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>sensor.py</code></td><td>Temperature sensor processors for the sensor-controller example</td></tr><tr><td><code>sensor-controller.py</code></td><td>Voice agent + sensor-controller worker, both as plain PipelineTasks</td></tr></tbody></table></div>
+<h3>Distributed (separate processes, network bus)</h3>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>llm.py</code></td><td>LLM worker — run on Machine B (or locally alongside ``main.py``)</td></tr><tr><td><code>main.py</code></td><td>Main transport worker — run on Machine A</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>llm.py</code></td><td>LLM worker — run on Machine B (or locally alongside ``main.py``)</td></tr><tr><td><code>main.py</code></td><td>Main transport worker — run on Machine A</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>assistant.py</code></td><td>Remote assistant LLM server</td></tr><tr><td><code>main.py</code></td><td>Main transport worker with a WebSocket proxy to a remote LLM server</td></tr></tbody></table></div>
+<h3>UI workers (bus ↔ web client)</h3>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Hello UIWorker — the smallest possible accessibility-snapshot demo</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Shopping list — every voice turn drives the UI; speech is incidental</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Form-fill — a voice-guided, accessible form walkthrough</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Deixis — the UIWorker grounds in what the user just selected</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Async tasks — the UIWorker fans out long-running work and streams progress</td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>bot.py</code></td><td>Document review — the synthesis demo</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

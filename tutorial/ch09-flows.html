@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 9 — Flows · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 9 · Part B — Modalities &amp; knowledge</div>
+<h1>Flows: structured, reliable conversations</h1>
+<div class="meta"><span class="pill">⏱ 60 min</span><span class="pill grey">Level: intermediate → advanced</span></div>
+<p class="lead">For step-by-step tasks — intake, ordering, reservations, triage — a single free-form prompt is unreliable. Flows models the conversation as a graph of nodes, each with its own instructions and allowed tools.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">Conversation as a graph</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>Each <strong>node</strong> has its own <code>role</code>/<code>task</code> messages and a scoped set of tools; a <strong>FlowManager</strong> moves between nodes as the user progresses. This keeps the bot on-task and dramatically more accurate than one giant prompt.</p></div>
+<p>Docs: <a href="reference/pipecat__flows.html" target="_blank" rel="noopener">Pipecat Flows</a>.</p>
+
+<h2 id="node">A node and a transition</h2>
+<pre><code class="language-python">def create_initial_node() -> NodeConfig:
+    return NodeConfig(
+        name="initial",
+        role_messages=[{"role": "system", "content": "You are a friendly assistant."}],
+        task_messages=[{"role": "system", "content": "Ask the user their favorite color."}],
+        functions=[record_favorite_color])          # only this tool is allowed here
+
+async def record_favorite_color(flow_manager, color: str) -> tuple[str, NodeConfig]:
+    return "Thanks!", create_end_node()             # RETURN the next node to advance</code></pre>
+<div class="box py"><p class="title">🐍 Python note — return <code>(result, next_node)</code></p>
+<p>A flow function returns both what to say and <em>which node comes next</em>. That return value is how the graph advances — the core idea of Flows.</p></div>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python flows/hello_world.py       # answer the color question, watch it transition
+uv run python flows/food_ordering.py     # a real multi-step order</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Add a node to <code>hello_world.py</code> that asks a second question before ending. Explore <code>patient_intake.py</code>, <code>insurance_quote.py</code>, and <code>warm_transfer.py</code> (a bridge to Chapter 11).</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>Conversation stuck → a flow function didn't return a next node. Bot goes off-script → tools not scoped to the node (<code>functions=[...]</code>).</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>What does a flow function return, and why?</summary><p>A tuple of the spoken result and the next <code>NodeConfig</code>, so the graph advances.</p></details>
+
+<h2 id="files">Example files</h2><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>food_ordering.py</code></td><td>A food ordering flow example for Pipecat Flows</td></tr><tr><td><code>food_ordering_advanced_functionschema.py</code></td><td>An "advanced" food ordering flow example using FlowsFunctionSchema</td></tr><tr><td><code>hello_world.py</code></td><td>A 'Hello-World' introduction to Pipecat Flows</td></tr><tr><td><code>insurance_quote.py</code></td><td>Insurance Quote Example using Pipecat Flows</td></tr><tr><td><code>llm_switching.py</code></td><td>A LLM switching flow example for Pipecat Flows</td></tr><tr><td><code>multi_worker_handoff.py</code></td><td>Multi-worker handoff: a free-form LLM router and a structured Flows worker</td></tr><tr><td><code>patient_intake.py</code></td><td>A patient intake flow example for Pipecat Flows</td></tr><tr><td><code>podcast_interview.py</code></td><td>Pipecat Podcast Interview Example</td></tr><tr><td><code>restaurant_reservation.py</code></td><td>A restaurant reservation flow example for Pipecat Flows</td></tr><tr><td><code>utils.py</code></td><td>Utility functions for Pipecat Flows examples</td></tr><tr><td><code>warm_transfer.py</code></td><td>'Warm Handoff' Example using Pipecat Flows</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cerebras LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Cerebras LLM</h1>
+<blockquote>CerebrasLLMService accesses Cerebras language models for chat completion via an OpenAI-compatible interface with streaming.</blockquote>
+<h2>Overview</h2>
+<p><code>CerebrasLLMService</code> provides access to Cerebras's language models through an OpenAI-compatible interface. It inherits from <code>OpenAILLMService</code> and supports streaming responses, function calling, and context management with ultra-fast inference speeds.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Cerebras LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.cerebras.llm.html"&gt;     Pipecat's API methods for Cerebras integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-cerebras.py"&gt;     Complete example with function calling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cerebras Documentation" icon="book" href="https://inference-docs.cerebras.ai/api-reference/chat-completions"&gt;     Official Cerebras inference API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cerebras Platform" icon="microphone" href="https://cloud.cerebras.ai/"&gt;     Access models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Cerebras services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[cerebras]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Cerebras Account Setup</h3>
+<p>Before using Cerebras LLM services, you need:</p>
+<ol><li><strong>Cerebras Account</strong>: Sign up at <a href="https://cloud.cerebras.ai/">Cerebras Cloud</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Selection</strong>: Choose from available Cerebras models with ultra-fast inference</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>CEREBRAS_API_KEY</code>: Your Cerebras API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Cerebras API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.cerebras.ai/v1"&gt;   Base URL for Cerebras API endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   Model identifier to use.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=CerebrasLLMService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="CerebrasLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>CerebrasLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<p>This service uses the same settings as <code>OpenAILLMService</code>. See <a href="/api-reference/server/services/llm/openai#settings">OpenAI LLM Settings</a> for the full parameter reference.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.cerebras import CerebrasLLMService
+
+llm = CerebrasLLMService(
+    api_key=os.getenv("CEREBRAS_API_KEY"),
+    model="gpt-oss-120b",
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.cerebras import CerebrasLLMService
+
+llm = CerebrasLLMService(
+    api_key=os.getenv("CEREBRAS_API_KEY"),
+    settings=CerebrasLLMService.Settings(
+        model="gpt-oss-120b",
+        temperature=0.7,
+        top_p=0.9,
+        max_completion_tokens=1024,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li>Cerebras supports a subset of OpenAI parameters. Advanced parameters like <code>frequency_penalty</code> and <code>presence_penalty</code> are not passed to the API.</li><li>Cerebras is known for ultra-fast inference speeds on supported models.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/cerebras">https://docs.pipecat.ai/api-reference/server/services/llm/cerebras</a></p>
+</div></main></div></body></html>

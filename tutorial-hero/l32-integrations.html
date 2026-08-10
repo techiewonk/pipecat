@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L32 · Framework integrations — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 32 · Part VI — Production & quality</div>
+      <h1>Framework integrations</h1>
+      <div class="meta"><span class="pill">⏱ 25 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Already have an agent built in LangChain or AWS Strands? Drop it into a Pipecat pipeline as a processor and give it a real-time voice.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Your agent, as a processor</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="STT → text|LangChain / Strands processor|your agent runs|streamed text out|TTS speaks"
+           data-caption="Transcribed user text arrives|a framework processor wraps your existing agent|LangChain chain or Strands agent executes|its output streams back as text frames|TTS speaks it — voice on top of your agent logic">
+      </div>
+      <p>These integrations live in <code>processors/frameworks/</code>. Because they're just <code>FrameProcessor</code>s, they slot into the pipeline between the context and TTS like any LLM.</p>
+
+      <h2 id="code">LangChain &amp; Strands</h2>
+      <pre><code class="language-python">from pipecat.processors.frameworks.langchain import LangchainProcessor
+chain_proc = LangchainProcessor(chain=my_langchain_runnable)
+pipeline = Pipeline([transport.input(), stt, user_agg, chain_proc, tts, transport.output(), assistant_agg])
+
+# AWS Strands Agents:
+from pipecat.processors.frameworks.strands_agents import StrandsAgentsProcessor
+# see examples/voice/voice-aws-strands.py</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/frameworks/langchain.py</code> and <code>processors/frameworks/strands_agents.py</code>. Example: <code>examples/voice/voice-aws-strands.py</code>. (RTVI, also under <code>processors/frameworks/</code>, is covered in <a href="l29-uiworker-rtvi.html">Lesson 29</a>.)</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Wrap a trivial LangChain runnable in a <code>LangchainProcessor</code> and talk to it. (2) Run <code>voice-aws-strands.py</code>. (3) Note how little glue is needed — it's just a processor.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. How does an external agent framework plug into Pipecat?</summary><p>As a <code>FrameProcessor</code> in <code>processors/frameworks/</code> — it sits in the pipeline like any LLM.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l33-deployment-cli.html">Lesson 33 — Deployment & the CLI →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

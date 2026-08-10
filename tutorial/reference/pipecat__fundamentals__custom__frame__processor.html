@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom FrameProcessor · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Custom FrameProcessor</h1>
+<blockquote>Write a custom Pipecat FrameProcessor: handle frames, push new ones downstream, and slot into a pipeline.</blockquote>
+<p>Pipecat's architecture is made up of a Pipeline, FrameProcessors, and Frames. See the <a href="/pipecat/learn/pipeline">Core Concepts</a> for a full review. From that architecture, recall that FrameProcessors are the workers in the pipeline that receive frames and complete actions based on the frames received.</p>
+<p>Pipecat comes with many FrameProcessors built in. These consist of services, like <code>OpenAILLMService</code> or <code>CartesiaTTSService</code>, utilities, like <code>LLMTextProcessor</code>, and other things. Largely, you can build most of your application with these built-in FrameProcessors, but commonly, your application code may require custom frame processing logic. For example, you may want to perform an action as a result of a frame that's pushed in the pipeline.</p>
+<h2>Example: MetricsFrame logger</h2>
+<p>This custom FrameProcessor format and logs MetricsFrames:</p>
+<pre><code>class MetricsFrameLogger(FrameProcessor):
+    """MetricsFrameLogger formats and logs all MetericsFrames"""
+
+    def __init__(self):
+        super().__init__()
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, MetricsFrame):
+            logger.info(f"{frame.name}\n    {format_metrics(frame.data)}")
+            await self.push_frame(frame, direction)
+
+        # ALWAYS push all frames
+        else:
+            # SUPER IMPORTANT: always push every frame!
+            await self.push_frame(frame, direction)</code></pre>
+<p>This frame processor looks for <code>MetricsFrames</code>. When it sees one, it formats the data and logs it.</p>
+<p>It uses this <code>format_metrics</code> function:</p>
+<pre><code>def format_metrics(metrics, indent=0):
+    lines = []
+    tab = "\t" * indent
+
+    for metric in metrics:
+        lines.append(tab + type(metric).__name__)
+        for field, value in vars(metric).items():
+            if hasattr(value, "__dict__") and not isinstance(
+                value, (str, int, float, bool, type(None))
+            ):
+                lines.append(f"{tab}\t{field}={type(value).__name__}")
+                for k, v in vars(value).items():
+                    lines.append(f"{tab}\t\t{k}={repr(v)}")
+            else:
+                lines.append(f"{tab}\t{field}={repr(value)}")
+
+    return "\n".join(lines)</code></pre>
+<p>&lt;Note&gt;   See this <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/features/features-custom-frame-processor.py">working   example</a>   using the <code>MetricsFrameLogger</code> FrameProcessor &lt;/Note&gt;</p>
+<h2>Add to a Pipeline</h2>
+<pre><code># Create and initialize the custom FrameProcessor
+metrics_frame_processor = MetricsFrameLogger()
+
+pipeline = Pipeline(
+    [
+        transport.input(),
+        stt,
+        context_aggregator.user(),
+        llm,
+        tts,
+        transport.output(),
+        context_aggregator.assistant(),
+        metrics_frame_processor,  # Our custom FrameProcessor that pretty prints metrics frames
+    ]
+)</code></pre>
+<p>With this positioning, the <code>MetricsFrameLogger</code> FrameProcessor will receive every MetericsFrame in the pipeline.</p>
+<h2>Key Requirements</h2>
+<p>FrameProcessors must inherit from the base <code>FrameProcessor</code> class. This ensures that your custom FrameProcessor will correctly handle frames like <code>StartFrame</code>, <code>EndFrame</code>, <code>InterruptionFrame</code> without having to write custom logic for those frames. This inheritance also provides it with the ability to <code>process_frame()</code> and <code>push_frame()</code>:</p>
+<ul><li><strong><code>process_frame()</code></strong> is what allows the FrameProcessor to receive frames and add custom conditional logic based on the frames that are received.</li><li><strong><code>push_frame()</code></strong> allows the FrameProcessor to push frames to the pipeline. Normally, frames are pushed DOWNSTREAM, but based on which processors need the output, you can also push UPSTREAM or in both directions.</li></ul>
+<h3>Essential Implementation Details</h3>
+<p>To ensure proper base class inheritance, it's critical to include:</p>
+<ol><li><strong><code>super().__init__()</code></strong> in your <code>__init__</code> method</li><li><strong><code>await super().process_frame(frame, direction)</code></strong> in your <code>process_frame()</code> method</li></ol>
+<pre><code>class MyCustomProcessor(FrameProcessor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)  # ✅ Required
+        # Your initialization code here
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)  # ✅ Required
+
+        # Your custom frame processing logic here
+        if isinstance(frame, SomeSpecificFrame):
+            # Handle the frame
+            pass
+
+        await self.push_frame(frame, direction)  # ✅ Required - pass frame through</code></pre>
+<h2>Critical Responsibility: Frame Forwarding</h2>
+<p>FrameProcessors receive <strong>all</strong> frames that are pushed through the pipeline. This gives them a lot of power, but also a great responsibility. Critically, they must push all frames through the pipeline; if they don't, they block frames from moving through the Pipeline, which will cause issues in how your application functions.</p>
+<p>As well as formatting and logging MetricsFrames, <code>MetricsFrameLogger</code> also has an <code>await self.push_frame(frame, direction)</code> which pushes the frame through to the next processor in the pipeline.</p>
+<h2>Frame Direction</h2>
+<p>When pushing frames, you can specify the direction:</p>
+<pre><code># Push downstream (default)
+await self.push_frame(frame, FrameDirection.DOWNSTREAM)
+
+# Push upstream
+await self.push_frame(frame, FrameDirection.UPSTREAM)</code></pre>
+<p>Most custom FrameProcessors will push frames downstream, but upstream can be useful for sending control frames or error notifications back up the pipeline.</p>
+<h2>Best Practices</h2>
+<ol><li><strong>Always call the parent methods</strong>: Use <code>super().__init__()</code> and <code>await super().process_frame()</code></li><li><strong>Forward all frames</strong>: Make sure every frame is pushed through with <code>await self.push_frame(frame, direction)</code></li><li><strong>Handle frames conditionally</strong>: Use <code>isinstance()</code> checks to handle specific frame types</li><li><strong>Use proper error handling</strong>: Wrap risky operations in try/catch blocks</li><li><strong>Position carefully in pipeline</strong>: Consider where in the pipeline your processor needs to be to receive the right frames</li></ol>
+<p>With these patterns, you can create powerful custom FrameProcessors that extend Pipecat's capabilities for your specific use case.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/fundamentals/custom-frame-processor">https://docs.pipecat.ai/pipecat/fundamentals/custom-frame-processor</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L22 · Transcripts & recording — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 22 · Part IV — Structure, control & capture</div>
+      <h1>Transcripts & recording</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Production agents need a record: a text transcript for review/analytics and an audio recording for QA. Both tap the pipeline without disturbing the conversation.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Tap the stream</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="user + bot turns|transcript processor|📝 transcript|AudioBufferProcessor|💾 WAV"
+           data-caption="Both sides of the conversation flow through the pipeline|a transcript processor/observer collects the text turns|which you save or stream to analytics|an AudioBufferProcessor taps the raw audio|and writes a WAV to disk — playback unaffected">
+      </div>
+
+      <h2 id="record">Recording audio</h2>
+      <pre><code class="language-python">from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
+
+recorder = AudioBufferProcessor()          # captures both user and bot audio
+pipeline = Pipeline([transport.input(), stt, user_agg, llm, tts, transport.output(),
+                     recorder, assistant_agg])
+
+@recorder.event_handler("on_audio_data")   # receive buffers to persist
+async def on_audio_data(proc, audio, sample_rate, num_channels):
+    save_wav(audio, sample_rate, num_channels)</code></pre>
+
+      <h2 id="transcript">Saving transcripts</h2>
+      <p>A transcript observer/processor collects the finalized user and assistant turns as they occur, so you can persist them or emit them to a client. Because it observes, it never risks the flow.</p>
+      <pre><code class="language-python">from pipecat.observers.transcription_log_observer import TranscriptionLogObserver
+# attach to the worker so every final transcript is logged/collected
+worker = PipelineWorker(pipeline, observers=[TranscriptionLogObserver()])</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/audio/audio_buffer_processor.py</code> — <code>AudioBufferProcessor</code> (<code>on_audio_data</code>). <code>observers/transcription_log_observer.py</code>. Examples: <code>audio/audio-recording.py</code>. Docs: saving-transcripts, recording-audio.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Add an <code>AudioBufferProcessor</code> to Atlas and write a WAV per call. (2) Collect the transcript and print it at the end. (3) Run <code>audio/audio-recording.py</code> and inspect the output.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. How do you record audio without affecting playback?</summary><p>Insert an <code>AudioBufferProcessor</code> — it taps the stream and forwards frames unchanged, emitting buffers via <code>on_audio_data</code>.</p></details>
+      <details><summary>2. Why capture transcripts with an observer?</summary><p>Observers watch read-only, so collecting text can't stall or alter the conversation.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l23-observability.html">Lesson 23 — Observability & metrics →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

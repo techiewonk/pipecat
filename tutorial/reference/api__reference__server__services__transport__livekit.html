@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveKit Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LiveKit Transport</h1>
+<blockquote>LiveKitTransport provides real-time audio communication for Pipecat pipelines over LiveKit's WebRTC infrastructure.</blockquote>
+<h2>Overview</h2>
+<p><code>LiveKitTransport</code> provides real-time audio communication capabilities using LiveKit's open-source WebRTC platform. It supports bidirectional audio streaming, data messaging, participant management, and room event handling for conversational AI applications with the flexibility of self-hosted or cloud infrastructure.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="LiveKitTransport API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.livekit.transport.html"&gt;     Pipecat's API methods for LiveKit integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transports/transports-livekit.py"&gt;     Complete LiveKit voice agent example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="LiveKit Documentation" icon="book" href="https://docs.livekit.io/reference/"&gt;     Official LiveKit API documentation and guides   &lt;/Card&gt;</p>
+<p>  &lt;Card title="LiveKit Cloud" icon="external-link" href="https://cloud.livekit.io/login"&gt;     Sign up for hosted LiveKit service   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use LiveKitTransport, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[livekit]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>LiveKit Setup</h3>
+<p>Before using LiveKitTransport, you need:</p>
+<ol><li><strong>LiveKit Server</strong>: Set up self-hosted or use <a href="https://cloud.livekit.io/">LiveKit Cloud</a></li><li><strong>API Credentials</strong>: Generate API key and secret from your LiveKit project</li><li><strong>Room Management</strong>: Create rooms using LiveKit API or SDK</li><li><strong>Access Tokens</strong>: Generate JWT tokens for room authentication</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>LIVEKIT_API_KEY</code>: Your LiveKit API key for authentication</li><li><code>LIVEKIT_API_SECRET</code>: Your LiveKit API secret for token generation</li><li><code>LIVEKIT_URL</code>: Your LiveKit server URL (wss\://your-domain.livekit.cloud)</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Open Source</strong>: Self-hosted or cloud-hosted WebRTC infrastructure</li><li><strong>Multi-participant Support</strong>: Handle multiple participants in rooms</li><li><strong>Data Channels</strong>: Real-time messaging alongside audio streams</li><li><strong>Room Management</strong>: Dynamic participant and room lifecycle management</li><li><strong>Flexible Deployment</strong>: Self-hosted or managed cloud options</li></ul>
+<h2>Configuration</h2>
+<h3>LiveKitTransport</h3>
+<p>&lt;ParamField path="url" type="str" required&gt;   LiveKit server URL to connect to (e.g., <code>wss://your-domain.livekit.cloud</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="token" type="str" required&gt;   Authentication token (JWT) for the LiveKit room. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="room_name" type="str" required&gt;   Name of the LiveKit room to join. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="LiveKitParams" default="LiveKitParams()"&gt;   Transport configuration parameters. Inherits all parameters from   <a href="/api-reference/server/services/transport/transport-params">TransportParams</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>LiveKitTransport connects your Pipecat bot to LiveKit rooms where it can communicate with participants through audio and data channels. The transport handles room joining, participant events, and media streaming automatically.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transports/transports-livekit.py">complete example</a> for a full implementation including:</p>
+<ul><li>LiveKit room creation and token generation</li><li>Transport configuration with participant management</li><li>Pipeline integration with audio processing</li><li>Event handling for room lifecycle management</li></ul>
+<h2>Event Handlers</h2>
+<p>LiveKitTransport provides event handlers for room lifecycle, participant management, and media track events. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to the room</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from the room</td></tr><tr><td><code>on_before_disconnect</code></td><td>About to disconnect (sync)</td></tr><tr><td><code>on_call_state_updated</code></td><td>Call state changed</td></tr><tr><td><code>on_first_participant_joined</code></td><td>First participant joined</td></tr><tr><td><code>on_participant_connected</code></td><td>A participant connected</td></tr><tr><td><code>on_participant_disconnected</code></td><td>A participant disconnected</td></tr><tr><td><code>on_participant_left</code></td><td>A participant left</td></tr><tr><td><code>on_audio_track_subscribed</code></td><td>Audio track subscribed</td></tr><tr><td><code>on_audio_track_unsubscribed</code></td><td>Audio track unsubscribed</td></tr><tr><td><code>on_video_track_subscribed</code></td><td>Video track subscribed</td></tr><tr><td><code>on_video_track_unsubscribed</code></td><td>Video track unsubscribed</td></tr><tr><td><code>on_data_received</code></td><td>Data message received</td></tr><tr><td><code>on_dtmf_event</code></td><td>SIP DTMF tone received (telephony)</td></tr></tbody></table></div>
+<h3>Room Lifecycle</h3>
+<h4>on\_connected</h4>
+<p>Fired when the bot successfully connects to the LiveKit room.</p>
+<pre><code>@transport.event_handler("on_connected")
+async def on_connected(transport):
+    print("Connected to LiveKit room")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<h4>on\_disconnected</h4>
+<p>Fired when the bot disconnects from the room.</p>
+<pre><code>@transport.event_handler("on_disconnected")
+async def on_disconnected(transport):
+    print("Disconnected from LiveKit room")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<h4>on\_before\_disconnect</h4>
+<p>Fired synchronously just before the bot disconnects from the room. Use this for cleanup that must happen before disconnection.</p>
+<pre><code>@transport.event_handler("on_before_disconnect")
+async def on_before_disconnect(transport):
+    print("About to disconnect...")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   This is a <strong>synchronous</strong> event — the bot will not disconnect until all   handlers complete. Keep handlers fast. &lt;/Note&gt;</p>
+<h4>on\_call\_state\_updated</h4>
+<p>Fired when the call state changes.</p>
+<pre><code>@transport.event_handler("on_call_state_updated")
+async def on_call_state_updated(transport, state):
+    print(f"Call state: {state}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>state</code></td><td><code>str</code></td><td>The new call state</td></tr></tbody></table></div>
+<h3>Participants</h3>
+<h4>on\_first\_participant\_joined</h4>
+<p>Fired when the first participant (other than the bot) joins the room. This is commonly used to start the conversation.</p>
+<pre><code>@transport.event_handler("on_first_participant_joined")
+async def on_first_participant_joined(transport, participant_id):
+    await worker.queue_frame(TTSSpeakFrame("Hello! How can I help you today?"))</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant_id</code></td><td><code>str</code></td><td>The participant's ID</td></tr></tbody></table></div>
+<h4>on\_participant\_connected</h4>
+<p>Fired when a participant connects to the room.</p>
+<pre><code>@transport.event_handler("on_participant_connected")
+async def on_participant_connected(transport, participant_id):
+    print(f"Participant connected: {participant_id}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant_id</code></td><td><code>str</code></td><td>The participant's ID</td></tr></tbody></table></div>
+<h4>on\_participant\_disconnected</h4>
+<p>Fired when a participant disconnects from the room.</p>
+<pre><code>@transport.event_handler("on_participant_disconnected")
+async def on_participant_disconnected(transport, participant_id):
+    print(f"Participant disconnected: {participant_id}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant_id</code></td><td><code>str</code></td><td>The participant's ID</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   When a participant disconnects, both <code>on_participant_disconnected</code> and   <code>on_participant_left</code> fire. The <code>on_participant_left</code> event includes a   <code>"disconnected"</code> reason for compatibility with other transports. &lt;/Note&gt;</p>
+<h4>on\_participant\_left</h4>
+<p>Fired when a participant leaves the room. This is a transport-agnostic event that fires alongside <code>on_participant_disconnected</code>.</p>
+<pre><code>@transport.event_handler("on_participant_left")
+async def on_participant_left(transport, participant_id, reason):
+    print(f"Participant left: {participant_id} ({reason})")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant_id</code></td><td><code>str</code></td><td>The participant's ID</td></tr><tr><td><code>reason</code></td><td><code>str</code></td><td>Reason for leaving (e.g., <code>"disconnected"</code>)</td></tr></tbody></table></div>
+<h3>Media Tracks</h3>
+<p>Track subscription events fire when audio or video tracks from participants are subscribed or unsubscribed. All receive <code>(transport, participant_id)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_audio_track_subscribed</code></td><td>Audio track from a participant was subscribed</td></tr><tr><td><code>on_audio_track_unsubscribed</code></td><td>Audio track from a participant was unsubscribed</td></tr><tr><td><code>on_video_track_subscribed</code></td><td>Video track from a participant was subscribed</td></tr><tr><td><code>on_video_track_unsubscribed</code></td><td>Video track from a participant was unsubscribed</td></tr></tbody></table></div>
+<pre><code>@transport.event_handler("on_audio_track_subscribed")
+async def on_audio_track_subscribed(transport, participant_id):
+    print(f"Audio track subscribed for: {participant_id}")</code></pre>
+<h3>Messaging</h3>
+<h4>on\_data\_received</h4>
+<p>Fired when data is received from a participant through LiveKit's data channel.</p>
+<pre><code>@transport.event_handler("on_data_received")
+async def on_data_received(transport, data, participant_id):
+    print(f"Data from {participant_id}: {data.decode()}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>bytes</code></td><td>The raw data received</td></tr><tr><td><code>participant_id</code></td><td><code>str</code></td><td>The sender's participant ID</td></tr></tbody></table></div>
+<h3>Telephony</h3>
+<h4>on\_dtmf\_event</h4>
+<p>Fired when a SIP DTMF tone is received from a participant (available when using LiveKit with SIP/PSTN calls). The transport automatically pushes an <code>InputDTMFFrame</code> downstream, so <code>DTMFAggregator</code> works with LiveKit telephony.</p>
+<pre><code>@transport.event_handler("on_dtmf_event")
+async def on_dtmf_event(transport, data):
+    digit = data.get("digit")
+    print(f"DTMF digit received: {digit}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LiveKitTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>dict</code></td><td>DTMF data with keys <code>tone</code>/<code>digit</code> (str), <code>code</code> (int), and <code>participant_id</code> (str)</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The transport pushes <code>InputDTMFFrame</code> automatically, so you only need this   handler for custom DTMF logic. Use <code>DTMFAggregator</code> to collect digits into   sequences. &lt;/Note&gt;</p>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/livekit">https://docs.pipecat.ai/api-reference/server/services/transport/livekit</a></p>
+</div></main></div></body></html>

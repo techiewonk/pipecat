@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS Bedrock LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AWS Bedrock LLM</h1>
+<blockquote>AWSBedrockLLMService runs Amazon Bedrock foundation models, including Claude and Amazon Nova, with streaming and function calling.</blockquote>
+<h2>Overview</h2>
+<p><code>AWSBedrockLLMService</code> provides access to Amazon's foundation models including Anthropic Claude and Amazon Nova, with streaming responses, function calling, and multimodal capabilities through Amazon's managed AI service for enterprise-grade LLM deployment.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="AWS Bedrock LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.aws.llm.html"&gt;     Pipecat's API methods for AWS Bedrock integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-aws.py"&gt;     Complete example with function calling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Bedrock Documentation" icon="book" href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html"&gt;     Official AWS Bedrock documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Console" icon="microphone" href="https://console.aws.amazon.com/bedrock/"&gt;     Access foundation models and manage IAM   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use AWS Bedrock services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[aws]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>AWS Account Setup</h3>
+<p>Before using AWS Bedrock LLM services, you need:</p>
+<ol><li><strong>AWS Account</strong>: Sign up at <a href="https://console.aws.amazon.com/">AWS Console</a></li><li><strong>IAM User</strong>: Create an IAM user with Amazon Bedrock permissions</li><li><strong>Model Access</strong>: Request access to foundation models in your AWS region</li><li><strong>Credentials</strong>: Set up AWS access keys and region configuration</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>AWS_ACCESS_KEY_ID</code>: Your AWS access key ID</li><li><code>AWS_SECRET_ACCESS_KEY</code>: Your AWS secret access key</li><li><code>AWS_SESSION_TOKEN</code>: Session token (if using temporary credentials)</li><li><code>AWS_REGION</code>: AWS region (defaults to "us-east-1")</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   AWS Bedrock model identifier (e.g.,   <code>"us.anthropic.claude-sonnet-4-5-20250929-v1:0"</code>,   <code>"us.amazon.nova-pro-v1:0"</code>). *Deprecated in v0.0.105. Use   <code>settings=AWSBedrockLLMService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_access_key" type="str" default="None"&gt;   AWS access key ID. If <code>None</code>, falls back to environment variables and the   default botocore credential chain (instance profiles, IRSA, ECS task roles,   SSO, etc.). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_secret_key" type="str" default="None"&gt;   AWS secret access key. Same fallback behaviour as <code>aws_access_key</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_session_token" type="str" default="None"&gt;   AWS session token for temporary credentials. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_region" type="str" default="None"&gt;   AWS region for the Bedrock service. If <code>None</code>, uses the <code>AWS_REGION</code>   environment variable, defaulting to <code>"us-east-1"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AWSBedrockLLMService.Settings" default="None"&gt;   Runtime-configurable model settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable model settings. See <a href="#settings">Settings</a> below.   *Deprecated in v0.0.105. Use <code>settings=AWSBedrockLLMService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="stop_sequences" type="List[str]" default="None" deprecated&gt;   List of strings that stop generation when encountered. *Deprecated in   v0.0.105. Use <code>settings=AWSBedrockLLMService.Settings(stop_sequences=...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="client_config" type="botocore.config.Config" default="None"&gt;   Custom botocore client configuration. If <code>None</code>, uses defaults with 5-minute   connect/read timeouts and 3 retry attempts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="retry_timeout_secs" type="float" default="5.0"&gt;   Request timeout in seconds. Used when <code>retry_on_timeout</code> is enabled to   determine when to retry. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="retry_on_timeout" type="bool" default="False"&gt;   Whether to retry the request once if it times out. The retry attempt has no   timeout limit. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AWSBedrockLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>AWS Bedrock model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>system_instruction</code></td><td><code>str</code></td><td><code>None</code></td><td>System instruction/prompt for the model. *(Inherited from base settings.)*</td></tr><tr><td><code>max_tokens</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Maximum number of tokens to generate.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Sampling temperature (0.0 to 1.0). Lower values are more focused, higher values are more creative.</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Top-p (nucleus) sampling (0.0 to 1.0). Controls diversity of output.</td></tr><tr><td><code>top_k</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Top-k sampling parameter.</td></tr><tr><td><code>seed</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Random seed for deterministic outputs.</td></tr><tr><td><code>stop_sequences</code></td><td><code>List[str]</code></td><td><code>NOT_GIVEN</code></td><td>List of strings that stop generation when encountered.</td></tr><tr><td><code>latency</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Performance mode: <code>"standard"</code> or <code>"optimized"</code>.</td></tr><tr><td><code>enable_prompt_caching</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to enable prompt caching by adding cachePoint markers to system prompts and tool definitions. Can reduce TTFT by up to 85% for multi-turn conversations. See <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html">AWS docs</a>.</td></tr><tr><td><code>additional_model_request_fields</code></td><td><code>dict</code></td><td><code>NOT_GIVEN</code></td><td>Additional model-specific parameters passed directly to the API.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted from the inference config, letting the Bedrock   API use its own defaults. Only parameters that are explicitly set are included   in the request. This avoids conflicts with models that don't allow certain   parameter combinations (e.g., <code>temperature</code> and <code>top_p</code> together). &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.aws import AWSBedrockLLMService
+
+llm = AWSBedrockLLMService(
+    model="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    aws_access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_region=os.getenv("AWS_REGION", "us-east-1"),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.aws import AWSBedrockLLMService
+
+llm = AWSBedrockLLMService(
+    model="us.amazon.nova-pro-v1:0",
+    aws_access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_region="us-east-1",
+    settings=AWSBedrockLLMService.Settings(
+        max_tokens=2048,
+        temperature=0.7,
+        latency="optimized",
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>Model settings can be changed mid-conversation using <code>LLMUpdateSettingsFrame</code>:</p>
+<pre><code>from pipecat.frames.frames import LLMUpdateSettingsFrame
+from pipecat.services.aws.llm import AWSBedrockLLMSettings
+
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=AWSBedrockLLMSettings(
+            temperature=0.3,
+            max_tokens=1024,
+        )
+    )
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Credential resolution</strong>: Credentials are resolved via a fallback chain: explicit parameters → environment variables (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>) → botocore credential provider chain (instance profiles, IRSA, ECS task roles, SSO, credential files). Services running with IAM roles no longer need to export static credentials.</li><li><strong>No-op tool handling</strong>: AWS Bedrock requires at least one tool to be defined when tool content exists in the conversation. The service automatically adds a placeholder tool when needed to prevent API errors.</li><li><strong>Model-specific parameters</strong>: Some models (e.g., Claude Sonnet 4.5) don't allow certain parameter combinations. The service only includes explicitly set parameters in the inference config to avoid conflicts.</li><li><strong>Retry behavior</strong>: When <code>retry_on_timeout=True</code>, the first attempt uses the <code>retry_timeout_secs</code> timeout. If it times out, a second attempt is made with no timeout limit.</li><li><strong>System instruction precedence</strong>: If both <code>system_instruction</code> (from the constructor) and a system message in the context are set, the constructor's <code>system_instruction</code> takes precedence and a warning is logged.</li></ul>
+<h2>Event Handlers</h2>
+<p><code>AWSBedrockLLMService</code> supports the following event handlers, inherited from <a href="/api-reference/server/events/service-events">LLMService</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_completion_timeout</code></td><td>Called when an LLM completion request times out</td></tr><tr><td><code>on_function_calls_started</code></td><td>Called when function calls are received and execution is about to start</td></tr></tbody></table></div>
+<pre><code>@llm.event_handler("on_completion_timeout")
+async def on_completion_timeout(service):
+    print("LLM completion timed out")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/aws">https://docs.pipecat.ai/api-reference/server/services/llm/aws</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deepgram Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Deepgram Text-to-Speech</h1>
+<blockquote>Aura TTS with DeepgramTTSService, DeepgramHttpTTSService, DeepgramFluxTTSService, and a SageMaker variant for hosted inference.</blockquote>
+<h2>Overview</h2>
+<p>Deepgram provides four TTS service implementations:</p>
+<ul><li><code>DeepgramFluxTTSService</code> for real-time synthesis using Deepgram's Flux WebSocket API, a streaming-first service designed for voice agents with token-level streaming and cross-turn prosody state</li><li><code>DeepgramTTSService</code> for real-time streaming synthesis using Deepgram's Aura WebSocket API with support for interruptions and ultra-low latency</li><li><code>DeepgramHttpTTSService</code> for batch synthesis using Deepgram's Aura HTTP API</li><li><code>DeepgramSageMakerTTSService</code> for real-time synthesis using Deepgram TTS models deployed on AWS SageMaker endpoints via HTTP/2 bidirectional streaming</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Deepgram TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.deepgram.tts.html"&gt;     Pipecat's API methods for Deepgram TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram.py"&gt;     Complete example with Silero VAD   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Flux Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram-flux.py"&gt;     Complete example with Flux STT and TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SageMaker Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-deepgram-sagemaker.py"&gt;     Complete example with Deepgram on SageMaker   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deepgram Documentation" icon="book" href="https://developers.deepgram.com/reference/text-to-speech/speak-streaming"&gt;     Official Deepgram Aura TTS API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Models" icon="microphone" href="https://developers.deepgram.com/docs/tts-models"&gt;     Browse available Aura voice models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Deepgram TTS services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[deepgram]"</code></pre>
+<p>For the SageMaker variant, install the SageMaker dependencies instead:</p>
+<pre><code>uv add "pipecat-ai[sagemaker]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Deepgram Account Setup</h3>
+<p>Before using <code>DeepgramTTSService</code> or <code>DeepgramHttpTTSService</code>, you need:</p>
+<ol><li><strong>Deepgram Account</strong>: Sign up at <a href="https://console.deepgram.com/">Deepgram Console</a></li><li><strong>API Key</strong>: Generate an API key from your project dashboard</li><li><strong>Voice Selection</strong>: Choose from available Aura voice models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>DEEPGRAM_API_KEY</code>: Your Deepgram API key for authentication</li></ul>
+<h3>AWS SageMaker Setup</h3>
+<p>Before using <code>DeepgramSageMakerTTSService</code>, you need:</p>
+<ol><li><strong>AWS Account</strong>: With credentials configured (via environment variables, AWS CLI, or instance metadata)</li><li><strong>SageMaker Endpoint</strong>: A deployed SageMaker endpoint with a <a href="https://developers.deepgram.com/docs/deploy-amazon-sagemaker">Deepgram TTS model</a></li><li><strong>Voice Selection</strong>: Choose from available Aura voice models</li></ol>
+<h3>Flux Setup</h3>
+<p>Before using <code>DeepgramFluxTTSService</code>, you need:</p>
+<ol><li><strong>Deepgram Account</strong>: Sign up at <a href="https://console.deepgram.com/">Deepgram Console</a></li><li><strong>API Key</strong>: Generate an API key with Flux TTS access</li><li><strong>Voice Selection</strong>: Choose from available Flux voice models (<code>flux-{voice}-{language}</code>)</li></ol>
+<h2>Configuration</h2>
+<h3>DeepgramFluxTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepgram API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.deepgram.com/v2/speak"&gt;   WebSocket URL for the Flux TTS API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. Must be one of: 8000, 16000, 24000, 32000, 44100, 48000. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool | None" default="None"&gt;   Opt out of the Deepgram Model Improvement Program (MIP). See the <a href="https://developers.deepgram.com/docs/the-deepgram-model-improvement-partnership-program">MIP   Guide</a>   for pricing impacts before setting to <code>True</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tag" type="list[str] | None" default="None"&gt;   Tags to label requests for identification during usage reporting. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.TOKEN"&gt;   How to aggregate incoming text before synthesis. Defaults to <code>TOKEN</code>,   streaming LLM tokens straight to Flux for the lowest latency. Pass   <code>TextAggregationMode.SENTENCE</code> to aggregate text into sentences before   synthesis. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramFluxTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#deepgramfluxttsservice-settings">DeepgramFluxTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>DeepgramFluxTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramFluxTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>voice</code></td><td><code>str</code></td><td><code>flux-alexis-en</code></td><td>Flux voice identifier (e.g., <code>flux-alexis-en</code>, <code>flux-drew-en</code>).</td></tr><tr><td><code>model</code></td><td><code>str</code></td><td>*(synced to voice)*</td><td>Model identifier. Automatically set to match <code>voice</code>. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The <code>model</code> field is automatically kept in sync with <code>voice</code> for metrics   tracking. Deepgram's Flux API uses the voice identifier as its model   parameter. &lt;/Note&gt;</p>
+<h3>DeepgramTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepgram API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="aura-2-helena-en" deprecated&gt;   Voice model to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=DeepgramTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#deepgramttsservice-settings">DeepgramTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.deepgram.com"&gt;   WebSocket base URL for Deepgram API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. Must be one of: <code>"linear16"</code>, <code>"mulaw"</code>, <code>"alaw"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool | None" default="None"&gt;   Opt out of the Deepgram Model Improvement Program (MIP). See the <a href="https://developers.deepgram.com/docs/the-deepgram-model-improvement-partnership-program">MIP   Guide</a>   for pricing impacts before setting to <code>True</code>. &lt;/ParamField&gt;</p>
+<h4>DeepgramTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h3>DeepgramHttpTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepgram API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="aura-2-helena-en" deprecated&gt;   Voice model to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=DeepgramHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#deepgramhttpttsservice-settings">DeepgramHttpTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. You must create and manage this   yourself. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.deepgram.com"&gt;   HTTP API base URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mip_opt_out" type="bool | None" default="None"&gt;   Opt out of the Deepgram Model Improvement Program (MIP). See the <a href="https://developers.deepgram.com/docs/the-deepgram-model-improvement-partnership-program">MIP   Guide</a>   for pricing impacts before setting to <code>True</code>. &lt;/ParamField&gt;</p>
+<h4>DeepgramHttpTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h3>DeepgramSageMakerTTSService</h3>
+<p>&lt;ParamField path="endpoint_name" type="str" required&gt;   Name of the SageMaker endpoint with Deepgram TTS model deployed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" required&gt;   AWS region where the SageMaker endpoint is deployed (e.g., <code>"us-east-2"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="aura-2-helena-en" deprecated&gt;   Voice model to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=DeepgramSageMakerTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="DeepgramSageMakerTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#deepgramsagemakerttsservice-settings">DeepgramSageMakerTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<h4>DeepgramSageMakerTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>DeepgramSageMakerTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.deepgram import DeepgramTTSService
+
+tts = DeepgramTTSService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramTTSService.Settings(
+        voice="aura-2-helena-en",
+    ),
+)</code></pre>
+<h3>Flux Service</h3>
+<pre><code>from pipecat.services.deepgram.flux.tts import DeepgramFluxTTSService
+
+tts = DeepgramFluxTTSService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramFluxTTSService.Settings(
+        voice="flux-alexis-en",
+    ),
+)</code></pre>
+<p>To aggregate text into sentences before synthesis instead of streaming tokens, pass <code>text_aggregation_mode</code>:</p>
+<pre><code>from pipecat.services.tts_service import TextAggregationMode
+
+tts = DeepgramFluxTTSService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    text_aggregation_mode=TextAggregationMode.SENTENCE,
+    settings=DeepgramFluxTTSService.Settings(
+        voice="flux-alexis-en",
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>import aiohttp
+from pipecat.services.deepgram import DeepgramHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = DeepgramHttpTTSService(
+        api_key=os.getenv("DEEPGRAM_API_KEY"),
+        settings=DeepgramHttpTTSService.Settings(
+            voice="aura-2-helena-en",
+        ),
+        aiohttp_session=session,
+    )</code></pre>
+<h3>SageMaker Service</h3>
+<pre><code>from pipecat.services.deepgram.sagemaker.tts import DeepgramSageMakerTTSService
+
+tts = DeepgramSageMakerTTSService(
+    endpoint_name=os.getenv("SAGEMAKER_TTS_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION"),
+    settings=DeepgramSageMakerTTSService.Settings(
+        voice="aura-2-helena-en",
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Choosing a service</strong>: The Aura WebSocket service (<code>DeepgramTTSService</code>) and SageMaker service (<code>DeepgramSageMakerTTSService</code>) both support real-time streaming with interruption handling, making them suitable for interactive conversations. The HTTP service (<code>DeepgramHttpTTSService</code>) is simpler but processes each request as a batch. The Flux service (<code>DeepgramFluxTTSService</code>) is a streaming-first option built for voice agents, with token-level streaming and cross-turn prosody state.</li><li><strong>Encoding validation</strong>: The WebSocket service validates the <code>encoding</code> parameter at initialization and raises a <code>ValueError</code> for unsupported formats.</li><li><strong>SageMaker deployment</strong>: The SageMaker service requires a Deepgram TTS model deployed to an AWS SageMaker endpoint. See the <a href="https://developers.deepgram.com/docs/deploy-amazon-sagemaker">Deepgram SageMaker deployment guide</a> for setup instructions.</li></ul>
+<h3>Flux notes</h3>
+<ul><li><strong>Token Streaming</strong>: By default (<code>TextAggregationMode.TOKEN</code>), LLM tokens are sent to Flux immediately without buffering for sentence boundaries. Flux internally determines synthesis boundaries, so aggregating sentences typically only adds latency.</li><li><strong>Cross-Turn Prosody</strong>: Flux maintains acoustic state across turns on a single connection, preserving prosody and pacing throughout the conversation. This state resets on reconnection (interruption or server session timeout).</li><li><strong>Interruption Handling</strong>: Flux does not yet provide a message to cancel the active turn. Interruptions are handled by reconnecting the websocket, which resets the cross-turn prosody state. Once Deepgram ships the planned <code>Interrupt</code> message, interruptions will be handled without reconnection.</li><li><strong>Sample Rate Validation</strong>: Only the rates 8000, 16000, 24000, 32000, 44100, and 48000 Hz are supported. An explicit unsupported rate raises a <code>ValueError</code> at initialization.</li><li><strong>Audio Format</strong>: Flux audio is always returned as linear PCM (<code>linear16</code>), the format used internally by Pipecat pipelines.</li></ul>
+<h2>Event Handlers</h2>
+<p>The WebSocket, SageMaker, and Flux services support the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Deepgram (WebSocket or SageMaker)</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Deepgram</td></tr><tr><td><code>on_connection_error</code></td><td>Connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Deepgram")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/deepgram">https://docs.pipecat.ai/api-reference/server/services/tts/deepgram</a></p>
+</div></main></div></body></html>

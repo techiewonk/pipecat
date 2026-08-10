@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssemblyAI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AssemblyAI Speech-to-Text</h1>
+<blockquote>Real-time STT with AssemblyAISTTService: WebSocket streaming, interim results, and end-of-turn detection for voice agents.</blockquote>
+<h2>Overview</h2>
+<p><code>AssemblyAISTTService</code> provides real-time speech recognition using AssemblyAI's WebSocket API with support for interim results, end-of-turn detection, and configurable audio processing parameters for accurate transcription in conversational AI applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="AssemblyAI STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.assemblyai.stt.html"&gt;     Pipecat's API methods for AssemblyAI STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-assemblyai-turn-detection.py"&gt;     Example with AssemblyAI built-in turn detection   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Universal 3.5 Pro Realtime" icon="bolt" href="https://www.assemblyai.com/docs/streaming/universal-3-pro"&gt;     Universal 3.5 Pro Realtime documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Universal 3.5 Pro Realtime API Reference" icon="book" href="https://www.assemblyai.com/docs/api-reference/streaming-api/universal-3-pro/universal-3-pro"&gt;     Complete Universal 3.5 Pro Realtime API reference   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AssemblyAI Console" icon="microphone" href="https://www.assemblyai.com/dashboard/signup"&gt;     Access API keys and transcription features   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use AssemblyAI services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[assemblyai]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>AssemblyAI Account Setup</h3>
+<p>Before using AssemblyAI STT services, you need:</p>
+<ol><li><strong>AssemblyAI Account</strong>: Sign up at <a href="https://www.assemblyai.com/dashboard/signup">AssemblyAI Console</a></li><li><strong>API Key</strong>: Generate an API key from your dashboard</li><li><strong>Configuration</strong>: Configure transcription settings and features for your use case</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>ASSEMBLYAI_API_KEY</code>: Your AssemblyAI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>AssemblyAISTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   AssemblyAI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language code for transcription. *Deprecated in v0.0.105. Use   <code>settings=AssemblyAISTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_endpoint_base_url" type="str" default="wss://streaming.assemblyai.com/v3/ws"&gt;   WebSocket endpoint URL. Override for custom or proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="16000"&gt;   Audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm_s16le"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="connection_params" type="AssemblyAIConnectionParams" default="None" deprecated&gt;   Connection configuration parameters. *Deprecated in v0.0.105. Use   <code>settings=AssemblyAISTTService.Settings(...)</code> instead. See   <a href="#settings">Settings</a> below.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="vad_force_turn_endpoint" type="bool" default="True"&gt;   Controls turn detection mode. When <code>True</code> (Pipecat mode, default): Forces   AssemblyAI to return finals ASAP so Pipecat's turn detection (e.g., Smart   Turn) decides when the user is done. VAD stop sends ForceEndpoint as ceiling.   No UserStarted/StoppedSpeakingFrame emitted from STT. When <code>False</code> (AssemblyAI   turn detection mode): AssemblyAI's model controls turn endings using built-in   turn detection. Uses AssemblyAI API defaults for all parameters unless   explicitly set. Emits UserStarted/StoppedSpeakingFrame from STT. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether to interrupt the bot when the user starts speaking in AssemblyAI turn   detection mode (<code>vad_force_turn_endpoint=False</code>). Only applies when using   AssemblyAI's built-in turn detection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="speaker_format" type="str | None" default="None"&gt;   Optional format string for speaker labels when diarization is enabled. Use   <code>{speaker}</code> for speaker label and <code>{text}</code> for transcript text. Example:   <code>"&lt;{speaker}&gt;{text}&lt;/{speaker}&gt;"</code> or <code>"{speaker}: {text}"</code>. If None, transcript   text is not modified. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AssemblyAISTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="ASSEMBLYAI_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AssemblyAISTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"universal-3-5-pro"</code></td><td>STT model identifier. Set to <code>"universal-3-5-pro"</code>. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>formatted_finals</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to enable transcript formatting.</td></tr><tr><td><code>word_finalization_max_wait_time</code></td><td><code>int</code></td><td><code>None</code></td><td>Maximum time to wait for word finalization in milliseconds.</td></tr><tr><td><code>end_of_turn_confidence_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>Confidence threshold for end-of-turn detection.</td></tr><tr><td><code>min_turn_silence</code></td><td><code>int</code></td><td><code>None</code></td><td>Silence duration (ms) before a speculative end-of-turn check. If terminal punctuation is found, the turn ends; otherwise a partial is emitted and the turn continues. Clamped to 50–10000 ms. Server default is mode-dependent (set by the <code>mode</code> preset).</td></tr><tr><td><code>max_turn_silence</code></td><td><code>int</code></td><td><code>None</code></td><td>Maximum silence (ms) before the turn is forced to end, regardless of punctuation.</td></tr><tr><td><code>keyterms_prompt</code></td><td><code>List[str]</code></td><td><code>None</code></td><td>A list of words and phrases to improve recognition accuracy for. Maximum 100 terms. May be combined with <code>prompt</code> on U3 Pro models.</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>None</code></td><td>A contextual prompt describing what the audio is about — its domain, scenario, or conversation details — so the model better recognizes likely vocabulary. Carries context about your audio, not transcription instructions; formatting or behavioral commands are not supported. Maximum \~1500 characters. Only applicable to U3 Pro models; may be combined with <code>keyterms_prompt</code> on those models.</td></tr><tr><td><code>language_code</code></td><td><code>str</code></td><td><code>None</code></td><td>Customer-declared audio language as an ISO code (e.g. <code>"en"</code>, <code>"es"</code>, <code>"fr"</code>). On U3 Pro models, a tier-1 code (<code>"en"</code>/<code>"es"</code>/<code>"fr"</code>/<code>"de"</code>/<code>"it"</code>/<code>"pt"</code>) steers transcription toward that language; other supported codes are <code>"tr"</code>, <code>"nl"</code>, <code>"sv"</code>, <code>"no"</code>, <code>"da"</code>, <code>"fi"</code>, <code>"hi"</code>, <code>"vi"</code>, <code>"ar"</code>, <code>"he"</code>, <code>"ja"</code>, <code>"zh"</code>. This is one of the names AssemblyAI accepts for its declared-language parameter, alongside <code>language_codes</code>, which covers the same languages as <code>Language</code> enums and is bound in preference to this one when both are set. Prefer <code>language_codes</code>. Distinct from <code>language_detection</code>, which controls whether the detected language is reported.</td></tr><tr><td><code>language_codes</code></td><td><code>List[Language]</code></td><td><code>None</code></td><td>Customer-declared audio languages. A single language (e.g. <code>[Language.ES]</code>) pins transcription to that language; several (e.g. <code>[Language.EN, Language.ES]</code>) steer toward that subset while keeping code-switching among them. Order is significant — the steering prompt follows the declared order. Regional variants resolve to their base code, so at most 10 distinct languages. Steering is prompt-based, so it applies to U3 Pro models only and is not sent for other models — including <code>universal-streaming-multilingual</code>, which transcribes multilingual audio without steering. Unlike most settings, a change applies to a live session without reconnecting; pass an empty list to clear steering back to the model default.</td></tr><tr><td><code>speaker_labels</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether to enable streaming speaker diarization. When enabled, each turn includes a <code>speaker_label</code> and each final word includes a <code>speaker</code> field for word-level attribution.</td></tr><tr><td><code>vad_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>Confidence threshold (0.0–1.0) for classifying audio frames as silence. Frames with VAD confidence below this value are considered silent; increase for noisy environments to reduce false speech detection. Server default is mode-dependent (set by the <code>mode</code> preset).</td></tr><tr><td><code>domain</code></td><td><code>str</code></td><td><code>None</code></td><td>Enable a domain-specific model for specialized terminology. Set to <code>"medical-v1"</code> for Medical Mode (improved accuracy on medications, procedures, conditions, and dosages). Supported languages: <code>en</code>, <code>es</code>, <code>de</code>, <code>fr</code>.</td></tr><tr><td><code>continuous_partials</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to emit additional partial transcripts during long turns at a steady \~3 second cadence. When enabled, partials covering the full turn transcript are emitted about every 3 seconds while speech continues; when disabled, only one early partial is emitted near turn start. The first partial (at 750 ms) is unaffected.</td></tr><tr><td><code>interruption_delay</code></td><td><code>int</code></td><td><code>None</code></td><td>How soon the first partial is emitted, in milliseconds (0–1000). Useful for tuning barge-in responsiveness or emitting earlier partials for LLM inference; larger values are more confident on interruptions, smaller values give faster time to first partial. The server adds a fixed 256 ms, so <code>0</code> yields an effective 256 ms and <code>500</code> yields 756 ms. Server default is mode-dependent (set by the <code>mode</code> preset).</td></tr><tr><td><code>agent_context</code></td><td><code>str</code></td><td><code>None</code></td><td>Your voice agent's spoken text (TTS reply), used as context for the next user turn — improves accuracy on short or ambiguous replies and spelled-out entities like emails or IDs. Set at connection to seed the agent's greeting and/or update after each reply; each update replaces the previous value. Maximum \~1500 characters.</td></tr><tr><td><code>previous_context_n_turns</code></td><td><code>int</code></td><td><code>None</code></td><td>Advanced. Maximum number of prior conversation entries (user transcripts and any <code>agent_context</code> values) carried forward as context. Range 0–100; set to <code>0</code> to disable automatic carryover. Most integrations should leave this unset.</td></tr><tr><td><code>voice_focus</code></td><td><code>Literal["near-field", "far-field"]</code></td><td><code>None</code></td><td>Enable Voice Focus to isolate the primary voice and suppress background noise before transcription. Set to <code>"near-field"</code> for close-talking mics (headsets, phones) or <code>"far-field"</code> for distant mics (conference rooms). Off when unset.</td></tr><tr><td><code>voice_focus_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>Controls how aggressively Voice Focus suppresses background audio, from <code>0.0</code> (least) to <code>1.0</code> (most). Requires <code>voice_focus</code> to be set, otherwise a validation error is returned.</td></tr><tr><td><code>mode</code></td><td><code>Literal["min_latency", "balanced", "max_accuracy"]</code></td><td><code>None</code></td><td>Latency and accuracy preset controlling turn-detection and partial-emission defaults. <code>max_accuracy</code> favors quality, <code>min_latency</code> favors speed, and <code>balanced</code> trades off between them. When omitted, the server applies its own preset, which sets the defaults for mode-dependent fields such as <code>interruption_delay</code>, <code>min_turn_silence</code>, <code>vad_threshold</code>, <code>previous_context_n_turns</code>, and <code>continuous_partials</code>.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+    ),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        keyterms_prompt=["Pipecat", "AssemblyAI"],
+    ),
+    vad_force_turn_endpoint=True,
+)</code></pre>
+<h3>With AssemblyAI Built-in Turn Detection</h3>
+<p>AssemblyAI's <code>universal-3-5-pro</code> model supports built-in turn detection for more natural conversation flow. When <code>vad_force_turn_endpoint=False</code>, the service automatically requests <code>ExternalUserTurnStrategies</code>, so you don't need to configure turn strategies manually:</p>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    vad_force_turn_endpoint=False,  # Use AssemblyAI's built-in turn detection
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        # Optional: Tune turn detection timing
+        min_turn_silence=100,  # Silence duration (ms) before a speculative end-of-turn check.
+        max_turn_silence=1000,  # Maximum silence (ms) before forcing end-of-turn
+    ),
+)</code></pre>
+<h3>With Speaker Diarization</h3>
+<p>Enable speaker identification for multi-party conversations:</p>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        speaker_labels=True,  # Enable speaker diarization
+    ),
+    speaker_format="{speaker}: {text}",  # Format transcripts with speaker labels
+)</code></pre>
+<h3>With Context Carryover</h3>
+<p>Context carryover improves transcription by giving the model memory of recent conversation turns. <strong>It's enabled by default</strong> for <code>universal-3-5-pro</code> — the service automatically feeds each of the agent's completed replies to AssemblyAI as carryover context, so no configuration is required. The example below only tunes how many prior turns are retained:</p>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        previous_context_n_turns=4,  # Keep last 4 turns (if None, server default is 3. Set to 0 to disable.)
+    ),
+)</code></pre>
+<p>Context carryover helps with short answers, spelled-out entities (emails, IDs), and similar-sounding words. Set <code>previous_context_n_turns=0</code> to disable automatic carryover.</p>
+<h3>With Voice Focus</h3>
+<p>Voice focus isolates the primary speaker and suppresses background noise:</p>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        voice_focus="near-field",  # Or "far-field" for distant capture
+        voice_focus_threshold=0.7,  # 0.0-1.0, higher suppresses more
+    ),
+)</code></pre>
+<p>Use <code>"near-field"</code> for close-talking mics (headsets, handsets) or <code>"far-field"</code> for distant capture (conference rooms, laptop mics).</p>
+<h3>With Language Steering</h3>
+<p>Steer transcription toward specific languages using <code>language_codes</code>:</p>
+<pre><code>from pipecat.services.assemblyai.stt import AssemblyAISTTService
+from pipecat.transcriptions.language import Language
+
+# Single language (pins transcription to that language)
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        language_codes=[Language.ES],
+    ),
+)
+
+# Multiple languages (steers toward subset, keeps code-switching)
+stt = AssemblyAISTTService(
+    api_key=os.getenv("ASSEMBLYAI_API_KEY"),
+    settings=AssemblyAISTTService.Settings(
+        model="universal-3-5-pro",
+        language_codes=[Language.EN, Language.ES],  # Order is significant
+    ),
+)</code></pre>
+<p>Language steering is prompt-based and applies to U3 Pro models only. Regional variants (e.g. <code>Language.ES_MX</code>) resolve to their base code (<code>"es"</code>). At most 10 distinct languages can be declared. Unlike most settings, <code>language_codes</code> can be updated mid-session without reconnecting using <code>STTUpdateSettingsFrame</code>.</p>
+<h2>Methods</h2>
+<h3>update\_agent\_context()</h3>
+<pre><code>async def update_agent_context(text: str)</code></pre>
+<p>Send the agent's latest spoken reply to AssemblyAI as carryover context. Improves transcription of the user's next turn — short answers, spelled-out entities, disambiguation.</p>
+<p><strong>Parameters:</strong></p>
+<ul><li><code>text</code> (str): The agent's spoken reply text. Clipped to \~1500 characters.</li></ul>
+<p><strong>Example:</strong></p>
+<pre><code># After the agent finishes speaking
+await stt.update_agent_context("What is your order ID?")</code></pre>
+<blockquote>It is automatically invoked each time an assistant turn is completed.</blockquote>
+<h2>Notes</h2>
+<ul><li><strong>Model</strong>: Use <code>universal-3-5-pro</code>, AssemblyAI's flagship streaming model. It supports built-in turn detection, prompting, continuous partials, context carryover, and voice focus.</li><li><strong>Turn detection modes</strong>:</li><li><strong>Pipecat mode</strong> (<code>vad_force_turn_endpoint=True</code>, default): Forces AssemblyAI to return finals ASAP so Pipecat's turn detection (e.g., Smart Turn) decides when the user is done. The service sends a <code>ForceEndpoint</code> message when VAD detects the user has stopped speaking.</li><li><strong>AssemblyAI mode</strong> (<code>vad_force_turn_endpoint=False</code>, <code>universal-3-5-pro</code> only): AssemblyAI's model controls turn endings using built-in turn detection. The service emits <code>UserStartedSpeakingFrame</code> and <code>UserStoppedSpeakingFrame</code> and automatically requests <code>ExternalUserTurnStrategies</code>, so you don't need to configure turn strategies manually. Pass your own <code>user_turn_strategies</code> only to override this.</li><li><strong>Context carryover</strong> (<code>universal-3-5-pro</code> only): Seed the agent's most recent reply, improving transcription of the user's next turn — short answers, spelled-out entities, disambiguation. <code>update_agent_context()</code> is automatically invoked each time an assistant turn is completed. Control the window size with <code>previous_context_n_turns</code> (0–100, default 3); set to 0 to disable carryover entirely.</li><li><strong>Voice focus</strong> (<code>universal-3-5-pro</code> only): Set <code>voice_focus</code> to <code>"near-field"</code> or <code>"far-field"</code> to isolate the primary voice and suppress background noise. Tune suppression strength with <code>voice_focus_threshold</code> (0.0–1.0, higher values suppress more).</li><li><strong>Speaker diarization</strong>: Enable <code>speaker_labels=True</code> in Settings to automatically identify different speakers. Final transcripts will include a speaker field (e.g., "Speaker A", "Speaker B"). Use the <code>speaker_format</code> parameter to format transcripts with speaker labels.</li><li><strong>Prompting</strong> (U3 Pro models only): The <code>prompt</code> parameter allows you to guide transcription for specific names, terms, or domain vocabulary. May be combined with <code>keyterms_prompt</code> on U3 Pro models. AssemblyAI recommends testing without a prompt first.</li><li><strong>Dynamic settings updates</strong>: Most settings can be updated at runtime using <code>STTUpdateSettingsFrame</code>. <code>agent_context</code> and <code>language_codes</code> are hot-updatable without reconnecting; other settings require a reconnect.</li></ul>
+<p>&lt;Tip&gt;   The <code>connection_params=</code> / <code>InputParams</code> / <code>params=</code> pattern is deprecated as   of v0.0.105. Use <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>AssemblyAI STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>, plus turn-level events for conversation tracking:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to AssemblyAI WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from AssemblyAI WebSocket</td></tr><tr><td><code>on_end_of_turn</code></td><td>End of turn detected (fires after final transcript is pushed)</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to AssemblyAI")
+
+@stt.event_handler("on_end_of_turn")
+async def on_end_of_turn(service, transcript):
+    print(f"Turn ended: {transcript}")</code></pre>
+<p>The <code>on_end_of_turn</code> event receives <code>(service, transcript)</code> where <code>transcript</code> is the final transcript text. This event fires after the final transcript is pushed, providing a reliable hook for end-of-turn logic that doesn't race with <code>TranscriptionFrame</code>. Works in both Pipecat and AssemblyAI turn detection modes.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/assemblyai">https://docs.pipecat.ai/api-reference/server/services/stt/assemblyai</a></p>
+</div></main></div></body></html>

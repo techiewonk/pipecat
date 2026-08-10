@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix F · utils/ reference — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix F · Reference</div>
+      <h1>utils/ reference</h1>
+      <p class="lead">The helper library (<code>src/pipecat/utils/</code>, ~50 files) — small utilities the framework leans on. You rarely import these directly, but knowing they exist saves you from reinventing them.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <div class="tablewrap"><table>
+        <thead><tr><th>Area</th><th>What's there</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Text</strong></td><td><code>utils/text/</code> — <code>MarkdownTextFilter</code>, sentence/aggregation helpers, base text filters.</td><td>TTS text prep (<a href="l13-tts.html">L13</a>)</td></tr>
+          <tr><td><strong>Audio helpers</strong></td><td>resampler factories (<code>create_stream_resampler</code>), <code>exp_smoothing</code>, <code>is_silence</code>.</td><td>Audio/VAD/output (<a href="l07-audio-processing.html">L7</a>, <a href="l14-output-playback.html">L14</a>)</td></tr>
+          <tr><td><strong>Tracing / telemetry</strong></td><td><code>@traced_llm</code> and tracing context helpers.</td><td>Metrics (<a href="l23-observability.html">L23</a>)</td></tr>
+          <tr><td><strong>Async / tasks</strong></td><td>task management, cancellation, watchdog helpers.</td><td>Workers/pipeline (<a href="l05-pipeline-workers.html">L5</a>)</td></tr>
+          <tr><td><strong>String / time</strong></td><td>id generation, formatting, time utilities.</td><td>Frames, logging (throughout)</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="box concept">
+        <p class="title">🧭 How to explore</p>
+        <p>Browse <code>src/pipecat/utils/</code> directly, or search the codebase for an import you see in a lesson (e.g. <code>from pipecat.utils.text.markdown_text_filter import MarkdownTextFilter</code>) to find the helper and its neighbors.</p>
+      </div>
+
+      <div class="box start">
+        <p class="title">🎓 You've reached the end</p>
+        <p>That's the whole framework, top to bottom. Head to the <a href="l35-capstone-a2a.html">Capstone (L35)</a> to assemble it, revisit any lesson from the sidebar, or open the feature tutorial's <a href="../tutorial/ch13-api-reference.html">API reference index</a> for the exhaustive per-class docs.</p>
+      </div>
+
+      <p class="lead" style="margin-top:26px">Back to the <a href="index.html">course home →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asterisk Frame Serializer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Asterisk Frame Serializer</h1>
+<blockquote>AsteriskFrameSerializer converts between Pipecat frames and an Asterisk server's media stream for self-hosted telephony.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="NikolayShakin" maintainerUrl="https://github.com/NikolayShakin" repo="https://github.com/NikolayShakin/pipecat-asterisk" /&gt;</p>
+<h2>Overview</h2>
+<p><code>AsteriskFrameSerializer</code> converts between Pipecat frames and the media stream of an <a href="https://www.asterisk.org/">Asterisk</a> WebSocket channel. It translates the channel's JSON or plain-text events and raw audio payloads into Pipecat frames (and vice versa), so a Pipecat pipeline can handle telephony calls bridged through Asterisk. The serializer is designed to be used with Pipecat's <code>FastAPIWebsocketTransport</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/NikolayShakin/pipecat-asterisk"&gt;     Source code, examples, and issues for the Asterisk integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-asterisk/"&gt;     The <code>pipecat-asterisk</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Asterisk" icon="phone" href="https://www.asterisk.org/"&gt;     Learn more about the Asterisk open-source telephony platform   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebSocket Channel Docs" icon="book" href="https://docs.asterisk.org/Configuration/Channel-Drivers/WebSocket/"&gt;     Asterisk WebSocket channel driver documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-asterisk</code></pre>
+<p>Or use <code>pip install pipecat-asterisk</code> if you manage dependencies with <code>pip</code>.</p>
+<h2>Prerequisites</h2>
+<p>Asterisk is a self-hosted, open-source telephony platform, so there is no provider account or API key to configure. You need:</p>
+<ol><li><strong>An Asterisk server</strong> with a WebSocket channel configured. The serializer</li></ol>
+<p>   and transport are based on the    <a href="https://docs.asterisk.org/Configuration/Channel-Drivers/WebSocket/">Asterisk WebSocket channel</a>.</p>
+<ol><li><strong><code>slin</code>-encoded audio</strong>: The serializer works with <code>slin</code> audio, since</li></ol>
+<p>   Asterisk natively supports all flavors of <code>slin</code> and Pipecat audio frames    must be <code>slin</code>-encoded. Transcode on the Asterisk side if you need a    different codec.</p>
+<p>The repository includes an example <code>docker-compose.yml</code> and Asterisk configuration files under <code>examples/pipecat_asterisk/</code> to spin up a local testing environment. See the <a href="https://github.com/NikolayShakin/pipecat-asterisk">source repository</a> for details.</p>
+<h2>Configuration</h2>
+<p><code>AsteriskFrameSerializer</code> is constructed with a single optional parameter:</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="0"&gt;   Sample rate in kHz used by the Asterisk channel. When left at <code>0</code>, it is   populated during setup or from the Asterisk <code>MEDIA_START</code> event. Supported   <code>slin</code> sample rates are <code>12, 16, 24, 32, 44, 48, 96, 192, 128</code> kHz. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   This serializer does not use the Pipecat Settings dataclass pattern. See the   <a href="https://github.com/NikolayShakin/pipecat-asterisk">source repository</a> for the   authoritative, up-to-date implementation. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<p>Pass the serializer to a <code>FastAPIWebsocketTransport</code> through <code>FastAPIWebsocketParams</code>, then build your pipeline as usual:</p>
+<pre><code>from fastapi import WebSocket
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.task import PipelineTask
+from pipecat.transports.websocket.fastapi import (
+    FastAPIWebsocketTransport,
+    FastAPIWebsocketParams,
+)
+from pipecat_asterisk import AsteriskFrameSerializer
+
+
+async def run_bot(websocket: WebSocket):
+    transport = FastAPIWebsocketTransport(
+        websocket=websocket,
+        params=FastAPIWebsocketParams(
+            serializer=AsteriskFrameSerializer(),
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+        ),
+    )
+
+    pipeline = Pipeline(
+        [
+            transport.input(),
+            # ... VAD, STT, LLM, TTS, etc.
+            transport.output(),
+        ]
+    )
+
+    task = PipelineTask(pipeline)
+    # ... run the pipeline</code></pre>
+<p>&lt;Tip&gt;   The package also ships an <code>AsteriskWebsocketTransport</code>, which wraps this   serializer together with flow-control logic for managing buffer utilization   between Pipecat and Asterisk. See the <a href="https://github.com/NikolayShakin/pipecat-asterisk">source   repository</a> for the full   example. &lt;/Tip&gt;</p>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v1.1.0 and Python 3.12+. Check the <a href="https://github.com/NikolayShakin/pipecat-asterisk">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/serializers/asterisk">https://docs.pipecat.ai/api-reference/server/services/serializers/asterisk</a></p>
+</div></main></div></body></html>

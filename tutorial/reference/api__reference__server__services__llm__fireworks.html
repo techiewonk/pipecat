@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fireworks AI LLM · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Fireworks AI LLM</h1>
+<blockquote>FireworksLLMService accesses Fireworks AI language models with streaming and function calling via an OpenAI-compatible API.</blockquote>
+<h2>Overview</h2>
+<p><code>FireworksLLMService</code> provides access to Fireworks AI's language models through an OpenAI-compatible interface. It inherits from <code>OpenAILLMService</code> and supports streaming responses, function calling, and context management with optimized inference infrastructure.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Fireworks LLM API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.fireworks.llm.html"&gt;     Pipecat's API methods for Fireworks AI integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/function-calling/function-calling-fireworks.py"&gt;     Complete example with function calling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Fireworks Documentation" icon="book" href="https://docs.fireworks.ai/api-reference/post-chatcompletions"&gt;     Official Fireworks AI API documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Fireworks Platform" icon="microphone" href="https://fireworks.ai/"&gt;     Access models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Fireworks AI services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[fireworks]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Fireworks AI Account Setup</h3>
+<p>Before using Fireworks AI LLM services, you need:</p>
+<ol><li><strong>Fireworks Account</strong>: Sign up at <a href="https://fireworks.ai/">Fireworks AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Selection</strong>: Choose from available open-source and proprietary models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FIREWORKS_API_KEY</code>: Your Fireworks AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Fireworks AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   Model identifier to use.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=FireworksLLMService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="FireworksLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.fireworks.ai/inference/v1"&gt;   Base URL for Fireworks API endpoint. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>FireworksLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<p>This service uses the same settings as <code>OpenAILLMService</code>. See <a href="/api-reference/server/services/llm/openai#settings">OpenAI LLM Settings</a> for the full parameter reference.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.fireworks import FireworksLLMService
+
+llm = FireworksLLMService(
+    api_key=os.getenv("FIREWORKS_API_KEY"),
+    model="accounts/fireworks/models/firefunction-v2",
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.fireworks import FireworksLLMService
+
+llm = FireworksLLMService(
+    api_key=os.getenv("FIREWORKS_API_KEY"),
+    settings=FireworksLLMService.Settings(
+        model="accounts/fireworks/models/firefunction-v2",
+        temperature=0.7,
+        top_p=0.9,
+        max_tokens=1024,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li>Fireworks does not support the <code>seed</code>, <code>max_completion_tokens</code>, or <code>stream_options</code> parameters. Use <code>max_tokens</code> instead.</li><li>Model identifiers use the <code>accounts/fireworks/models/</code> prefix format.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/llm/fireworks">https://docs.pipecat.ai/api-reference/server/services/llm/fireworks</a></p>
+</div></main></div></body></html>

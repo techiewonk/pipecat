@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradium Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Gradium Speech-to-Text</h1>
+<blockquote>GradiumSTTService streams real-time STT over Gradium's WebSocket API with multilingual transcription and semantic VAD.</blockquote>
+<h2>Overview</h2>
+<p><code>GradiumSTTService</code> provides real-time speech recognition using Gradium's WebSocket API with support for multilingual transcription, semantic voice activity detection for smart turn-taking, and robust performance in noisy environments.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Gradium STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.gradium.stt.html"&gt;     Pipecat's API methods for Gradium STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-gradium.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gradium Documentation" icon="book" href="https://gradium.ai/api_docs.html#tag/STT"&gt;     Official Gradium STT API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gradium Platform" icon="microphone" href="https://gradium.ai/"&gt;     Access API keys and speech models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Gradium services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[gradium]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Gradium Account Setup</h3>
+<p>Before using Gradium STT services, you need:</p>
+<ol><li><strong>Gradium Account</strong>: Sign up at <a href="https://gradium.ai/">Gradium</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Region Selection</strong>: Choose your preferred region (EU or US)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GRADIUM_API_KEY</code>: Your Gradium API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>GradiumSTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Gradium API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_endpoint_base_url" type="str" default="wss://api.gradium.ai/api/speech/asr"&gt;   WebSocket endpoint URL. Gradium automatically routes traffic to the nearest   endpoint. Override to pin to a specific region or custom deployment. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm"&gt;   Base audio encoding type. One of <code>"pcm"</code>, <code>"wav"</code>, or <code>"opus"</code>. For PCM, the   sample rate is appended automatically to form the input format (e.g., <code>"pcm"</code>   becomes <code>"pcm_16000"</code>). PCM accepts 8000, 16000, and 24000 Hz sample rates. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int | None" default="None"&gt;   Audio sample rate in Hz. If <code>None</code>, uses the pipeline's audio sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="GradiumSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for language and delay settings. *Deprecated in   v0.0.105. Use <code>settings=GradiumSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="json_config" type="str" default="None"&gt;   Optional JSON configuration string for additional model settings. Deprecated   in favor of <code>params</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GradiumSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="GRADIUM_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GradiumSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"default"</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Expected language of the audio. *(Inherited from base STT settings.)* Helps ground the model to a specific language and improve transcription quality.</td></tr><tr><td><code>delay_in_frames</code></td><td><code>int</code></td><td><code>12</code></td><td>Server-side delay in audio frames (80ms each) before text is generated. Higher delays allow more context but increase latency. Allowed values: 7, 8, 10, 12, 14, 16, 20, 24, 36, 48. Default is 12 (960ms). Sent to Gradium API via json\_config.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.gradium.stt import GradiumSTTService
+
+stt = GradiumSTTService(
+    api_key=os.getenv("GRADIUM_API_KEY"),
+)</code></pre>
+<h3>With Language and Delay Configuration</h3>
+<pre><code>from pipecat.services.gradium.stt import GradiumSTTService
+from pipecat.transcriptions.language import Language
+
+stt = GradiumSTTService(
+    api_key=os.getenv("GRADIUM_API_KEY"),
+    settings=GradiumSTTService.Settings(
+        language=Language.EN,
+        delay_in_frames=8,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Supported languages</strong>: German, English, Spanish, French, and Portuguese.</li><li><strong>Audio format</strong>: Configurable via <code>encoding</code> and <code>sample_rate</code> parameters. Defaults to PCM with the pipeline's sample rate. Supported PCM rates: 8000, 16000, and 24000 Hz. Audio is sent in 80ms chunks.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>Gradium STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Gradium WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Gradium WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Gradium")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/gradium">https://docs.pipecat.ai/api-reference/server/services/stt/gradium</a></p>
+</div></main></div></body></html>

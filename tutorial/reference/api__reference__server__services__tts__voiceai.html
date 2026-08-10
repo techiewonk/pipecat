@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice.ai Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Voice.ai Text-to-Speech</h1>
+<blockquote>VoiceAiTTSService streams TTS through Voice.ai's Multi-Context WebSocket API over a single persistent connection.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="voice-ai" maintainerUrl="https://github.com/voice-ai" repo="https://github.com/voice-ai/voice-ai-pipecat-tts" /&gt;</p>
+<h2>Overview</h2>
+<p><code>VoiceAiTTSService</code> converts text to speech using <a href="https://voice.ai/">Voice.ai</a>'s Multi-Context WebSocket API. It maintains a persistent WebSocket connection that streams raw PCM audio (32kHz mono), with support for multiple languages, custom voice selection, and temperature/top\_p generation controls.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/voice-ai/voice-ai-pipecat-tts"&gt;     Source code, examples, and issues for the Voice.ai integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice.ai Website" icon="book" href="https://voice.ai/"&gt;     Sign up and get a Voice.ai API key   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Documentation" icon="book" href="https://voice.ai/docs/api-reference/text-to-speech/multi-context-websocket"&gt;     Voice.ai Multi-Context WebSocket TTS API reference   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>. It is not published to PyPI; install it from source:</p>
+<pre><code>git clone https://github.com/voice-ai/voice-ai-pipecat-tts.git
+cd voice-ai-pipecat-tts
+pip install -e .</code></pre>
+<h2>Prerequisites</h2>
+<h3>Voice.ai Account Setup</h3>
+<p>Before using the Voice.ai TTS service, you need:</p>
+<ol><li><strong>Voice.ai Account</strong>: Sign up at <a href="https://voice.ai/">Voice.ai</a></li><li><strong>API Key</strong>: Obtain an API key (format: <code>vk_*</code>) from Voice.ai</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>VOICEAI_API_KEY</code>: Your Voice.ai API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Voice.ai API key for authentication (format: <code>vk_*</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None"&gt;   Voice identifier for synthesis. If not provided, uses the default built-in   voice. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://dev.voice.ai/api/v1/tts/multi-stream"&gt;   WebSocket URL for the Voice.ai multi-context TTS API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate. Defaults to 32000 Hz (Voice.ai's native rate) when   not set. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="VoiceAiTTSService.InputParams" default="None"&gt;   Voice synthesis settings. See <a href="#input-parameters">Input Parameters</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="True"&gt;   Whether to aggregate text by sentences before TTS. When <code>True</code>, each sentence   is sent separately for lower latency; when <code>False</code>, larger text chunks are   batched for more natural flow at the cost of higher latency. &lt;/ParamField&gt;</p>
+<h3>Input Parameters</h3>
+<p>Synthesis settings passed via the <code>params</code> constructor argument using <code>VoiceAiTTSService.InputParams(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>language</code></td><td><code>Language</code></td><td><code>Language.EN</code></td><td>Target language. Supports <code>en</code>, <code>ca</code>, <code>sv</code>, <code>es</code>, <code>fr</code>, <code>de</code>, <code>it</code>, <code>pt</code>, <code>pl</code>, <code>ru</code>, <code>nl</code>.</td></tr><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>TTS model. Auto-selected based on language when not provided.</td></tr><tr><td><code>audio_format</code></td><td><code>str</code></td><td><code>"pcm"</code></td><td>Audio output format (raw PCM).</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>1.0</code></td><td>Generation temperature (0.0–2.0). Higher values are more random.</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>0.8</code></td><td>Top-p sampling (0.0–1.0). Controls output diversity.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Available parameters and defaults are defined by the integration and the   Voice.ai API. See the <a href="https://github.com/voice-ai/voice-ai-pipecat-tts">source   repository</a> for the   authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat_voice_ai import VoiceAiTTSService
+from pipecat.transcriptions.language import Language
+
+tts = VoiceAiTTSService(
+    api_key="vk_your-api-key",
+    voice_id="your-voice-id",  # Optional: uses default if not provided
+    params=VoiceAiTTSService.InputParams(
+        language=Language.EN,
+        temperature=1.0,
+        top_p=0.8,
+    ),
+)
+
+# Add tts to your pipeline:
+from pipecat.pipeline.pipeline import Pipeline
+
+pipeline = Pipeline([
+    # ... other processors ...
+    tts,
+    transport.output(),
+])</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.100+. Check the <a href="https://github.com/voice-ai/voice-ai-pipecat-tts">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/voiceai">https://docs.pipecat.ai/api-reference/server/services/tts/voiceai</a></p>
+</div></main></div></body></html>

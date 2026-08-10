@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistral Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Mistral Speech-to-Text</h1>
+<blockquote>MistralSTTService streams real-time STT through Mistral's Voxtral Realtime API via the Mistral SDK's RealtimeConnection.</blockquote>
+<h2>Overview</h2>
+<p><code>MistralSTTService</code> provides real-time speech recognition using Mistral's Voxtral Realtime API. It uses the Mistral SDK's <code>RealtimeConnection</code> to stream audio and receive transcription events over WebSocket.</p>
+<p>Key features include:</p>
+<ul><li>Streaming transcription with interim results</li><li>Automatic language detection</li><li>VAD-driven utterance lifecycle management</li><li>Built-in metrics support</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Mistral STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.mistral.stt.html"&gt;     Pipecat's API methods for Mistral STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-mistral.py"&gt;     Complete example with Mistral STT and TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Transcription Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transcription/transcription-mistral.py"&gt;     Transcription-only example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Mistral Documentation" icon="book" href="https://docs.mistral.ai/"&gt;     Official Mistral API documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Mistral STT service, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[mistral]"</code></pre>
+<h2>Prerequisites</h2>
+<p>Before using <code>MistralSTTService</code>, you need:</p>
+<ol><li><strong>Mistral Account</strong>: Sign up at <a href="https://mistral.ai/">Mistral AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure you have access to the Voxtral Realtime API</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>MISTRAL_API_KEY</code>: Your Mistral API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str"&gt;   Mistral API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="None"&gt;   Custom API endpoint URL. Leave empty for the default Mistral endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="target_streaming_delay_ms" type="int" default="None"&gt;   Streaming delay for accuracy/latency tradeoff. Higher values may improve   accuracy at the cost of latency. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="MISTRAL_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="MistralSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>MistralSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"voxtral-mini-transcribe-realtime-2602"</code></td><td>Mistral STT model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language hint for transcription. *(Inherited from base STT settings.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.mistral import MistralSTTService
+
+stt = MistralSTTService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>import os
+from pipecat.services.mistral import MistralSTTService
+
+stt = MistralSTTService(
+    api_key=os.getenv("MISTRAL_API_KEY"),
+    target_streaming_delay_ms=1000,
+    settings=MistralSTTService.Settings(
+        model="voxtral-mini-transcribe-realtime-2602",
+        language="en",
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>SDK-managed WebSocket</strong>: The service extends <code>STTService</code> directly (rather than <code>WebsocketSTTService</code>) because the Mistral SDK manages the WebSocket connection internally.</li><li><strong>Language detection</strong>: When <code>language</code> is not specified in settings, the service automatically detects the spoken language and includes it in the transcription frames.</li><li><strong>VAD integration</strong>: The service works with VAD (Voice Activity Detection) to manage utterance lifecycle. When the user starts speaking, it begins accumulating interim transcripts. When the user stops, it flushes remaining audio for final transcription.</li></ul>
+<h2>Event Handlers</h2>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Transcription session created</td></tr><tr><td><code>on_disconnected</code></td><td>Connection closed</td></tr><tr><td><code>on_connection_error</code></td><td>Transcription error occurred</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(stt):
+    print("Mistral STT connected")
+
+@stt.event_handler("on_connection_error")
+async def on_connection_error(stt, error_msg):
+    print(f"Connection error: {error_msg}")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/mistral">https://docs.pipecat.ai/api-reference/server/services/stt/mistral</a></p>
+</div></main></div></body></html>

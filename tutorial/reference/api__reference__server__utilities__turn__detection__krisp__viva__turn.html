@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krisp VIVA Turn · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Krisp VIVA Turn</h1>
+<blockquote>Turn detection with the Krisp VIVA SDK in Pipecat as an alternative to VAD-based end-of-turn detection.</blockquote>
+<h2>Overview</h2>
+<p><code>KrispVivaTurn</code> is a turn analyzer that uses Krisp's VIVA SDK turn detection v3 (Tt) API to determine when a user has finished speaking. The Tt API accepts an external VAD flag with each audio frame, allowing the model to leverage voice activity information for more accurate turn detection. Unlike the <a href="/api-reference/server/utilities/turn-detection/smart-turn-overview">Smart Turn model</a> which analyzes audio in batches when VAD detects a pause, <code>KrispVivaTurn</code> processes audio frame-by-frame in real time using Krisp's streaming model.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Krisp VIVA Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-krisp-viva.py"&gt;     Complete example with Krisp VIVA voice isolation and turn detection   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Krisp Developers" icon="globe" href="https://krisp.ai/developers"&gt;     Get the Krisp SDK and API key   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p><code>KrispVivaTurn</code> requires the Krisp Python SDK. See the <a href="/pipecat/features/krisp-viva">Krisp VIVA guide</a> for installation instructions.</p>
+<h2>Environment Variables</h2>
+<p>You need to provide the path to the Krisp turn detection model file (.kef extension). This can either be done by setting the <code>KRISP_VIVA_TURN_MODEL_PATH</code> environment variable or by passing <code>model_path</code> to the constructor.</p>
+<p>For SDK v1.6.1+, you also need to provide a Krisp API key via the <code>api_key</code> constructor parameter or the <code>KRISP_VIVA_API_KEY</code> environment variable.</p>
+<pre><code>KRISP_VIVA_TURN_MODEL_PATH=/path/to/krisp-viva-tt-v2.kef
+KRISP_VIVA_API_KEY=your_api_key_here</code></pre>
+<h2>Configuration</h2>
+<p>The <code>KrispTurnParams</code> class configures turn detection behavior:</p>
+<p>&lt;ParamField path="threshold" type="float" default="0.5"&gt;   Probability threshold for turn completion (0.0 to 1.0). Higher values require   more confidence before marking a turn as complete. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="frame_duration_ms" type="int" default="20"&gt;   Frame duration in milliseconds for turn detection. Supported values: 10, 15,   20, 30, 32. &lt;/ParamField&gt;</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="model_path" type="str | None" default="None"&gt;   Path to the Krisp turn detection model file (.kef extension). If not provided,   falls back to the <code>KRISP_VIVA_TURN_MODEL_PATH</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int | None" default="None"&gt;   Audio sample rate (will be set by the transport if not provided). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="KrispTurnParams" default="KrispTurnParams()"&gt;   Configuration parameters for turn detection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Krisp SDK API key for licensing (required for SDK v1.6.1+). If empty, falls   back to the <code>KRISP_VIVA_API_KEY</code> environment variable. &lt;/ParamField&gt;</p>
+<h2>Example</h2>
+<pre><code>from pipecat.audio.turn.krisp_viva_turn import KrispVivaTurn
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+# Configure Krisp turn detection via user turn strategies
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_turn_strategies=UserTurnStrategies(
+            stop=[TurnAnalyzerUserTurnStopStrategy(
+                turn_analyzer=KrispVivaTurn()
+            )]
+        ),
+        vad_analyzer=SileroVADAnalyzer(),
+    ),
+)</code></pre>
+<h2>How It Works</h2>
+<p><code>KrispVivaTurn</code> processes audio as a streaming model, analyzing each audio frame in real time with VAD integration:</p>
+<ol><li><strong>VAD-enhanced processing</strong>: Each incoming audio frame is processed by the Krisp turn detection v3 model along with a VAD flag indicating whether speech is present. The model uses both the audio and VAD information to output a probability that the user's turn is complete.</li><li><strong>Speech tracking</strong>: VAD signals are used to track when speech starts and stops, providing context to the turn detection model.</li><li><strong>Threshold crossing</strong>: When the model's probability exceeds the configured <code>threshold</code> after speech has been detected, the turn is marked as complete.</li></ol>
+<p>This differs from the <a href="/api-reference/server/utilities/turn-detection/smart-turn-overview">Smart Turn model</a> which buffers audio and runs batch inference when VAD detects a pause. <code>KrispVivaTurn</code> makes its decision continuously as audio flows through, which can result in faster turn detection.</p>
+<h2>Notes</h2>
+<ul><li>Requires a valid Krisp SDK license and turn detection model file</li><li>Works with any VAD analyzer (Silero is recommended)</li><li>Emits <code>TurnMetricsData</code> with end-to-end processing time, measuring the interval from VAD speech-to-silence transition to the model crossing the probability threshold</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/krisp-viva-turn">https://docs.pipecat.ai/api-reference/server/utilities/turn-detection/krisp-viva-turn</a></p>
+</div></main></div></body></html>

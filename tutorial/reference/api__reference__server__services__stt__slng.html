@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLNG Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>SLNG Speech-to-Text</h1>
+<blockquote>SlngSTTService streams real-time STT over a persistent WebSocket to SLNG, a unified voice AI gateway routing multiple providers.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="slng-ai" maintainerUrl="https://github.com/slng-ai" repo="https://github.com/slng-ai/pipecat-slng" /&gt;</p>
+<h2>Overview</h2>
+<p><code>SlngSTTService</code> provides real-time speech-to-text transcription over a persistent WebSocket connection to <a href="https://slng.ai">SLNG</a>, a unified voice AI gateway that routes to multiple STT providers (Deepgram, ElevenLabs, Rime, Sarvam, and more) through a single API key. Swap the <code>model</code> string to switch providers; no other code changes needed. The service emits <code>TranscriptionFrame</code> and <code>InterimTranscriptionFrame</code> results.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/slng-ai/pipecat-slng"&gt;     Source code, examples, and issues for the SLNG integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-slng/"&gt;     The <code>pipecat-slng</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SLNG Website" icon="book" href="https://slng.ai"&gt;     Learn about the SLNG unified voice AI gateway   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SLNG Docs" icon="book" href="https://docs.slng.ai/"&gt;     Documentation for the SLNG platform   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-slng</code></pre>
+<h2>Prerequisites</h2>
+<h3>SLNG Account Setup</h3>
+<p>Before using the SLNG STT service, you need:</p>
+<ol><li><strong>SLNG Account</strong>: Sign up at <a href="https://slng.ai/">SLNG</a></li><li><strong>API Key</strong>: Get an API key from <a href="https://slng.ai">slng.ai</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SLNG_API_KEY</code>: Your SLNG API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Authentication key for the SLNG API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="slng/deepgram/nova:3-en"&gt;   The transcription model to use. Use a <code>slng/...</code> prefix for SLNG-hosted   routes, or an external route (e.g. <code>deepgram/nova:3</code>) proxied through SLNG. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="api.slng.ai"&gt;   The API host (without scheme). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. One of <code>"linear16"</code>, <code>"mp3"</code>, or <code>"opus"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. If <code>None</code>, uses the pipeline sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region_override" type="str" default="None"&gt;   Pin requests to a specific datacenter (e.g. <code>ap-southeast-2</code>, <code>eu-north-1</code>,   <code>us-east-1</code>). Sent as the <code>X-Region-Override</code> header. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="world_part_override" type="str" default="None"&gt;   Constrain routing to a broad geographic zone (<code>ap</code>, <code>eu</code>, or <code>na</code>). Sent as   the <code>X-World-Part-Override</code> header. If <code>region_override</code> is also set, it wins. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="provider_key" type="str" default="None"&gt;   Your own upstream provider API key (BYOK). Sent as the <code>X-Slng-Provider-Key</code>   header so the provider bills your account directly. Only supported on external   catalog routes (no <code>slng/</code> prefix); SLNG-hosted <code>slng/...</code> routes reject it   with a 400. See the <a href="https://docs.slng.ai/execution-layer/byok">BYOK docs</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN"&gt;   Recognition language. Defaults to <code>Language.EN</code> when not given. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_vad" type="bool" default="True"&gt;   Enable server-side VAD. Defaults to <code>True</code> when not given. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_partials" type="bool" default="True"&gt;   Stream partial (interim) transcripts. Defaults to <code>True</code> when not given. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SlngSTTService.Settings" default="None"&gt;   Runtime-updatable settings override, merged on top of the explicit kwargs   above. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SlngSTTService.Settings(...)</code>. The settings dataclass extends Pipecat's <code>STTSettings</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"slng/deepgram/nova:3-en"</code></td><td>The transcription model to use.</td></tr><tr><td><code>language</code></td><td><code>Language</code></td><td><code>Language.EN</code></td><td>Language for speech recognition.</td></tr><tr><td><code>enable_vad</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to enable server-side VAD.</td></tr><tr><td><code>enable_partials</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to receive partial (interim) transcripts.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   When the provider surfaces a confidence score, transcripts below 0.5 are   dropped. Changing <code>language</code> mid-session reconnects the WebSocket to re-run   the init handshake. See the <a href="https://github.com/slng-ai/pipecat-slng">source   repository</a> for the authoritative,   up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+
+from pipecat_slng import SlngSTTService
+
+stt = SlngSTTService(
+    api_key=os.getenv("SLNG_API_KEY"),
+    model="slng/deepgram/nova:3-en",
+)
+
+# ... add stt to your pipeline</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v1.3.0. Check the <a href="https://github.com/slng-ai/pipecat-slng">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/slng">https://docs.pipecat.ai/api-reference/server/services/stt/slng</a></p>
+</div></main></div></body></html>

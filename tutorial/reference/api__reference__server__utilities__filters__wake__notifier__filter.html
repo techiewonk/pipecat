@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WakeNotifierFilter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>WakeNotifierFilter</h1>
+<blockquote>Processor that triggers a notifier when specified frame types pass a custom filter</blockquote>
+<h2>Overview</h2>
+<p><code>WakeNotifierFilter</code> monitors the pipeline for specific frame types and triggers a notification when those frames pass a custom filter condition. It passes all frames through unchanged while performing this notification side-effect.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="notifier" type="BaseNotifier" required&gt;   The notifier object to trigger when conditions are met &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="types" type="Tuple[Type[Frame]]" required&gt;   Tuple of frame types to monitor &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="filter" type="Callable[[Frame], Awaitable[bool]]" required&gt;   Async function that examines each matching frame and returns True to trigger   notification &lt;/ParamField&gt;</p>
+<h2>Functionality</h2>
+<p>The processor operates as follows:</p>
+<ol><li>Checks if the incoming frame matches any of the specified types</li><li>If it's a matching type, calls the filter function with the frame</li><li>If the filter returns True, triggers the notifier</li><li>Passes all frames through unchanged, regardless of the filtering result</li></ol>
+<p>This allows for notification side-effects without modifying the pipeline's data flow.</p>
+<h2>Output Frames</h2>
+<ul><li>All frames pass through unchanged in their original direction</li><li>No frames are modified or filtered out</li></ul>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.frames.frames import TranscriptionFrame, UserStartedSpeakingFrame
+from pipecat.processors.filters import WakeNotifierFilter
+from pipecat.sync.event_notifier import EventNotifier
+
+# Create an event notifier
+wake_event = EventNotifier()
+
+# Create filter that notifies when certain wake phrases are detected
+async def wake_phrase_filter(frame):
+    if isinstance(frame, TranscriptionFrame):
+        return "hey assistant" in frame.text.lower()
+    return False
+
+# Add to pipeline
+wake_notifier = WakeNotifierFilter(
+    notifier=wake_event,
+    types=(TranscriptionFrame, UserStartedSpeakingFrame),
+    filter=wake_phrase_filter
+)
+
+# In another component, wait for the notification
+async def handle_wake_event():
+    await wake_event.wait()
+    print("Wake phrase detected!")</code></pre>
+<h2>Frame Flow</h2>
+<pre><code>graph TD
+    A[Input Frame] --&gt; B[WakeNotifierFilter]
+    B --&gt; C{Matching Type?}
+    C --&gt;|Yes| D{Filter Function}
+    D --&gt;|Returns True| E[Notify]
+    D --&gt;|Returns False| F[Pass Through]
+    C --&gt;|No| F
+    E --&gt; F</code></pre>
+<h2>Notes</h2>
+<ul><li>Acts as a transparent pass-through for all frames</li><li>Can trigger external events without modifying pipeline flow</li><li>Useful for signaling between pipeline components</li><li>Can monitor for multiple frame types simultaneously</li><li>Uses async filter function for complex conditions</li><li>Functions as a "listener" that doesn't affect the data stream</li><li>Can be used for logging, analytics, or coordinating external systems</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-notifier-filter">https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-notifier-filter</a></p>
+</div></main></div></body></html>

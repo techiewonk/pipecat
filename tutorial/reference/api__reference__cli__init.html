@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat init · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat init</h1>
+<blockquote>pipecat init scaffolds a new Pipecat app from the CLI: the single entry point for starting a project with Pipecat.</blockquote>
+<p><code>pipecat init</code> initializes a new Pipecat app. It's the single entry point for building with Pipecat.</p>
+<p>It gives you a choice about how to scaffold your project:</p>
+<ul><li>Using a coding agent like Claude Code or Codex</li><li>Using an interactive wizard</li></ul>
+<p>No matter how you choose to scaffold, the coding-agent files <code>AGENTS.md</code> and <code>CLAUDE.md</code> are provided so your favorite coding agent works well with Pipecat.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat init [TARGET_DIR] [OPTIONS]</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="TARGET_DIR" type="string"&gt;   Directory to initialize. <code>pipecat init my-bot</code> targets <code>./my-bot</code>; <code>pipecat       init .</code> targets the current directory. With no argument and no scaffold   options, the CLI prompts for a directory. When scaffold options are present,   the bot is generated <strong>in-place</strong> in this directory (the project name is   derived from it); a missing <code>TARGET_DIR</code> then defaults to the current   directory. The special value <code>quickstart</code> (<code>pipecat init quickstart</code>)   scaffolds the canned quickstart bot into <code>./pipecat-quickstart</code> (see   <a href="#quickstart-preset">Quickstart Preset</a>). &lt;/ParamField&gt;</p>
+<p><strong>Guide options:</strong></p>
+<p>&lt;ParamField path="--overwrite-guide" type="boolean" default="false"&gt;   Overwrite existing <code>AGENTS.md</code>, <code>CLAUDE.md</code>, and <code>GETTING_STARTED.md</code> files.   By default existing guide files are kept, so your edits are never clobbered. &lt;/ParamField&gt;</p>
+<p><strong>Scaffold options:</strong> Passing any of these (or <code>--config</code>) scaffolds a bot non-interactively, in-place in <code>TARGET_DIR</code>.</p>
+<p>&lt;ParamField path="--name / -n" type="string"&gt;   Project name. Defaults to the target directory name; pass this to override it. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--bot-type / -b" type="string"&gt;   Bot type: <code>web</code> or <code>telephony</code>. Optional — inferred from <code>--transport</code> when   omitted (telephony if any transport is a telephony provider, otherwise web). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--transport / -t" type="string"&gt;   Transport provider. Repeatable for multiple transports (e.g. <code>-t daily -t       smallwebrtc</code>). Valid values: <code>daily</code>, <code>smallwebrtc</code>, <code>twilio</code>, <code>telnyx</code>,   <code>plivo</code>, <code>exotel</code>, <code>daily_pstn</code>, <code>twilio_daily_sip</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--mode / -m" type="string"&gt;   Pipeline mode: <code>cascade</code> or <code>realtime</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--stt" type="string"&gt;   Speech-to-Text service (cascade mode). e.g. <code>deepgram_stt</code>, <code>openai_stt</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--llm" type="string"&gt;   Language model service (cascade mode). e.g. <code>openai_llm</code>, <code>anthropic_llm</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--tts" type="string"&gt;   Text-to-Speech service (cascade mode). e.g. <code>cartesia_tts</code>, <code>elevenlabs_tts</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--realtime" type="string"&gt;   Realtime service (realtime mode). e.g. <code>openai_realtime</code>,   <code>gemini_live_realtime</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--video" type="string"&gt;   Video avatar service (web bots only). e.g. <code>heygen_video</code>, <code>tavus_video</code>,   <code>simli_video</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--client-framework" type="string"&gt;   Client framework (web bots only): <code>react</code>, <code>vanilla</code>, or <code>none</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--client-server" type="string"&gt;   Client dev server (when using <code>--client-framework react</code>): <code>vite</code> or <code>nextjs</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--daily-pstn-mode" type="string"&gt;   Daily PSTN mode (required when transport is <code>daily_pstn</code>): <code>dial-in</code> or   <code>dial-out</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--twilio-daily-sip-mode" type="string"&gt;   Twilio + Daily SIP mode (required when transport is <code>twilio_daily_sip</code>):   <code>dial-in</code> or <code>dial-out</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--recording / --no-recording" type="boolean" default="false"&gt;   Enable audio recording. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--transcription / --no-transcription" type="boolean" default="false"&gt;   Enable transcription logging. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--video-input / --no-video-input" type="boolean" default="false"&gt;   Enable video input (web bots only). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--video-output / --no-video-output" type="boolean" default="false"&gt;   Enable video output (web bots only). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--deploy-to-cloud / --no-deploy-to-cloud" type="boolean" default="true"&gt;   Generate Pipecat Cloud deployment files (Dockerfile, pcc-deploy.toml). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--enable-krisp / --no-enable-krisp" type="boolean" default="false"&gt;   Enable Krisp noise cancellation (requires cloud deployment). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--observability / --no-observability" type="boolean" default="false"&gt;   Enable observability. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--eval / --no-eval" type="boolean" default="false"&gt;   Make the generated bot eval-ready: add an <code>eval</code> transport entry and starter   scenarios in <code>server/evals/</code>, plus the dependencies to run them. See the   <a href="/api-reference/cli/eval">evals docs</a> for the verification workflow. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--config / -c" type="string"&gt;   Path to a JSON config file. Triggers non-interactive scaffolding. CLI flags   override file values. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--dry-run" type="boolean" default="false"&gt;   Print the resolved scaffold configuration as JSON without writing any files. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--list-options" type="boolean" default="false"&gt;   Print all available service options as JSON and exit. Useful for CI scripts   and coding agents that need to discover valid values at runtime. &lt;/ParamField&gt;</p>
+<h2>Behavior</h2>
+<ul><li><strong>Existing guide files are kept.</strong> Re-running <code>pipecat init</code> never overwrites an existing <code>AGENTS.md</code>, <code>CLAUDE.md</code>, or <code>GETTING_STARTED.md</code>, so your edits are safe. If a guide was written by an older Pipecat version, an interactive run offers to refresh it on the spot; a non-interactive run prints how.</li><li><strong><code>--overwrite-guide</code> refreshes them</strong>, overwriting the existing guide files with the current templates (for example, after upgrading Pipecat).</li><li><code>GETTING_STARTED.md</code> is written on the coding-agent path only, not when scaffolding a bot.</li></ul>
+<h2>Scaffolding a Bot</h2>
+<p><code>pipecat init</code> scaffolds a complete project — <code>bot.py</code>, dependencies, config, and an optional client — in-place in the target directory, so the coding-agent guide and a runnable bot live together.</p>
+<h3>Interactive</h3>
+<p>With no scaffold options, an interactive <code>pipecat init</code> asks whether to build with a coding agent or scaffold a bot now. Choosing to scaffold runs a wizard for bot type, transport, AI services, and deployment options.</p>
+<h3>Non-Interactive</h3>
+<p>Passing any scaffold option (or <code>--config</code>) skips the prompts and builds the project from your flags and/or a config file — the path coding agents and automation use. The typical agent loop is:</p>
+<pre><code># 1. A developer initializes the project (writes the coding-agent guide):
+pipecat init my-bot
+
+# 2. They open ./my-bot in a coding agent and describe the bot they want.
+# 3. The agent scaffolds it in place, mapping the requirements to flags:
+pipecat init . --bot-type web --transport daily --mode cascade \
+  --stt deepgram_stt --llm openai_llm --tts cartesia_tts --eval</code></pre>
+<p>All required fields must be specified or the command exits with a list of all missing/invalid fields. Bot type is not required — it's inferred from <code>--transport</code> when omitted. Run <code>pipecat init --list-options</code> to discover valid service and transport values.</p>
+<h2>Quickstart Preset</h2>
+<pre><code>pipecat init quickstart</code></pre>
+<p>Scaffolds the canned quickstart bot (SmallWebRTC + Daily, Deepgram, OpenAI, Cartesia) into <code>./pipecat-quickstart</code> <strong>and</strong> writes <code>AGENTS.md</code> + <code>CLAUDE.md</code> there (the generated README carries the Context Hub setup). It's the fastest way to a running project that your coding agent can work with.</p>
+<h2>Examples</h2>
+<h3>Initialize for a coding agent</h3>
+<pre><code>pipecat init my-bot</code></pre>
+<h3>Scaffold in place, non-interactively</h3>
+<pre><code>pipecat init . --bot-type web --transport daily --mode cascade \
+  --stt deepgram_stt --llm openai_llm --tts cartesia_tts</code></pre>
+<p>Scaffolds into the current directory, deriving the project name from it. Bot type is inferred from the transport (<code>web</code> here), so <code>--bot-type</code> is optional.</p>
+<h3>Realtime bot</h3>
+<pre><code>pipecat init rt-bot --bot-type web --transport smallwebrtc \
+  --mode realtime --realtime openai_realtime</code></pre>
+<h3>Multiple transports</h3>
+<pre><code>pipecat init my-bot --bot-type web \
+  --transport daily --transport smallwebrtc \
+  --mode cascade --stt deepgram_stt --llm openai_llm --tts cartesia_tts</code></pre>
+<h3>With a React client</h3>
+<pre><code>pipecat init my-bot --bot-type web --transport daily \
+  --mode cascade --stt deepgram_stt --llm openai_llm --tts cartesia_tts \
+  --client-framework react --client-server vite</code></pre>
+<h3>Telephony</h3>
+<pre><code>pipecat init call-bot --bot-type telephony --transport twilio \
+  --mode cascade --stt deepgram_stt --llm openai_llm --tts cartesia_tts</code></pre>
+<h3>Eval-ready bot</h3>
+<pre><code>pipecat init my-bot --bot-type web --transport daily \
+  --mode cascade --stt deepgram_stt --llm openai_llm --tts cartesia_tts \
+  --eval</code></pre>
+<h3>Refresh the guide files</h3>
+<pre><code>pipecat init my-bot --overwrite-guide</code></pre>
+<h3>Scaffold the quickstart project</h3>
+<pre><code>pipecat init quickstart</code></pre>
+<h3>Discover available options</h3>
+<pre><code>pipecat init --list-options</code></pre>
+<p>Output:</p>
+<pre><code>{
+  "bot_type": ["web", "telephony"],
+  "transports": {
+    "web": ["daily", "smallwebrtc"],
+    "telephony": ["twilio", "twilio_daily_sip_dialin", "twilio_daily_sip_dialout", ...]
+  },
+  "stt": ["deepgram_stt", "mistral_stt", "openai_stt", "xai_stt", ...],
+  "llm": ["openai_llm", "anthropic_llm", ...],
+  "tts": ["cartesia_tts", "elevenlabs_tts", "soniox_tts", ...],
+  "realtime": ["openai_realtime", "gemini_live_realtime", ...],
+  "video": ["heygen_video", "tavus_video", "simli_video"]
+}</code></pre>
+<p>This is useful for scripting — for example, to pick a TTS provider:</p>
+<pre><code>options=$(pipecat init --list-options)
+tts=$(echo "$options" | jq -r '.tts[0]')</code></pre>
+<h3>Dry run</h3>
+<pre><code>pipecat init . --bot-type web --transport daily \
+  --mode cascade --stt deepgram_stt --llm openai_llm --tts cartesia_tts \
+  --dry-run</code></pre>
+<p>Prints the resolved configuration as JSON and writes nothing.</p>
+<h3>From a config file</h3>
+<pre><code>pipecat init my-bot --config project-config.json</code></pre>
+<p>Sample <code>project-config.json</code>:</p>
+<pre><code>{
+  "project_name": "my-bot",
+  "bot_type": "web",
+  "transports": ["daily"],
+  "mode": "cascade",
+  "stt_service": "deepgram_stt",
+  "llm_service": "openai_llm",
+  "tts_service": "cartesia_tts",
+  "recording": false,
+  "transcription": false,
+  "deploy_to_cloud": true,
+  "enable_krisp": false,
+  "enable_observability": false
+}</code></pre>
+<p>CLI flags override any values in the file, so you can use a base config and customize per-run:</p>
+<pre><code>pipecat init my-bot --config base-config.json --name custom-name --no-deploy-to-cloud</code></pre>
+<h2>Generated Project Structure</h2>
+<pre><code>my-bot/
+├── AGENTS.md               # Coding-agent guide
+├── CLAUDE.md               # @AGENTS.md import for Claude Code
+├── server/                 # Python bot server
+│   ├── bot.py              # Main bot implementation
+│   ├── evals/              # Starter eval scenarios (with --eval)
+│   ├── pyproject.toml      # Python dependencies
+│   ├── .env.example        # Environment variables template
+│   ├── Dockerfile          # Container image (if cloud enabled)
+│   └── pcc-deploy.toml     # Deployment config (if cloud enabled)
+├── client/                 # Web client (if generated)
+│   ├── src/
+│   ├── package.json
+│   └── ...
+├── .gitignore
+└── README.md               # Project setup instructions</code></pre>
+<p>The generated <code>README.md</code> includes a <strong>"Building with an AI coding agent"</strong> section with <a href="/api-reference/context-hub">Pipecat Context Hub</a> setup, so a scaffolded project is ready to extend with Claude Code or Codex.</p>
+<h2>Next Steps</h2>
+<p>&lt;Card title="Build Your Next Bot" icon="wand-magic-sparkles" href="/pipecat/get-started/build-your-next-bot"&gt;   The full flow: initialize a project, then build with a coding agent or   scaffold a bot &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/init">https://docs.pipecat.ai/api-reference/cli/init</a></p>
+</div></main></div></body></html>

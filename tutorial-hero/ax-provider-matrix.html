@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix D · Provider matrix — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix D · Reference</div>
+      <h1>Provider matrix</h1>
+      <p class="lead">What you subclass and the (usually one) method you override to add or swap a provider. Source: <code>services/</code>.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="add">Adding a provider</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Kind</th><th>Subclass</th><th>Override</th></tr></thead>
+        <tbody>
+          <tr><td>LLM (OpenAI-compatible)</td><td><code>BaseOpenAILLMService</code></td><td>Just set <code>Settings</code> + defaults (reuses the streaming engine).</td></tr>
+          <tr><td>LLM (other)</td><td><code>LLMService</code> / <code>WebsocketLLMService</code></td><td>Set <code>adapter_class</code>; implement completion in <code>process_frame</code>/<code>_process_context</code>.</td></tr>
+          <tr><td>STT (streaming)</td><td><code>STTService</code></td><td><code>run_stt(audio)</code> (+ optional <code>_connect</code>/<code>_disconnect</code>).</td></tr>
+          <tr><td>STT (batch/HTTP)</td><td><code>SegmentedSTTService</code></td><td><code>run_stt(audio)</code> — called once per VAD segment.</td></tr>
+          <tr><td>TTS (streaming)</td><td><code>WebsocketTTSService</code></td><td><code>run_tts(text, ctx)</code> + a receive loop emitting <code>TTSAudioRawFrame</code>.</td></tr>
+          <tr><td>TTS (HTTP)</td><td><code>TTSService</code></td><td><code>run_tts(text, ctx)</code>.</td></tr>
+          <tr><td>Realtime (speech-to-speech)</td><td><code>WebsocketLLMService</code></td><td>Consume <code>InputAudioRawFrame</code>, emit <code>TTSAudioRawFrame</code>; a long-lived session loop.</td></tr>
+          <tr><td>Vision / Image</td><td><code>VisionService</code> / <code>ImageGenService</code></td><td><code>run_vision(frame)</code> / <code>run_image_gen(prompt)</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Every provider defines a <code>Settings</code> dataclass (extending the modality's), exposes it as <code>Settings = …</code>, and implements <code>can_generate_metrics()</code> / <code>language_to_service_language()</code> where relevant.</p>
+
+      <h2 id="who">Who's available (selected)</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Modality</th><th>Providers</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LLM</strong></td><td>OpenAI, Anthropic, Google (Gemini/Vertex), AWS Bedrock, Grok, Groq, Cerebras, DeepSeek, Fireworks, Mistral, Nebius, OpenRouter, Perplexity, Qwen, SambaNova, Together, xAI, Ollama, Baseten, Crusoe…</td></tr>
+          <tr><td><strong>STT</strong></td><td>Deepgram (+ Flux), AssemblyAI, Gladia, Speechmatics, Soniox, Whisper (local), Moonshine, FunASR, NVIDIA, Azure, Google, Cartesia, ElevenLabs…</td></tr>
+          <tr><td><strong>TTS</strong></td><td>Cartesia, ElevenLabs, Rime, LMNT, Neuphonic, Piper, Kokoro, XTTS, Fish, Hume, Inworld, MiniMax, Camb, Async.ai, NVIDIA, Azure, Google, OpenAI…</td></tr>
+          <tr><td><strong>Realtime</strong></td><td>Google Gemini Live, OpenAI Realtime, AWS Nova Sonic, Grok, Inworld, Azure, Ultravox.</td></tr>
+          <tr><td><strong>Vision / Avatar</strong></td><td>OpenAI, Anthropic, Gemini, Moondream (vision); Tavus, HeyGen, Simli, LemonSlice (avatars).</td></tr>
+        </tbody>
+      </table></div>
+      <p>The full, always-current catalog is the feature tutorial's <a href="../tutorial/ch13-api-reference.html">API reference index</a> and <a href="../tutorial/EXAMPLES_INVENTORY.md">examples inventory</a>.</p>
+
+      <p class="lead" style="margin-top:26px">See also: <a href="ax-coverage.html">Appendix E — Coverage matrix →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

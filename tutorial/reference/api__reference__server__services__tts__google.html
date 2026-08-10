@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google Text-to-Speech</h1>
+<blockquote>Google Cloud TTS with GoogleTTSService (low-latency streaming), GoogleHttpTTSService, and GeminiTTSService for Gemini TTS models.</blockquote>
+<h2>Overview</h2>
+<p>Google Cloud Text-to-Speech provides high-quality speech synthesis with two service implementations: <code>GoogleTTSService</code> (WebSocket-based) for streaming with the lowest latency, and <code>GoogleHttpTTSService</code> (HTTP-based) for simpler integration. <code>GoogleTTSService</code> is recommended for real-time applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Google TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.tts.html"&gt;     Pipecat's API methods for Google Cloud TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-google.py"&gt;     Complete example with Chirp 3 HD voice   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Cloud Documentation" icon="book" href="https://cloud.google.com/text-to-speech/docs"&gt;     Official Google Cloud Text-to-Speech documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Gallery" icon="microphone" href="https://cloud.google.com/text-to-speech/docs/voices"&gt;     Browse available voices and languages   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Google services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Cloud Setup</h3>
+<p>Before using Google Cloud TTS services, you need:</p>
+<ol><li><strong>Google Cloud Account</strong>: Sign up at <a href="https://console.cloud.google.com/">Google Cloud Console</a></li><li><strong>Project Setup</strong>: Create a project and enable the Text-to-Speech API</li><li><strong>Service Account</strong>: Create a service account with TTS permissions</li><li><strong>Authentication</strong>: Set up credentials via service account key or Application Default Credentials</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_APPLICATION_CREDENTIALS</code>: Path to your service account key file (recommended)</li><li>Or use Application Default Credentials for cloud deployments</li></ul>
+<h2>Configuration</h2>
+<h3>GoogleTTSService</h3>
+<p>Streaming service optimized for Chirp 3 HD and Journey voices.</p>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string containing Google Cloud service account credentials. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to Google Cloud service account JSON file. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" default="None"&gt;   Google Cloud location for regional endpoint (e.g., <code>"us-central1"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="en-US-Chirp3-HD-Charon" deprecated&gt;   Google TTS voice identifier. *Deprecated in v0.0.105. Use   <code>settings=GoogleTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_cloning_key" type="str" default="None"&gt;   Voice cloning key for Chirp 3 custom voices. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="InputParams()" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=GoogleTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#googlettsservice-settings">GoogleTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>GoogleTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GoogleTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>speaking_rate</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speaking rate in the range \[0.25, 2.0].</td></tr></tbody></table></div>
+<h3>GoogleHttpTTSService</h3>
+<p>HTTP service with full SSML support for all voice types.</p>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string containing Google Cloud service account credentials. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to Google Cloud service account JSON file. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" default="None"&gt;   Google Cloud location for regional endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="en-US-Chirp3-HD-Charon" deprecated&gt;   Google TTS voice identifier. *Deprecated in v0.0.105. Use   <code>settings=GoogleHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=GoogleHttpTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#googlehttpttsservice-settings">GoogleHttpTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>GoogleHttpTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GoogleHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>pitch</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Voice pitch adjustment (e.g., <code>"+2st"</code>, <code>"-50%"</code>).</td></tr><tr><td><code>rate</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Speaking rate for SSML prosody (non-Chirp voices, e.g., <code>"slow"</code>, <code>"fast"</code>, <code>"125%"</code>).</td></tr><tr><td><code>speaking_rate</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speaking rate for AudioConfig (Chirp/Journey voices). Range \[0.25, 2.0].</td></tr><tr><td><code>volume</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Volume adjustment (e.g., <code>"loud"</code>, <code>"soft"</code>, <code>"+6dB"</code>).</td></tr><tr><td><code>emphasis</code></td><td><code>Literal</code></td><td><code>NOT_GIVEN</code></td><td>Emphasis level: <code>"strong"</code>, <code>"moderate"</code>, <code>"reduced"</code>, <code>"none"</code>.</td></tr><tr><td><code>gender</code></td><td><code>Literal</code></td><td><code>NOT_GIVEN</code></td><td>Voice gender preference: <code>"male"</code>, <code>"female"</code>, <code>"neutral"</code>.</td></tr><tr><td><code>google_style</code></td><td><code>Literal</code></td><td><code>NOT_GIVEN</code></td><td>Google-specific voice style: <code>"apologetic"</code>, <code>"calm"</code>, <code>"empathetic"</code>, <code>"firm"</code>, <code>"lively"</code>.</td></tr></tbody></table></div>
+<h3>GeminiTTSService</h3>
+<p>Streaming service using Gemini's TTS-specific models with natural voice control. Supports two backends: the Google Cloud backend (with prompts for style instructions and multi-speaker support) or the Gemini Developer API (google-genai) backend (simpler API key authentication).</p>
+<p>&lt;ParamField path="model" type="str" default="gemini-3.1-flash-tts-preview" deprecated&gt;   Gemini TTS model to use. Options: <code>"gemini-3.1-flash-tts-preview"</code>,   <code>"gemini-2.5-flash-tts"</code>, <code>"gemini-2.5-pro-tts"</code>. *Deprecated in v0.0.105. Use   <code>settings=GeminiTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Google AI API key for authentication with the GenAI backend. When provided,   automatically selects the GenAI backend. Alternatively set <code>GOOGLE_API_KEY</code>   environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials" type="str" default="None"&gt;   JSON string containing Google Cloud service account credentials for the Google   Cloud backend. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="credentials_path" type="str" default="None"&gt;   Path to Google Cloud service account JSON file for the Google Cloud backend. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="location" type="str" default="None"&gt;   Google Cloud location for regional endpoint (Google Cloud backend only). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="Kore" deprecated&gt;   Voice name from available Gemini voices (e.g., <code>"Kore"</code>, <code>"Charon"</code>, <code>"Puck"</code>,   <code>"Zephyr"</code>). *Deprecated in v0.0.105. Use   <code>settings=GeminiTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. Google TTS outputs at 24kHz; mismatched rates   will produce a warning. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=GeminiTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GeminiTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#geminittsservice-settings">GeminiTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_genai" type="bool" default="None"&gt;   Force use of the google-genai backend when <code>True</code>, or the Google Cloud backend   when <code>False</code>. If not provided, backend is selected automatically based on   whether <code>api_key</code> is passed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_options" type="HttpOptions" default="None"&gt;   HTTP client options for the google-genai client. Only applicable when using   the GenAI backend. &lt;/ParamField&gt;</p>
+<h4>GeminiTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GeminiTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Style instructions for how to synthesize the content.</td></tr><tr><td><code>multi_speaker</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Enable multi-speaker support.</td></tr><tr><td><code>speaker_configs</code></td><td><code>list[dict]</code></td><td><code>NOT_GIVEN</code></td><td>Speaker configurations for multi-speaker mode. Each dict should have <code>speaker_alias</code> and optionally <code>speaker_id</code>.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup (Streaming)</h3>
+<pre><code>from pipecat.services.google import GoogleTTSService
+
+tts = GoogleTTSService(
+    credentials_path="/path/to/service-account.json",
+    settings=GoogleTTSService.Settings(
+        voice="en-US-Chirp3-HD-Charon",
+        language=Language.EN_US,
+    )
+)</code></pre>
+<h3>HTTP Service with SSML</h3>
+<pre><code>from pipecat.services.google import GoogleHttpTTSService
+from pipecat.transcriptions.language import Language
+
+tts = GoogleHttpTTSService(
+    credentials_path="/path/to/service-account.json",
+    settings=GoogleHttpTTSService.Settings(
+        voice="en-US-Standard-A",
+        language=Language.EN_US,
+        rate="1.1",
+        pitch="+2st",
+    ),
+)</code></pre>
+<h3>Gemini TTS with GenAI Backend (API Key)</h3>
+<pre><code>from pipecat.services.google import GeminiTTSService
+
+tts = GeminiTTSService(
+    api_key=os.environ["GOOGLE_API_KEY"],
+    settings=GeminiTTSService.Settings(
+        model="gemini-3.1-flash-tts-preview",
+        voice="Puck",
+    )
+)</code></pre>
+<h3>Gemini TTS with Google Cloud Backend (Style Prompt)</h3>
+<pre><code>from pipecat.services.google import GeminiTTSService
+from pipecat.transcriptions.language import Language
+
+tts = GeminiTTSService(
+    credentials_path="/path/to/service-account.json",
+    settings=GeminiTTSService.Settings(
+        model="gemini-3.1-flash-tts-preview",
+        voice="Kore",
+        language=Language.EN_US,
+        prompt="Say this in a friendly and helpful tone"
+    )
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Streaming vs HTTP</strong>: <code>GoogleTTSService</code> uses the streaming API for low latency and only supports Chirp 3 HD and Journey voices. <code>GoogleHttpTTSService</code> supports all Google voices including Standard and WaveNet, with full SSML support.</li><li><strong>Chirp/Journey voices and SSML</strong>: Chirp and Journey voices do not support SSML. The HTTP service automatically uses plain text input for these voices.</li><li><strong>Speaking rate</strong>: For Chirp and Journey voices, use <code>speaking_rate</code> (float, 0.25-2.0) in <code>settings</code>. For other voices, use <code>rate</code> (string) for SSML prosody control.</li><li><strong>Gemini TTS sample rate</strong>: Google TTS always outputs at 24kHz. Setting a different sample rate will produce a warning and may cause audio issues.</li><li><strong>Gemini TTS backends</strong>: <code>GeminiTTSService</code> supports two backends:</li><li><strong>GenAI backend</strong> (google-genai): Simpler authentication with API key. Automatically selected when <code>api_key</code> is provided. Does not support <code>prompt</code> or <code>multi_speaker</code> settings.</li><li><strong>Google Cloud backend</strong>: Uses service account credentials. Supports <code>prompt</code> for style instructions and <code>multi_speaker</code> for multi-voice conversations.</li><li><strong>Backend selection</strong>: Pass <code>api_key</code> to use the GenAI backend, or <code>credentials</code>/<code>credentials_path</code> for Google Cloud. The <code>GOOGLE_API_KEY</code> environment variable alone does not switch backends; it is only used once the GenAI backend is active. Use <code>use_genai=True</code> to force the GenAI backend explicitly.</li><li><strong>Gemini multi-speaker</strong>: Use <code>multi_speaker=True</code> with <code>speaker_configs</code> to generate conversations between multiple voices (Google Cloud backend only). Markup text with speaker aliases to control which voice speaks.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/google">https://docs.pipecat.ai/api-reference/server/services/tts/google</a></p>
+</div></main></div></body></html>

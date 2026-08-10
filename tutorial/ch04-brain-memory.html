@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 4 — Brain &amp; Memory · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 4 · Part A — Core</div>
+<h1>Brain &amp; Memory: the LLM and its context</h1>
+<div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+<p class="lead">The LLM is the reasoning core, but it's stateless — it only knows what you resend each turn. Pipecat manages that memory (the <em>context</em>), keeps it across sessions, and compresses it when it grows.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="context">Context is the memory</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>An <code>LLMContext</code> is the running list of messages (system, user, assistant) sent to the model every turn. The <strong>context aggregator pair</strong> records both sides automatically. Swap models freely — each provider is an <code>LLMService</code> in the same slot.</p></div>
+<pre class="diagram">user_aggregator ─▶ [ LLMContext: system, user, assistant, ... ] ◀─ assistant_aggregator
+                              │ resent to the LLM every turn
+                              ▼  (optional) summarizer collapses old turns</pre>
+<p>Docs: <a href="reference/pipecat__learn__context__management.html" target="_blank" rel="noopener">Context Management</a>, <a href="reference/pipecat__learn__llm.html" target="_blank" rel="noopener">LLM Inference</a>.</p>
+
+<h2 id="build">Building &amp; kicking off context</h2>
+<pre><code class="language-python">llm = OpenAILLMService(api_key=os.environ["OPENAI_API_KEY"],
+    settings=OpenAILLMService.Settings(system_instruction="You are helpful and brief."))
+
+context = LLMContext()
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context, user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()))
+
+context.add_message({"role": "developer", "content": "Please introduce yourself."})
+await worker.queue_frames([LLMRunFrame()])   # trigger a first response</code></pre>
+<div class="box py"><p class="title">🐍 Python note — messages are dicts</p>
+<p>Each message is a <code>dict</code> with <code>role</code> and <code>content</code>. Roles: <code>system</code>/<code>developer</code> (instructions), <code>user</code>, <code>assistant</code>.</p></div>
+
+<h2 id="runtime">Runtime model settings</h2>
+<pre><code class="language-python">from pipecat.frames.frames import LLMUpdateSettingsFrame
+await llm.queue_frame(LLMUpdateSettingsFrame({"temperature": 0.2}))</code></pre>
+
+<h2 id="persist">Persistence &amp; summarization</h2>
+<p><strong>Persistence</strong> keeps the context across reconnects/sessions (the <code>persistent-context/</code> examples; realtime providers keep memory in-model). <strong>Summarization</strong> compresses old turns to stay under token limits and cost (<code>context-summarization/</code>). Docs: <a href="reference/pipecat__fundamentals__context__summarization.html" target="_blank" rel="noopener">Context Summarization</a>.</p>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python persistent-context/persistent-context-openai.py   # chat, reconnect, it remembers
+uv run python context-summarization/context-summarization-openai.py</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Lower the summarization token threshold so it fires after a few turns and log the produced summary. Swap <code>OpenAILLMService</code> for <code>AnthropicLLMService</code> and confirm the pipeline is unchanged.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>Bot "forgets" instantly → aggregators missing/misordered (assistant aggregator goes after <code>transport.output()</code>). Cost spikes on long chats → add summarization. Update ignored → sent before init; send after <code>on_client_connected</code>.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>Why must Pipecat resend context every turn?</summary><p>The LLM is stateless — it has no memory of prior turns, so the whole conversation is resent each time.</p></details>
+
+<h2 id="files">Example files</h2>
+<h3>Runtime LLM settings</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>llm-anthropic.py</code></td><td>Runtime LLM settings updates — Anthropic</td></tr><tr><td><code>llm-aws-bedrock.py</code></td><td>Runtime LLM settings updates — AWS</td></tr><tr><td><code>llm-aws-nova-sonic.py</code></td><td>Runtime LLM settings updates — AWS</td></tr><tr><td><code>llm-azure.py</code></td><td>Runtime LLM settings updates — Azure</td></tr><tr><td><code>llm-azure-realtime.py</code></td><td>Runtime LLM settings updates — Azure</td></tr><tr><td><code>llm-cerebras.py</code></td><td>Runtime LLM settings updates — Cerebras</td></tr><tr><td><code>llm-deepseek.py</code></td><td>Runtime LLM settings updates — DeepSeek</td></tr><tr><td><code>llm-fireworks.py</code></td><td>Runtime LLM settings updates — Fireworks</td></tr><tr><td><code>llm-gemini-live.py</code></td><td>Runtime LLM settings updates — gemini-live</td></tr><tr><td><code>llm-gemini-live-vertex.py</code></td><td>Runtime LLM settings updates — Google Vertex — via Vertex AI</td></tr><tr><td><code>llm-google.py</code></td><td>Runtime LLM settings updates — Google</td></tr><tr><td><code>llm-google-vertex.py</code></td><td>Runtime LLM settings updates — Google — via Vertex AI</td></tr><tr><td><code>llm-grok.py</code></td><td>Runtime LLM settings updates — xAI</td></tr><tr><td><code>llm-grok-realtime.py</code></td><td>Runtime LLM settings updates — Grok</td></tr><tr><td><code>llm-groq.py</code></td><td>Runtime LLM settings updates — Groq</td></tr><tr><td><code>llm-mistral.py</code></td><td>Runtime LLM settings updates — Mistral</td></tr><tr><td><code>llm-nvidia.py</code></td><td>Runtime LLM settings updates — NVIDIA</td></tr><tr><td><code>llm-ollama.py</code></td><td>Runtime LLM settings updates — Ollama</td></tr><tr><td><code>llm-openai.py</code></td><td>Runtime LLM settings updates — OpenAI</td></tr><tr><td><code>llm-openai-realtime.py</code></td><td>Runtime LLM settings updates — OpenAI</td></tr><tr><td><code>llm-openai-responses.py</code></td><td>Runtime LLM settings updates — OpenAI</td></tr><tr><td><code>llm-openai-responses-http.py</code></td><td>Runtime LLM settings updates — OpenAI — HTTP streaming</td></tr><tr><td><code>llm-openrouter.py</code></td><td>Runtime LLM settings updates — OpenRouter</td></tr><tr><td><code>llm-perplexity.py</code></td><td>Runtime LLM settings updates — Perplexity</td></tr><tr><td><code>llm-qwen.py</code></td><td>Runtime LLM settings updates — Qwen</td></tr><tr><td><code>llm-sambanova.py</code></td><td>Runtime LLM settings updates — SambaNova</td></tr><tr><td><code>llm-sarvam.py</code></td><td>Runtime LLM settings updates — Sarvam</td></tr><tr><td><code>llm-together.py</code></td><td>Runtime LLM settings updates — Together</td></tr><tr><td><code>llm-ultravox-realtime.py</code></td><td>Runtime LLM settings updates — Ultravox</td></tr></tbody></table></div>
+<h3>Persistent context</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>persistent-context-anthropic.py</code></td><td>Persistent cross-session context — Anthropic</td></tr><tr><td><code>persistent-context-aws-nova-sonic.py</code></td><td>Persistent cross-session context — AWS</td></tr><tr><td><code>persistent-context-gemini.py</code></td><td>Persistent cross-session context — context-gemini</td></tr><tr><td><code>persistent-context-grok-realtime.py</code></td><td>Grok Realtime persistent context example</td></tr><tr><td><code>persistent-context-openai.py</code></td><td>Persistent cross-session context — OpenAI</td></tr><tr><td><code>persistent-context-openai-realtime.py</code></td><td>Persistent cross-session context — OpenAI</td></tr><tr><td><code>persistent-context-openai-responses.py</code></td><td>Persistent cross-session context — OpenAI</td></tr><tr><td><code>persistent-context-openai-responses-http.py</code></td><td>Persistent cross-session context — OpenAI — HTTP streaming</td></tr></tbody></table></div>
+<h3>Context summarization</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>context-summarization-dedicated-llm.py</code></td><td>Example demonstrating advanced context summarization configuration</td></tr><tr><td><code>context-summarization-google.py</code></td><td>Example demonstrating context summarization feature</td></tr><tr><td><code>context-summarization-manual-openai.py</code></td><td>Example demonstrating manual context summarization via a function call</td></tr><tr><td><code>context-summarization-openai.py</code></td><td>Example demonstrating context summarization feature</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCPClient · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>MCPClient</h1>
+<blockquote>MCPClient connects Pipecat bots to MCP (Model Context Protocol) servers and registers their tools with your LLM.</blockquote>
+<h2>Overview</h2>
+<p>MCP is an open standard for enabling AI agents to interact with external data and tools. <code>MCPClient</code> provides a way to access and call tools via MCP. For example, instead of writing bespoke function call implementations for an external API, you may use an MCP server that provides a bridge to the API. *Be aware there may be security implications.* See <a href="https://github.com/modelcontextprotocol">MCP documenation</a> for more details.</p>
+<p>The client maintains a persistent connection to the MCP server and must be used as an async context manager or explicitly started and closed:</p>
+<pre><code>async with MCPClient(server_params=...) as mcp:
+    tools = await mcp.register_tools(llm)</code></pre>
+<h2>Installation</h2>
+<p>To use <code>MCPClient</code>, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[mcp]"</code></pre>
+<p>You may also need to set environment variables as required by the specific MCP server to which you are connecting.</p>
+<h2>Configuration</h2>
+<h3>Constructor Parameters</h3>
+<p>You can connect to your MCP server via Stdio, SSE, or Streamable HTTP transport. See <a href="https://modelcontextprotocol.io/docs/concepts/transports#built-in-transport-types">here</a> for more documentation on MCP transports.</p>
+<p>&lt;ParamField path="server_params" type="StdioServerParameters | SseServerParameters | StreamableHttpParameters" required&gt;   Connection parameters for the MCP server. Must be one of:</p>
+<ul><li><code>StdioServerParameters</code> (from <code>mcp</code>): Connects to a local MCP server process via stdio.</li></ul>
+<pre><code>  from mcp import StdioServerParameters
+
+  StdioServerParameters(
+      command="python",       # Executable
+      args=["server.py"],     # Optional command line arguments
+      env=None,               # Optional environment variables
+  )</code></pre>
+<ul><li><code>SseServerParameters</code> (from <code>mcp.client.session_group</code>): Connects to a remote MCP server via Server-Sent Events.</li></ul>
+<pre><code>  from mcp.client.session_group import SseServerParameters
+
+  SseServerParameters(
+      url="https://your.mcp.server/sse",  # Server URL
+      headers=None,                        # Optional HTTP headers
+      timeout=5,                           # Connection timeout in seconds
+      sse_read_timeout=300,                # SSE read timeout in seconds
+  )</code></pre>
+<ul><li><code>StreamableHttpParameters</code> (from <code>mcp.client.session_group</code>): Connects to a remote MCP server via Streamable HTTP.</li></ul>
+<pre><code>  from mcp.client.session_group import StreamableHttpParameters
+
+  StreamableHttpParameters(
+      url="https://your.mcp.server/mcp/",  # Server URL
+      headers=None,                         # Optional HTTP headers
+      timeout=5,                            # Connection timeout in seconds
+      sse_read_timeout=300,                 # SSE read timeout in seconds
+      terminate_on_close=True,              # Terminate session on close
+  )</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools_filter" type="List[str] | None" default="None"&gt;   Optional list of tool names to register. If <code>None</code>, all tools from the MCP   server are registered. Use this to limit which tools are exposed to the LLM. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tools_output_filters" type="Dict[str, Callable] | None" default="None"&gt;   Optional dictionary mapping tool names to filter functions that post-process tool outputs. Each filter function receives the raw tool output and returns the processed output.</p>
+<pre><code>  mcp = MCPClient(
+      server_params=server_params,
+      tools_output_filters={
+          "search": lambda result: result[:500],  # Truncate long results
+      },
+  )</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h3>Input Parameters</h3>
+<p>See more information regarding server params <a href="https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#writing-mcp-clients">here</a>.</p>
+<h2>Usage Examples</h2>
+<h3>MCP Stdio Transport</h3>
+<pre><code>import shutil
+
+from mcp import StdioServerParameters
+from pipecat.services.mcp_service import MCPClient
+
+# Initialize an LLM
+llm = ...
+
+# Initialize and configure MCPClient with server parameters
+async with MCPClient(
+    server_params=StdioServerParameters(
+        command=shutil.which("npx"),
+        args=["-y", "@name/mcp-server-name@latest"],
+        env={"ENV_API_KEY": "&lt;env_api_key&gt;"},
+    )
+) as mcp:
+    # Create tools schema from the MCP server and register them with llm
+    tools = await mcp.register_tools(llm)
+
+    # Create context with developer message and tools
+    context = LLMContext(
+        messages=[
+            {
+                "role": "developer",
+                "content": "You are a helpful assistant in a voice conversation. You have access to MCP tools. Keep responses concise."
+            }
+        ],
+        tools=tools
+    )</code></pre>
+<h3>MCP SSE Transport</h3>
+<pre><code>from mcp.client.session_group import SseServerParameters
+from pipecat.services.mcp_service import MCPClient
+
+# Initialize an LLM
+llm = ...
+
+# Initialize and configure MCPClient with SSE server parameters
+async with MCPClient(
+    server_params=SseServerParameters(
+        url="https://your.mcp.server/sse",
+    )
+) as mcp:
+    # Create tools schema from the MCP server and register them with llm
+    tools = await mcp.register_tools(llm)
+
+    # Create context with developer message and tools
+    context = LLMContext(
+        messages=[
+            {
+                "role": "developer",
+                "content": "You are a helpful assistant in a voice conversation. You have access to MCP tools. Keep responses concise."
+            }
+        ],
+        tools=tools
+    )</code></pre>
+<h3>MCP Streamable HTTP Transport</h3>
+<pre><code>import os
+
+from mcp.client.session_group import StreamableHttpParameters
+from pipecat.services.mcp_service import MCPClient
+
+# Initialize an LLM
+llm = ...
+
+# Initialize and configure MCPClient with Streamable HTTP parameters
+async with MCPClient(
+    server_params=StreamableHttpParameters(
+        url="https://api.githubcopilot.com/mcp/",
+        headers={"Authorization": f"Bearer {os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN')}"},
+    )
+) as mcp:
+    # Create tools schema from the MCP server and register them with llm
+    tools = await mcp.register_tools(llm)
+
+    # Create context with tools
+    context = LLMContext(tools=tools)</code></pre>
+<h3>Two-Step Registration</h3>
+<p>Some LLM services (e.g. Gemini Live) require tools to be passed at construction time. Use <code>get_tools_schema()</code> to obtain the schema first, then <code>register_tools_schema()</code> to register handlers after the LLM is created.</p>
+<pre><code>from mcp.client.session_group import StreamableHttpParameters
+from pipecat.services.mcp_service import MCPClient
+
+# Initialize MCPClient
+async with MCPClient(
+    server_params=StreamableHttpParameters(
+        url="https://api.githubcopilot.com/mcp/",
+        headers={"Authorization": f"Bearer {os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN')}"},
+    )
+) as mcp:
+    # Step 1: Get tools schema without registering
+    tools = await mcp.get_tools_schema()
+
+    # Step 2: Create LLM with tools
+    llm = GeminiLiveLLMService(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        system_instruction="You are a helpful assistant.",
+        tools=tools,
+    )
+
+    # Step 3: Register tool handlers with the LLM
+    await mcp.register_tools_schema(tools, llm)</code></pre>
+<h3>Multiple MCP Servers</h3>
+<p>You can combine tools from multiple MCP servers by merging their <code>ToolsSchema</code> objects.</p>
+<pre><code>from mcp import StdioServerParameters
+from mcp.client.session_group import StreamableHttpParameters
+from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from pipecat.services.mcp_service import MCPClient
+
+# Initialize an LLM
+llm = ...
+
+# Set up multiple MCP clients
+async with MCPClient(
+    server_params=StdioServerParameters(
+        command=shutil.which("npx"),
+        args=["-y", "mcp-server-a"],
+        env={"API_KEY": os.getenv("SERVER_A_API_KEY")},
+    )
+) as server_a, MCPClient(
+    server_params=StreamableHttpParameters(
+        url="https://api.githubcopilot.com/mcp/",
+        headers={"Authorization": f"Bearer {os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN')}"},
+    )
+) as server_b:
+    # Register tools from each server
+    tools_a = await server_a.register_tools(llm)
+    tools_b = await server_b.register_tools(llm)
+
+    # Merge tools into a single schema
+    all_tools = ToolsSchema(
+        standard_tools=tools_a.standard_tools + tools_b.standard_tools
+    )
+
+    # Create context with combined tools
+    context = LLMContext(tools=all_tools)</code></pre>
+<h2>Methods</h2>
+<p>&lt;ResponseField name="start" type="async method"&gt;   Opens a persistent connection to the MCP server and initializes the session.   The session is reused for all subsequent tool calls until <code>close()</code> is called.   Can also be used via async context manager instead of calling this directly. &lt;/ResponseField&gt;</p>
+<pre><code>async def start(self) -&gt; None</code></pre>
+<p>&lt;ResponseField name="close" type="async method"&gt;   Closes the persistent MCP connection. Safe to call multiple times or without   having called <code>start()</code>. &lt;/ResponseField&gt;</p>
+<pre><code>async def close(self) -&gt; None</code></pre>
+<p>&lt;ResponseField name="register_tools" type="async method"&gt;   Discovers available tools from the active session, converts their schemas to   Pipecat format, and registers them with the LLM service. This is equivalent to   calling <code>get_tools_schema()</code> followed by <code>register_tools_schema()</code>. Requires   the client to be started via <code>start()</code> or async context manager. &lt;/ResponseField&gt;</p>
+<pre><code>async def register_tools(self, llm: LLMService | LLMSwitcher) -&gt; ToolsSchema</code></pre>
+<p>&lt;ResponseField name="get_tools_schema" type="async method"&gt;   Discovers available tools from the active session and converts their schemas   to Pipecat format — without registering them with an LLM. Use this when you   need the tools schema before the LLM is created. Requires the client to be   started via <code>start()</code> or async context manager. &lt;/ResponseField&gt;</p>
+<pre><code>async def get_tools_schema(self) -&gt; ToolsSchema</code></pre>
+<p>&lt;ResponseField name="register_tools_schema" type="async method"&gt;   Registers a previously obtained <code>ToolsSchema</code> with an LLM service. Use this   after <code>get_tools_schema()</code> once the LLM is available. &lt;/ResponseField&gt;</p>
+<pre><code>async def register_tools_schema(self, tools_schema: ToolsSchema, llm: LLMService | LLMSwitcher) -&gt; None</code></pre>
+<h2>Additional documentation</h2>
+<p>&lt;Note&gt;   See <a href="https://github.com/modelcontextprotocol/python-sdk">MCP's docs</a> for MCP   related updates. &lt;/Note&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/mcp/mcp">https://docs.pipecat.ai/api-reference/server/utilities/mcp/mcp</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transport Utilities · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Transport Utilities</h1>
+<blockquote>Configuration and helper utilities for Daily, LiveKit, telephony, and WebRTC transports</blockquote>
+<h2>Overview</h2>
+<p>Pipecat provides several utility modules for configuring transports and handling transport-specific operations. While the <a href="/api-reference/server/utilities/runner/guide">development runner</a> handles most of these automatically, these utilities are useful for custom setups, advanced configurations, or when building your own deployment infrastructure.</p>
+<h2>Daily Configuration</h2>
+<p>The Daily utilities handle room creation, token generation, and authentication setup for Daily integration. They support both standard video/audio rooms and SIP-enabled rooms for telephony integration.</p>
+<h3>Basic Configuration</h3>
+<p>Use <code>configure()</code> for simple room and token setup:</p>
+<pre><code>import aiohttp
+from pipecat.runner.daily import configure
+
+async with aiohttp.ClientSession() as session:
+    # Returns a DailyRoomConfig object
+    room_config = await configure(session)
+
+    room_url = room_config.room_url
+    token = room_config.token
+
+    # Use with DailyTransport
+    transport = DailyTransport(room_url, token, "Bot Name", params=DailyParams())</code></pre>
+<p>The <code>configure()</code> function returns a <code>DailyRoomConfig</code> object with:</p>
+<ul><li><code>room_url</code>: The Daily room URL for joining</li><li><code>token</code>: Authentication token for the bot</li><li><code>sip_endpoint</code>: SIP endpoint URI (None for standard rooms)</li></ul>
+<p>This function:</p>
+<ul><li>Uses <code>DAILY_SAMPLE_ROOM_URL</code> environment variable if set, otherwise creates a new room</li><li>Creates rooms with 2-hour expiration and automatic ejection by default</li><li>Generates an authentication token with 2-hour expiration using <code>DAILY_API_KEY</code></li></ul>
+<h3>Environment Variables</h3>
+<p><strong>Required</strong>:</p>
+<ul><li><code>DAILY_API_KEY</code>: Daily API key for creating rooms and tokens</li></ul>
+<p><strong>Optional</strong>:</p>
+<ul><li><code>DAILY_SAMPLE_ROOM_URL</code>: Use an existing room instead of creating one</li><li><code>DAILY_API_URL</code>: Override Daily API endpoint (defaults to <a href="https://api.daily.co/v1">https://api.daily.co/v1</a>)</li></ul>
+<h3>Room and Token Management</h3>
+<p>When no <code>DAILY_SAMPLE_ROOM_URL</code> is provided, rooms are created automatically with:</p>
+<ul><li>2-hour expiration from creation time</li><li>Automatic participant ejection when the room expires</li><li>Unique names using UUID prefixes (e.g. <code>pipecat-uuid</code>)</li></ul>
+<p>&lt;Note&gt;   Expired rooms are automatically cleaned up by Daily, so you don't need to   manage them manually. &lt;/Note&gt;</p>
+<p>Tokens are generated with 2-hour expiration and include necessary permissions for bot participation. The utilities handle all the Daily REST API interactions automatically.</p>
+<h3>SIP Configuration</h3>
+<p>Daily utilities support SIP-enabled rooms for telephony integration. When SIP parameters are provided, the function creates rooms with telephony capabilities:</p>
+<pre><code>import aiohttp
+from pipecat.runner.daily import configure
+
+async with aiohttp.ClientSession() as session:
+    # Create SIP-enabled room
+    sip_config = await configure(
+        session,
+        sip_caller_phone="+15551234567",
+        sip_enable_video=False,  # Voice-only by default
+        sip_num_endpoints=1,
+        sip_codecs={"audio": ["OPUS"], "video": ["H264"]}
+    )
+
+    print(f"Room URL: {sip_config.room_url}")
+    print(f"SIP Endpoint: {sip_config.sip_endpoint}")
+    print(f"Token: {sip_config.token}")</code></pre>
+<p><strong>SIP Parameters</strong>:</p>
+<ul><li><code>sip_caller_phone</code>: Phone number or identifier for SIP display name (enables SIP mode)</li><li><code>sip_enable_video</code>: Whether video is enabled for SIP calls (default: False)</li><li><code>sip_num_endpoints</code>: Number of allowed SIP endpoints (default: 1)</li><li><code>sip_codecs</code>: Audio/video codecs to support (optional, uses Daily defaults if not specified)</li></ul>
+<p>&lt;Note&gt;   SIP-enabled rooms cannot use existing room URLs from <code>DAILY_SAMPLE_ROOM_URL</code>.   They always create new temporary rooms with SIP configuration. &lt;/Note&gt;</p>
+<h3>Backward Compatibility</h3>
+<p>The <code>configure()</code> function supports tuple unpacking:</p>
+<pre><code># Tuple unpacking (legacy style)
+room_url, token = await configure(session)
+
+# Object access (recommended)
+config = await configure(session)
+room_url = config.room_url
+token = config.token</code></pre>
+<h2>LiveKit Configuration</h2>
+<p>LiveKit utilities manage authentication tokens, room setup, and agent permissions for LiveKit server integration.</p>
+<h3>Basic Configuration</h3>
+<p>Use <code>configure()</code> for standard setup:</p>
+<pre><code>from pipecat.runner.livekit import configure
+
+url, token, room_name = await configure()
+
+# Use with LiveKitTransport
+transport = LiveKitTransport(url=url, token=token, room_name=room_name, params=LiveKitParams())</code></pre>
+<h3>Configuration with Arguments</h3>
+<p>For command-line integration:</p>
+<pre><code>import argparse
+from pipecat.runner.livekit import configure_with_args
+
+parser = argparse.ArgumentParser()
+url, token, room_name, args = await configure_with_args(parser)</code></pre>
+<p>Supports these command-line options:</p>
+<ul><li><code>-r, --room</code>: Specify LiveKit room name</li><li><code>-u, --url</code>: Specify LiveKit server URL</li></ul>
+<h3>Token Generation</h3>
+<p>LiveKit provides two token generation functions:</p>
+<p><strong><code>generate_token(room_name, participant_name, api_key, api_secret)</code></strong> Creates a standard participant token for users or testing.</p>
+<p><strong><code>generate_token_with_agent(room_name, participant_name, api_key, api_secret)</code></strong> Creates an agent token with special permissions. Use this for your bots.</p>
+<pre><code>from pipecat.runner.livekit import generate_token_with_agent
+
+# Generate agent token for your bot
+agent_token = generate_token_with_agent("my-room", "Pipecat Bot", api_key, api_secret)
+
+# Generate user token for testing
+user_token = generate_token("my-room", "Test User", api_key, api_secret)</code></pre>
+<h3>Environment Variables</h3>
+<p><strong>Required</strong>:</p>
+<ul><li><code>LIVEKIT_API_KEY</code>: LiveKit API key</li><li><code>LIVEKIT_API_SECRET</code>: LiveKit API secret</li><li><code>LIVEKIT_URL</code>: LiveKit server URL</li><li><code>LIVEKIT_ROOM_NAME</code>: Default room name</li></ul>
+<p>All environment variables are required for LiveKit to function properly.</p>
+<h2>WebSocket and Transport Utilities</h2>
+<p>The transport utilities provide helper functions for WebSocket parsing, SDP manipulation, and transport management.</p>
+<h3>Telephony WebSocket Parsing</h3>
+<p>Use <code>parse_telephony_websocket()</code> to auto-detect telephony providers and extract call data:</p>
+<pre><code>from pipecat.runner.utils import parse_telephony_websocket
+
+transport_type, call_data = await parse_telephony_websocket(websocket)
+
+if transport_type == "twilio":
+    stream_id = call_data["stream_id"]
+    call_id = call_data["call_id"]
+elif transport_type == "telnyx":
+    stream_id = call_data["stream_id"]
+    call_control_id = call_data["call_control_id"]
+    outbound_encoding = call_data["outbound_encoding"]
+elif transport_type == "plivo":
+    stream_id = call_data["stream_id"]
+    call_id = call_data["call_id"]
+elif transport_type == "exotel":
+    stream_sid=call_data["stream_id"],
+    call_sid=call_data["call_id"],</code></pre>
+<p>The function automatically:</p>
+<ul><li>Reads and parses initial WebSocket messages</li><li>Detects provider based on message structure</li><li>Extracts provider-specific call information</li><li>Returns structured data for transport configuration</li></ul>
+<h3>Transport Helper Functions</h3>
+<p><strong>Client ID Detection</strong>:</p>
+<pre><code>from pipecat.runner.utils import get_transport_client_id
+
+client_id = get_transport_client_id(transport, client)
+# Returns pc_id for WebRTC or participant ID for Daily</code></pre>
+<p><strong>Video Capture</strong> (Daily only):</p>
+<pre><code>from pipecat.runner.utils import maybe_capture_participant_camera, maybe_capture_participant_screen
+
+# Capture participant's camera
+await maybe_capture_participant_camera(transport, client, framerate=30)
+
+# Capture participant's screen
+await maybe_capture_participant_screen(transport, client, framerate=15)</code></pre>
+<p>These functions safely handle transport detection and only execute if the transport supports the operation.</p>
+<h2>When to Use These Utilities</h2>
+<h3>Automatic Usage (Most Common)</h3>
+<p>The development runner and <code>create_transport</code> utility handle these automatically. Most users won't need to call these functions directly.</p>
+<h3>Manual Usage (Advanced)</h3>
+<p>Use these utilities directly when:</p>
+<p><strong>Custom deployment infrastructure</strong>: Building your own bot runner or deployment system</p>
+<p><strong>Advanced transport configuration</strong>: Need specific room settings, token permissions, or custom authentication</p>
+<p><strong>Non-runner scenarios</strong>: Integrating Pipecat transports into existing applications</p>
+<p><strong>Testing and debugging</strong>: Need to create rooms/tokens independently for testing</p>
+<h3>Integration Example</h3>
+<p>Here's how you might use these utilities in a custom deployment:</p>
+<pre><code>import aiohttp
+from pipecat.runner.daily import configure
+from pipecat.runner.utils import parse_telephony_websocket
+from pipecat.transports.daily.transport import DailyTransport, DailyParams
+
+async def create_custom_bot_session(transport_type: str):
+    if transport_type == "daily":
+        async with aiohttp.ClientSession() as session:
+            room_config = await configure(session)
+
+            room_url = room_config.room_url
+            token = room_config.token
+
+            return DailyTransport(room_url, token, "Custom Bot", DailyParams())
+
+    elif transport_type == "telephony":
+        # Handle custom telephony setup
+        transport_type, call_data = await parse_telephony_websocket(websocket)
+        # Configure based on detected provider...</code></pre>
+<p>These utilities provide the building blocks for any transport configuration scenario while maintaining the same reliability and functionality as the development runner.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/runner/transport-utils">https://docs.pipecat.ai/api-reference/server/utilities/runner/transport-utils</a></p>
+</div></main></div></body></html>

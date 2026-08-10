@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat 0-to-Hero — the complete source-grounded course</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">The complete course</div>
+      <h1>Pipecat, 0&nbsp;to&nbsp;Hero</h1>
+      <p class="lead">A single, source-grounded path from "never heard of Pipecat" to "can design and ship a distributed multi-agent voice system." Every lesson explains the <strong>real classes</strong> that implement the idea, then hands you an <strong>annotated program you can run</strong>.</p>
+
+      <div class="box concept">
+        <p class="title">🎯 How this course works</p>
+        <p>Two code tracks per lesson: a self-contained <strong>mini-example</strong> to learn the idea in isolation, and one step of the <strong>"Atlas" capstone</strong> — a single project that grows lesson by lesson from a say-one-thing bot into a Gemini&nbsp;Live agent-to-agent system running locally and distributed. Each lesson follows the same rhythm: 🎯 objective · 🧠 principle · 🔬 source anchors · 💻 runnable code · 🏋 exercise · ✅ checkpoint.</p>
+      </div>
+
+      <div class="box start">
+        <p class="title">✅ Full-coverage guarantee</p>
+        <p>This course is audited so that <strong>every one of the 24 <code>src/pipecat</code> packages</strong> and <strong>every official Fundamentals + Evals doc</strong> maps to a lesson — see the <a href="ax-coverage.html">Coverage matrix</a>. Nothing in the framework is left out.</p>
+      </div>
+
+      <h2 id="path">The path at a glance</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Part</th><th>Lessons</th><th>You'll be able to…</th></tr></thead>
+        <tbody>
+          <tr><td><strong>I — Principles</strong></td><td>0–5</td><td>Read any Pipecat file: frames, the FrameProcessor contract, pipelines, workers, the runner.</td></tr>
+          <tr><td><strong>II — The voice loop</strong></td><td>6–14</td><td>Build a production-quality single voice agent, every layer understood (transport → audio → STT → context → turns → LLM → tools → TTS → output).</td></tr>
+          <tr><td><strong>III — Realtime & multimodal</strong></td><td>15–18</td><td>Use Gemini Live speech-to-speech, add vision/video/avatars, reasoning, and RAG.</td></tr>
+          <tr><td><strong>IV — Structure & capture</strong></td><td>19–23</td><td>Script tasks with Flows; handle interruptions/idle/switching; summarize; record; observe.</td></tr>
+          <tr><td><strong>V — Multi-agent</strong></td><td>24–29</td><td>The bus, workers, handoff, parallel jobs, distributed agents, and a UI worker.</td></tr>
+          <tr><td><strong>VI — Production</strong></td><td>30–34</td><td>Telephony, IVR/voicemail, integrations, deployment/CLI, and evals & testing.</td></tr>
+          <tr><td><strong>VII — Capstone</strong></td><td>35</td><td>Assemble the Gemini Live A2A — local and distributed.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="part1">Part I — Principles: the engine</h2>
+      <div class="grid">
+        <a class="card" href="l00-orientation.html"><div class="n">L0</div><div class="h">How to use this course</div><div class="d">The layer cake, the capstone thread, running examples, repo map.</div></a>
+        <a class="card" href="l01-what-is-pipecat.html"><div class="n">L1</div><div class="h">What Pipecat is</div><div class="d">Real-time media-agent framework; the seven core ideas.</div></a>
+        <a class="card" href="l02-setup-first-run.html"><div class="n">L2</div><div class="h">Setup & first run</div><div class="d">uv, .env, the web client, your first bot.</div></a>
+        <a class="card" href="l03-frame-model.html"><div class="n">L3</div><div class="h">The frame model</div><div class="d">The 3 lanes and the 125-type taxonomy.</div></a>
+        <a class="card" href="l04-frameprocessor.html"><div class="n">L4</div><div class="h">FrameProcessor & custom processors</div><div class="d">process_frame/push_frame, directions, interruptions, the toolbox.</div></a>
+        <a class="card" href="l05-pipeline-workers.html"><div class="n">L5</div><div class="h">Pipeline, workers & runner</div><div class="d">Linking, lifecycle, PipelineWorker, WorkerRunner, parallel pipelines.</div></a>
+      </div>
+
+      <h2 id="part2">Part II — The voice loop, layer by layer</h2>
+      <div class="grid">
+        <a class="card" href="l06-transports.html"><div class="n">L6</div><div class="h">Transports</div><div class="d">input()/output(), TransportParams, the MediaSender.</div></a>
+        <a class="card" href="l07-audio-processing.html"><div class="n">L7</div><div class="h">Audio: filters, resamplers, VAD</div><div class="d">RNNoise/Krisp/Koala/AIC, SOXR/Resampy, Silero VAD.</div></a>
+        <a class="card" href="l08-stt.html"><div class="n">L8</div><div class="h">Speech to Text</div><div class="d">Streaming vs segmented, latency tuning, languages.</div></a>
+        <a class="card" href="l09-context-aggregators.html"><div class="n">L9</div><div class="h">Context & aggregators</div><div class="d">LLMContext and the user/assistant hub.</div></a>
+        <a class="card" href="l10-turn-taking.html"><div class="n">L10</div><div class="h">Turn-taking & muting</div><div class="d">Start/stop strategies, smart turn, server-side muting.</div></a>
+        <a class="card" href="l11-llm-settings.html"><div class="n">L11</div><div class="h">LLM, adapters & settings</div><div class="d">Streaming engine, adapters, the NOT_GIVEN settings pattern.</div></a>
+        <a class="card" href="l12-function-calling.html"><div class="n">L12</div><div class="h">Function calling & MCP</div><div class="d">Tools, result_callback, async/cancellable, MCP bridge.</div></a>
+        <a class="card" href="l13-tts.html"><div class="n">L13</div><div class="h">Text to Speech</div><div class="d">Aggregation, audio context, word timestamps, skip_tts.</div></a>
+        <a class="card" href="l14-output-playback.html"><div class="n">L14</div><div class="h">Output & playback</div><div class="d">Mixers, bot-speaking, DTMF, recording. Milestone agent.</div></a>
+      </div>
+
+      <h2 id="part3">Part III — Realtime & multimodal</h2>
+      <div class="grid">
+        <a class="card" href="l15-realtime.html"><div class="n">L15</div><div class="h">Realtime speech-to-speech</div><div class="d">One service replaces STT+LLM+TTS (Gemini Live).</div></a>
+        <a class="card" href="l16-vision-video.html"><div class="n">L16</div><div class="h">Vision, video & avatars</div><div class="d">Image frames, multimodal vision, GStreamer, talking heads.</div></a>
+        <a class="card" href="l17-thinking.html"><div class="n">L17</div><div class="h">Thinking / reasoning</div><div class="d">Thought frames, budgets, thinking + tools.</div></a>
+        <a class="card" href="l18-rag-memory.html"><div class="n">L18</div><div class="h">RAG & memory</div><div class="d">Retrieval into context, grounding, long-term memory.</div></a>
+      </div>
+
+      <h2 id="part4">Part IV — Structure, control & capture</h2>
+      <div class="grid">
+        <a class="card" href="l19-flows.html"><div class="n">L19</div><div class="h">Flows</div><div class="d">Node graphs, transitions, actions, context strategies.</div></a>
+        <a class="card" href="l20-interruptions-switching.html"><div class="n">L20</div><div class="h">Interruptions, idle & switching</div><div class="d">Interruption flow, idle, service/LLM switchers.</div></a>
+        <a class="card" href="l21-summarization.html"><div class="n">L21</div><div class="h">Summarization & strategies</div><div class="d">Compress history; APPEND/RESET/RESET_WITH_SUMMARY.</div></a>
+        <a class="card" href="l22-transcripts-recording.html"><div class="n">L22</div><div class="h">Transcripts & recording</div><div class="d">Save transcripts and audio with AudioBufferProcessor.</div></a>
+        <a class="card" href="l23-observability.html"><div class="n">L23</div><div class="h">Observability & metrics</div><div class="d">Observers, TTFB/usage metrics, RTVI events.</div></a>
+      </div>
+
+      <h2 id="part5">Part V — Multi-agent: the bus</h2>
+      <div class="grid">
+        <a class="card" href="l24-bus.html"><div class="n">L24</div><div class="h">The worker bus & bridge</div><div class="d">WorkerBus, messages, BusBridge/edge processors.</div></a>
+        <a class="card" href="l25-workers-registry.html"><div class="n">L25</div><div class="h">Workers, @tool, registry</div><div class="d">Worker hierarchy, tools, registry & discovery.</div></a>
+        <a class="card" href="l26-handoff.html"><div class="n">L26</div><div class="h">Handoff</div><div class="d">activate_worker; who owns the transport.</div></a>
+        <a class="card" href="l27-job-coordination.html"><div class="n">L27</div><div class="h">Job coordination</div><div class="d">job()/job_group(), fan-out and synthesize.</div></a>
+        <a class="card" href="l28-distributed-proxy.html"><div class="n">L28</div><div class="h">Distributed & proxy</div><div class="d">RedisBus/PgmqBus; WebSocket proxy workers.</div></a>
+        <a class="card" href="l29-uiworker-rtvi.html"><div class="n">L29</div><div class="h">UIWorker + RTVI client</div><div class="d">Bridge the bus to a web GUI over RTVI.</div></a>
+      </div>
+
+      <h2 id="part6">Part VI — Production & quality</h2>
+      <div class="grid">
+        <a class="card" href="l30-runner-telephony.html"><div class="n">L30</div><div class="h">Runner & telephony</div><div class="d">create_transport, one server, telephony serializers.</div></a>
+        <a class="card" href="l31-ivr-voicemail.html"><div class="n">L31</div><div class="h">IVR & voicemail</div><div class="d">IvrNavigator and VoicemailDetector.</div></a>
+        <a class="card" href="l32-integrations.html"><div class="n">L32</div><div class="h">Framework integrations</div><div class="d">LangChain and AWS Strands Agents as processors.</div></a>
+        <a class="card" href="l33-deployment-cli.html"><div class="n">L33</div><div class="h">Deployment & the CLI</div><div class="d">Pipecat Cloud vs self-host; the bot() contract.</div></a>
+        <a class="card" href="l34-evals-testing.html"><div class="n">L34</div><div class="h">Evals & testing</div><div class="d">EvalTransport, scenarios, harness, judge, suites.</div></a>
+      </div>
+
+      <h2 id="part7">Part VII — Capstone</h2>
+      <div class="grid">
+        <a class="card" href="l35-capstone-a2a.html"><div class="n">L35</div><div class="h">The Gemini Live A2A</div><div class="d">Assemble everything — local and distributed.</div></a>
+      </div>
+
+      <h2 id="appendices">Appendices</h2>
+      <div class="grid">
+        <a class="card" href="ax-frame-catalog.html"><div class="n">A</div><div class="h">Frame catalog</div><div class="d">All 125 frame types by lane/role.</div></a>
+        <a class="card" href="ax-glossary.html"><div class="n">B</div><div class="h">Glossary</div><div class="d">Every term, one place.</div></a>
+        <a class="card" href="ax-migration.html"><div class="n">C</div><div class="h">What changed</div><div class="d">Differences from older tutorials.</div></a>
+        <a class="card" href="ax-provider-matrix.html"><div class="n">D</div><div class="h">Provider matrix</div><div class="d">Every provider + the method it overrides.</div></a>
+        <a class="card" href="ax-coverage.html"><div class="n">E</div><div class="h">Coverage matrix</div><div class="d">Package + doc → lesson map.</div></a>
+        <a class="card" href="ax-utils.html"><div class="n">F</div><div class="h">utils/ reference</div><div class="d">The helper library, indexed.</div></a>
+        <a class="card" href="ax-events.html"><div class="n">G</div><div class="h">Events reference</div><div class="d">Every event handler across the course, in one lookup.</div></a>
+      </div>
+
+      <p class="lead" style="margin-top:28px">Begin at <a href="l00-orientation.html">Lesson 0 — How to use this course →</a></p>
+      <p style="color:var(--muted);font-size:13px">All 36 lessons and 6 appendices are complete — each with an animated flow, runnable code, source anchors, and a checkpoint. Your progress is saved in this browser.</p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

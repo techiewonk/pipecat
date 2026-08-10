@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Components · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Components</h1>
+<blockquote>Ready-to-use React components from the Pipecat React SDK: PipecatClientProvider, audio and video rendering, and visualizers.</blockquote>
+<p>The Pipecat React SDK provides several components for handling audio, video, and visualization in your application.</p>
+<h2>PipecatClientProvider</h2>
+<p>The root component for providing Pipecat client context to your application. It also includes built-in conversation state management, so any descendant component can use the <a href="/api-reference/client/react/hooks#usepipecatconversation"><code>usePipecatConversation</code></a> hook to access messages without adding a separate provider.</p>
+<pre><code>&lt;PipecatClientProvider client={pcClient}&gt;
+  {/* Child components can use usePipecatConversation, usePipecatClient, etc. */}
+&lt;/PipecatClientProvider&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>&lt;ParamField path="client" type="PipecatClient" required&gt;   A singleton instance of <code>PipecatClient</code> &lt;/ParamField&gt;</p>
+<h2>PipecatClientAudio</h2>
+<p>Creates a new <code>&lt;audio&gt;</code> element that mounts the bot's audio track.</p>
+<pre><code>&lt;PipecatClientAudio /&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>No props required</p>
+<h2>PipecatClientVideo</h2>
+<p>Creates a new <code>&lt;video&gt;</code> element that renders either the bot or local participant's video track.</p>
+<pre><code>&lt;PipecatClientVideo
+  participant="local"
+  fit="cover"
+  mirror
+  onResize={({ aspectRatio, height, width }) =&gt; {
+    console.log("Video dimensions changed:", { aspectRatio, height, width });
+  }}
+/&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>&lt;ParamField path="participant" type="('local' | 'bot')" required&gt;   Defines which participant's video track is rendered &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="fit" type="('contain' | 'cover')"&gt;   Defines whether the video should be fully contained or cover the box. Default:   'contain' &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="mirror" type="boolean"&gt;   Forces the video to be mirrored, if set &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="onResize(dimensions: object)" type="function"&gt;   Triggered whenever the video's rendered width or height changes &lt;/ParamField&gt;</p>
+<h2>PipecatClientCamToggle</h2>
+<p>A headless component to read and set the local participant's camera state.</p>
+<pre><code>&lt;PipecatClientCamToggle
+  onCamEnabledChanged={(enabled) =&gt; console.log("Camera enabled:", enabled)}
+  disabled={false}
+&gt;
+  {({ disabled, isCamEnabled, onClick }) =&gt; (
+    &lt;button disabled={disabled} onClick={onClick}&gt;
+      {isCamEnabled ? "Disable Camera" : "Enable Camera"}
+    &lt;/button&gt;
+  )}
+&lt;/PipecatClientCamToggle&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>&lt;ParamField path="onCamEnabledChanged(enabled: boolean)" type="function"&gt;   Triggered whenever the local participant's camera state changes &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="disabled" type="boolean"&gt;   If true, the component will not allow toggling the camera state. Default:   false &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="children" type="function"&gt;   A render prop that provides state and handlers to the children &lt;/ParamField&gt;</p>
+<h2>PipecatClientMicToggle</h2>
+<p>A headless component to read and set the local participant's microphone state.</p>
+<pre><code>&lt;PipecatClientMicToggle
+  onMicEnabledChanged={(enabled) =&gt; console.log("Microphone enabled:", enabled)}
+  disabled={false}
+&gt;
+  {({ disabled, isMicEnabled, onClick }) =&gt; (
+    &lt;button disabled={disabled} onClick={onClick}&gt;
+      {isMicEnabled ? "Disable Microphone" : "Enable Microphone"}
+    &lt;/button&gt;
+  )}
+&lt;/PipecatClientMicToggle&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>&lt;ParamField path="onMicEnabledChanged(enabled: boolean)" type="function"&gt;   Triggered whenever the local participant's microphone state changes &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="disabled" type="boolean"&gt;   If true, the component will not allow toggling the microphone state. Default:   false &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="children" type="function"&gt;   A render prop that provides state and handlers to the children &lt;/ParamField&gt;</p>
+<h2>VoiceVisualizer</h2>
+<p>Renders a visual representation of audio input levels on a <code>&lt;canvas&gt;</code> element.</p>
+<pre><code>&lt;VoiceVisualizer
+  participantType="local"
+  backgroundColor="white"
+  barColor="black"
+  barGap={1}
+  barWidth={4}
+  barMaxHeight={24}
+/&gt;</code></pre>
+<p><strong>Props</strong></p>
+<p>&lt;ParamField path="participantType" type="string" required&gt;   The participant type to visualize audio for &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="backgroundColor" type="string"&gt;   The background color of the canvas. Default: 'transparent' &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="barColor" type="string"&gt;   The color of the audio level bars. Default: 'black' &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="barCount" type="number"&gt;   The number of bars to display. Default: 5 &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="barGap" type="number"&gt;   The gap between bars in pixels. Default: 12 &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="barWidth" type="number"&gt;   The width of each bar in pixels. Default: 30 &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="barMaxHeight" type="number"&gt;   The maximum height at full volume of each bar in pixels. Default: 120 &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react/components">https://docs.pipecat.ai/api-reference/client/react/components</a></p>
+</div></main></div></body></html>

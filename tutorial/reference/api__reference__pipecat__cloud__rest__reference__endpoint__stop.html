@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop an Agent Session · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Stop an Agent Session</h1>
+<blockquote>DELETE /agents/{agentName}/sessions/{sessionId} stops a running Pipecat Cloud agent session and cleans up its resources.</blockquote>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /agents/{agentName}/sessions/{sessionId}:
+    delete:
+      summary: Stop an agent session
+      description: Stops an active session of a deployed agent and cleans up its resources.
+      operationId: stopSession
+      parameters:
+        - name: agentName
+          in: path
+          required: true
+          description: Name of the agent
+          schema:
+            type: string
+        - name: sessionId
+          in: path
+          required: true
+          description: UUID of the session to stop
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session stopped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopResponse'
+        '400':
+          description: Invalid request (e.g., invalid session ID format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Service or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - PrivateKeyAuth: []
+components:
+  schemas:
+    StopResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the stop operation
+          example: terminated
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID of the stopped session
+          example: 639f91d8-d511-4677-a83b-bd7564d5d92f
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Unauthorized / token expired
+            code: '401'
+  securitySchemes:
+    PrivateKeyAuth:
+      type: http
+      scheme: bearer
+      description: &gt;-
+        Authentication requires a Pipecat Cloud Private API token.
+
+
+        Generate a Private API key from your Dashboard (Settings &gt; API Keys &gt;
+        Private &gt; Create key) and include it as a Bearer token in the
+        Authorization header.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/stop">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/stop</a></p>
+</div></main></div></body></html>

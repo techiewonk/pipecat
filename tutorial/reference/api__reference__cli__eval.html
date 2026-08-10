@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat eval · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat eval</h1>
+<blockquote>pipecat eval runs scenario-based behavioral evals against a running Pipecat agent, individually or as a suite from the CLI.</blockquote>
+<p>Run scenario-based behavioral evals. <code>pipecat eval run</code> tests scenarios against an already-running agent; <code>pipecat eval suite</code> spawns the agents listed in a manifest and runs their scenarios concurrently. Both exit <code>0</code> when everything passes and <code>1</code> otherwise.</p>
+<p>If <code>pipecat-ai[cli]</code> is a dependency of your project, run these commands with <code>uv run pipecat eval</code>. They're also available as <code>python -m pipecat.evals</code>.</p>
+<p>See the <a href="/pipecat/evals/overview">Pipecat Evals guide</a> for concepts, the scenario format, and manifests.</p>
+<h2>eval run</h2>
+<p>Run one or more scenarios against an already-running agent (started with <code>-t eval</code>).</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat eval run [OPTIONS] SCENARIOS...</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="SCENARIOS..." type="path" required&gt;   One or more scenario YAML files. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--bot-url" type="string" default="ws://localhost:7860"&gt;   WebSocket URL of the agent's eval transport. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--verbose / -v" type="flag"&gt;   Print a line for each turn and expectation as it resolves. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--audio / -a" type="flag"&gt;   Record each scenario's conversation audio (audio-mode scenarios). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--record-dir" type="string" default="recordings"&gt;   Directory for <code>--audio</code> recordings: <code>&lt;record-dir&gt;/&lt;scenario&gt;.wav</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--cache-dir" type="string"&gt;   Directory for cached synthesized user audio. Defaults to   <code>&lt;user-cache-dir&gt;/pipecat/tts</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--no-cache" type="flag"&gt;   Disable the user-audio cache: re-synthesize every turn (no reads or writes). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--timeout / -t" type="integer" default="60"&gt;   Default per-expectation timeout in seconds, for expectations without their own   <code>within_ms</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--logs-dir" type="string" default="."&gt;   Directory for each scenario's logs: <code>&lt;logs-dir&gt;/&lt;scenario&gt;.eval.log</code> (plus   <code>.debug.log</code> under <code>--debug</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--debug / -d" type="flag"&gt;   Also save <code>&lt;scenario&gt;.debug.log</code> with the harness's full per-pipeline logs. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--stop-bot" type="flag"&gt;   Cancel the agent's pipeline (exit it) after the run. By default the agent is   left running so it can serve more scenarios. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--trigger-disconnect" type="flag"&gt;   Fire the bot's <code>on_client_disconnect</code> callback when the eval client   disconnects. Bots often cancel their pipeline there, so it's off by default. A   scenario's <code>trigger_disconnect:</code> field opts in on its own. &lt;/ParamField&gt;</p>
+<h2>eval suite</h2>
+<p>Spawn the agents in a manifest and run their scenarios concurrently. Everything except the <code>suite:</code> list can be set in the manifest or overridden on the command line (the command line wins).</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat eval suite [OPTIONS] MANIFEST_PATH</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="MANIFEST_PATH" type="path" required&gt;   Manifest YAML listing agents and their scenarios. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--pattern / -p" type="string"&gt;   Only run bots whose path contains this substring. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--scenario / -s" type="string"&gt;   Only run this scenario name. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--name / -n" type="string"&gt;   Run subdirectory name under <code>runs_dir</code>. Defaults to a timestamp. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--runs-dir" type="path"&gt;   Output base, overriding the manifest's <code>runs_dir</code>. A <code>&lt;name&gt;/</code> subdirectory   with <code>logs/</code> and <code>recordings/</code> is created under it. Defaults to <code>eval-runs</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--bots-dir" type="path"&gt;   Override the manifest's <code>bots_dir</code> (bot paths are relative to it). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--scenarios-dir" type="path"&gt;   Override the manifest's <code>scenarios_dir</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--concurrency / -c" type="integer"&gt;   Override the manifest's <code>concurrency</code> (how many runs execute at once). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--base-port" type="integer"&gt;   Override the manifest's <code>base_port</code> (default <code>7900</code>). Each run gets \`base\_port</p>
+<ul><li>index\`.</li></ul>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--cache-dir" type="string"&gt;   Override the manifest's <code>cache_dir</code> for cached synthesized user audio. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--no-cache" type="flag"&gt;   Disable the user-audio cache: re-synthesize every turn (no reads or writes). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--timeout / -t" type="integer" default="60"&gt;   Default per-expectation timeout in seconds, for expectations without their own   <code>within_ms</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--spawn" type="string"&gt;   Override the manifest's spawn template. Default: <code>"{python} {bot} -t eval   --port {port}"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--python" type="string"&gt;   Override the Python interpreter used to spawn each agent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--audio / -a" type="flag"&gt;   Record conversation audio. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--debug / -d" type="flag"&gt;   Also save <code>&lt;run&gt;.debug.log</code> with the harness's full per-pipeline logs. &lt;/ParamField&gt;</p>
+<h2>Examples</h2>
+<pre><code># Run one scenario against a running agent
+pipecat eval run scenarios/capital_question.yaml
+
+# Run a batch of scenarios, verbosely
+pipecat eval run scenarios/*.yaml -v
+
+# Run a full suite
+pipecat eval suite manifest.yaml
+
+# Only the support agent, 8 runs at a time, named output dir
+pipecat eval suite manifest.yaml -p support -c 8 -n nightly</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/eval">https://docs.pipecat.ai/api-reference/cli/eval</a></p>
+</div></main></div></body></html>

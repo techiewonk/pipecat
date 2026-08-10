@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipecatClient Constructor · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>PipecatClient Constructor</h1>
+<blockquote>Construct a PipecatClient from @pipecat-ai/client-js: transport selection, callbacks, and configuration options.</blockquote>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";</code></pre>
+<p><code>PipecatClient</code> is the primary component for building the client-side portion of a client-bot interaction. It is designed to work with various transport layers, such as WebRTC, WebSockets, or HTTP, allowing you to pick and choose the communication layer that best suits your application while maintaining a consistent API.</p>
+<p>&lt;Note&gt;   When initializing the <code>PipecatClient</code>, you must provide a transport instance   to the constructor for your chosen protocol or provider. See   <a href="./transports/transport">Transport</a> for more information. For the purpose of   this guide, we'll demonstrate using the <a href="/api-reference/client/js/transports/daily">Daily WebRTC   transport</a>. &lt;/Note&gt;</p>
+<h2>Example</h2>
+<pre><code>import { RTVIEvent, RTVIMessage, PipecatClient } from "@pipecat-ai/client-js";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+const PipecatClient = new PipecatClient({
+  transport: new DailyTransport(),
+  enableMic: true,
+  enableCam: false,
+  enableScreenShare: false,
+  timeout: 15 * 1000,
+  callbacks: {
+    onConnected: () =&gt; {
+      console.log("[CALLBACK] User connected");
+    },
+    onDisconnected: () =&gt; {
+      console.log("[CALLBACK] User disconnected");
+    },
+    onTransportStateChanged: (state: string) =&gt; {
+      console.log("[CALLBACK] State change:", state);
+    },
+    onBotConnected: () =&gt; {
+      console.log("[CALLBACK] Bot connected");
+    },
+    onBotDisconnected: () =&gt; {
+      console.log("[CALLBACK] Bot disconnected");
+    },
+    onBotReady: () =&gt; {
+      console.log("[CALLBACK] Bot ready to chat!");
+    },
+  },
+});</code></pre>
+<hr>
+<h2>API reference</h2>
+<h3>transport</h3>
+<p>&lt;ParamField path="transport" type="Class&lt;Transport&gt;" default="undefined" required&gt;   An instance of the <code>Transport</code> type you will use to connect to your bot service (<code>PipecatClient.connect()</code>). Transports implement the underlying device management, connectivity, media transmission, and state logic that manage the lifecycle of your session.</p>
+<p>  &lt;Note&gt;     As a best practice, we recommend you construct the transport inline in the     client constructor, as opposed to holding a reference to it. Access to the     transport is typically unnecessary. For advanced use cases that do require     access to the transport, we recommend doing so via the     <code>PipecatClient.transport</code> property, which provides some additional safeguards.   &lt;/Note&gt;</p>
+<pre><code>  import { PipecatClient } from "@pipecat-ai/client-js";
+  import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+  const pcClient = new PipecatClient({
+    transport: new DailyTransport(),
+  });</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h3>callbacks</h3>
+<p>&lt;ParamField path="callbacks" type="RTVIEventCallbacks"&gt;   Map of callback functions. See <a href="./callbacks">callbacks</a>. &lt;/ParamField&gt;</p>
+<h3>Media Initialization</h3>
+<p>&lt;ParamField path="enableMic" type="boolean" default="true"&gt;   Enable user's local microphone device. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enableCam" type="boolean" default="false"&gt;   Enable user's local webcam device. Note: Not all transports support video.   Setting this value in that case will have no effect. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enableScreenShare" type="boolean" default="false"&gt;   Enable user's local screen share. Note: Not all transports support screen   sharing. Setting this value in that case will have no effect. &lt;/ParamField&gt;</p>
+<h3>Session behavior</h3>
+<p>&lt;ParamField path="disconnectOnBotDisconnect" type="boolean" default="true"&gt;   When <code>true</code> (default), the client will automatically disconnect when the bot   disconnects. Set to <code>false</code> to keep the client transport connected after the   bot leaves — useful if you want to handle reconnection or show a waiting state   without tearing down the transport. Introduced in client-js 1.7.0. &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/client-constructor">https://docs.pipecat.ai/api-reference/client/js/client-constructor</a></p>
+</div></main></div></body></html>

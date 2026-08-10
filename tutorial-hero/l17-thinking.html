@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L17 · Thinking / reasoning — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 17 · Part III — Realtime & multimodal</div>
+      <h1>Thinking / reasoning</h1>
+      <div class="meta"><span class="pill">⏱ 25 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Reasoning models spend hidden tokens thinking before they answer, improving hard questions. Pipecat surfaces that as its own frames so you can show, log, or suppress it.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Think, then speak</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="LLMContextFrame|LLMThoughtStartFrame|LLMThoughtTextFrame(s)|LLMThoughtEndFrame|LLMTextFrame → TTS"
+           data-caption="The context reaches a reasoning-capable LLM|it opens a thinking phase (LLMThoughtStartFrame)|streams hidden reasoning as LLMThoughtTextFrames|closes thinking (LLMThoughtEndFrame)|then streams the spoken answer as normal LLMTextFrames">
+      </div>
+      <p>Thought frames are separate from the spoken answer, so by default the reasoning is <em>not</em> read aloud — but you can log it, show it in a UI, or gate on it.</p>
+
+      <h2 id="enable">Enabling thinking</h2>
+      <pre><code class="language-python">from pipecat.services.anthropic.llm import AnthropicLLMService
+
+llm = AnthropicLLMService(api_key=os.environ["ANTHROPIC_API_KEY"],
+    settings=AnthropicLLMService.Settings(
+        enable_thinking=True,
+        thinking_budget_tokens=1024,   # cap reasoning so latency stays bounded
+    ))</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Booleans & budgets</p>
+        <p><code>enable_thinking=True</code> turns it on; the <em>budget</em> caps how many hidden tokens the model may spend — the knob that trades quality for latency/cost. Thinking works with function calling too (<code>thinking-functions-*</code> examples).</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>frames/frames.py</code> — <code>LLMThoughtStartFrame</code> (561), <code>LLMThoughtTextFrame</code> (589), <code>LLMThoughtEndFrame</code> (613). Providers: Anthropic, Google (+ Vertex), OpenAI Responses. Examples: the <code>thinking/</code> folder (<code>thinking-anthropic.py</code>, <code>thinking-functions-anthropic.py</code>).</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>thinking/thinking-anthropic.py</code> with a multi-step puzzle. (2) Lower the budget and watch quality vs. speed trade off. (3) Add a processor that logs <code>LLMThoughtTextFrame</code>s so you can see the reasoning.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does a thinking <em>budget</em> control?</summary><p>How many hidden reasoning tokens the model may use before answering — the quality/latency knob.</p></details>
+      <details><summary>2. Are thought frames spoken by default?</summary><p>No — they're separate from <code>LLMTextFrame</code>s, so the reasoning isn't read aloud unless you route it somewhere.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l18-rag-memory.html">Lesson 18 — RAG & memory →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

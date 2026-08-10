@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoicemailDetector · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>VoicemailDetector</h1>
+<blockquote>Technical implementation details and architecture for voicemail detection</blockquote>
+<h2>Overview</h2>
+<p>This document provides technical implementation details for the VoicemailDetector, including its parallel pipeline architecture and performance considerations for production use.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="API Reference" icon="book" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.extensions.voicemail.voicemail_detector.html"&gt;     Complete API documentation for all VoicemailDetector classes and methods   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="code" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/features/features-voicemail-detection.py"&gt;     Working example showing VoicemailDetector integration in a complete pipeline   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Architecture</h2>
+<p>The VoicemailDetector uses a parallel pipeline architecture with two processing branches:</p>
+<ul><li><strong>Conversation Branch</strong>: Handles normal conversation flow and can be blocked when voicemail is detected to prevent the main LLM from processing additional input.</li></ul>
+<ul><li><strong>Classification Branch</strong>: Contains the LLM classifier and decision logic. This branch closes after making a classification decision to prevent unnecessary LLM calls.</li></ul>
+<p>The system coordinates between branches using a notification system and gates that control frame flow based on classification decisions. TTS frames are buffered during classification and either released (for conversations) or cleared (for voicemail) based on the decision.</p>
+<h2>Performance Considerations</h2>
+<h3>LLM Selection</h3>
+<p>The VoicemailDetector works with two separate LLMs in your pipeline:</p>
+<p><strong>Conversation LLM (main pipeline):</strong></p>
+<ul><li>Must be text-based for compatibility with the VoicemailDetector's gating system</li><li>Realtime LLMs are not compatible as they don't allow the required level of output control</li><li>This is the LLM that handles normal conversation after classification</li></ul>
+<p><strong>Classifier LLM (VoicemailDetector parameter):</strong></p>
+<ul><li>Can be either text-based or realtime LLMs</li><li>For realtime LLMs: Set output modality to <code>text</code> to ensure text-based responses</li><li>Must be able to output "CONVERSATION" or "VOICEMAIL" keywords for classification</li><li>Recommended models: OpenAILLMService with <code>gpt-4o</code>, GoogleLLMService with <code>gemini-2.0-flash</code></li></ul>
+<p>The two LLMs operate independently. You can use a realtime LLM for classification (with text output) while using a text-based LLM for conversation, or use text-based LLMs for both.</p>
+<h3>Response Timing</h3>
+<p>The <code>voicemail_response_delay</code> parameter should be tuned based on your target voicemail systems. The default value of 2 seconds is a good starting point, but you may need to adjust it based on your target voicemail systems.</p>
+<h2>Common Issues</h2>
+<p><strong>Classification not working:</strong></p>
+<ul><li>Confirm both <code>detector()</code> and <code>gate()</code> are correctly placed in pipeline</li><li>Check that STT service is producing text input for classification</li><li>Ensure the LLM is a text-based LLM</li></ul>
+<p><strong>Timing problems:</strong></p>
+<ul><li>Adjust <code>voicemail_response_delay</code> based on observed voicemail greeting patterns</li><li>Monitor classification speed; slow LLM responses affect conversation latency</li></ul>
+<p><strong>Audio playback issues:</strong></p>
+<ul><li>Ensure <code>gate()</code> is placed immediately after TTS service</li><li>Verify TTS frames are being generated before classification completes</li></ul>
+<p><strong>Custom prompt validation:</strong> The system validates custom prompts and warns if they're missing required response keywords ("CONVERSATION" and "VOICEMAIL"). Include the <code>CLASSIFIER_RESPONSE_INSTRUCTION</code> constant to ensure proper functionality.</p>
+<h2>Event Handlers</h2>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_detected</code></td><td>Live conversation detected (not voicemail)</td></tr><tr><td><code>on_voicemail_detected</code></td><td>Voicemail detected</td></tr></tbody></table></div>
+<pre><code>@voicemail_detector.event_handler("on_conversation_detected")
+async def on_conversation_detected(detector):
+    print("Live person detected — starting conversation")
+
+@voicemail_detector.event_handler("on_voicemail_detected")
+async def on_voicemail_detected(detector):
+    print("Voicemail detected — leaving message")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/extensions/voicemail">https://docs.pipecat.ai/api-reference/server/extensions/voicemail</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Producer &amp; Consumer Processors · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Producer &amp; Consumer Processors</h1>
+<blockquote>Route frames between different parts of a pipeline, allowing selective frame sharing across parallel branches or within complex pipelines</blockquote>
+<h2>Overview</h2>
+<p>The Producer and Consumer processors work as a pair to route frames between different parts of a pipeline, particularly useful when working with <a href="/api-reference/server/pipeline/parallel-pipeline"><code>ParallelPipeline</code></a>. They allow you to selectively capture frames from one pipeline branch and inject them into another.</p>
+<h2>ProducerProcessor</h2>
+<p><code>ProducerProcessor</code> examines frames flowing through the pipeline, applies a filter to decide which frames to share, and optionally transforms these frames before sending them to connected consumers.</p>
+<h3>Constructor Parameters</h3>
+<p>&lt;ParamField path="filter" type="Callable[[Frame], Awaitable[bool]]" required&gt;   An async function that determines which frames should be sent to consumers.   Should return <code>True</code> for frames to be shared. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transformer" type="Callable[[Frame], Awaitable[Frame]]" default="identity_transformer"&gt;   Optional async function that transforms frames before sending to consumers. By   default, passes frames unchanged. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="passthrough" type="bool" default="True"&gt;   When <code>True</code>, passes all frames through the normal pipeline flow. When <code>False</code>,   only passes through frames that don't match the filter. &lt;/ParamField&gt;</p>
+<h2>ConsumerProcessor</h2>
+<p><code>ConsumerProcessor</code> receives frames from a <code>ProducerProcessor</code> and injects them into its pipeline branch.</p>
+<h3>Constructor Parameters</h3>
+<p>&lt;ParamField path="producer" type="ProducerProcessor" required&gt;   The producer processor that will send frames to this consumer. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transformer" type="Callable[[Frame], Awaitable[Frame]]" default="identity_transformer"&gt;   Optional async function that transforms frames before injecting them into the   pipeline. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="direction" type="FrameDirection" default="FrameDirection.DOWNSTREAM"&gt;   The direction in which to push received frames. Usually <code>DOWNSTREAM</code> to send   frames forward in the pipeline. &lt;/ParamField&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Basic Usage: Moving TTS Audio Between Branches</h3>
+<pre><code># Create a producer that captures TTS audio frames
+async def is_tts_audio(frame: Frame) -&gt; bool:
+    return isinstance(frame, TTSAudioRawFrame)
+
+# Define an async transformer function
+async def tts_to_input_audio_transformer(frame: Frame) -&gt; Frame:
+    if isinstance(frame, TTSAudioRawFrame):
+        # Convert TTS audio to input audio format
+        return InputAudioRawFrame(
+            audio=frame.audio,
+            sample_rate=frame.sample_rate,
+            num_channels=frame.num_channels
+        )
+    return frame
+
+producer = ProducerProcessor(
+    filter=is_tts_audio,
+    transformer=tts_to_input_audio_transformer
+    passthrough=True  # Keep these frames in original pipeline
+)
+
+# Create a consumer to receive the frames
+consumer = ConsumerProcessor(
+    producer=producer,
+    direction=FrameDirection.DOWNSTREAM
+)
+
+# Use in a ParallelPipeline
+pipeline = Pipeline([
+    transport.input(),
+    ParallelPipeline(
+        # Branch 1: LLM for bot responses
+        [
+            llm,
+            tts,
+            producer,  # Capture TTS audio here
+        ],
+        # Branch 2: Audio processing branch
+        [
+            consumer,  # Receive TTS audio here
+            llm, # Speech-to-Speech LLM (audio in)
+        ]
+    ),
+    transport.output(),
+])</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/frame/producer-consumer">https://docs.pipecat.ai/api-reference/server/utilities/frame/producer-consumer</a></p>
+</div></main></div></body></html>

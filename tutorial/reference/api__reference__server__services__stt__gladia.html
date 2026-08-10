@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gladia Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Gladia Speech-to-Text</h1>
+<blockquote>GladiaSTTService streams real-time STT over Gladia's WebSocket API: 99+ languages, custom vocabulary, translation, and sentiment.</blockquote>
+<h2>Overview</h2>
+<p><code>GladiaSTTService</code> provides real-time speech recognition using Gladia's WebSocket API with support for 99+ languages, custom vocabulary, translation, sentiment analysis, and advanced audio processing features for comprehensive transcription.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Gladia STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.gladia.html"&gt;     Pipecat's API methods for Gladia STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-gladia.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gladia Documentation" icon="book" href="https://docs.gladia.io/api-reference/live-flow"&gt;     Official Gladia documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gladia Platform" icon="microphone" href="https://www.gladia.io/"&gt;     Access multilingual transcription and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Gladia services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[gladia]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Gladia Account Setup</h3>
+<p>Before using Gladia STT services, you need:</p>
+<ol><li><strong>Gladia Account</strong>: Sign up at <a href="https://www.gladia.io/">Gladia</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Region Selection</strong>: Choose your preferred region (EU-West or US-West)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GLADIA_API_KEY</code>: Your Gladia API key for authentication</li><li><code>GLADIA_REGION</code>: Your preferred region (optional, defaults to "eu-west")</li></ul>
+<h2>Configuration</h2>
+<h3>GladiaSTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Gladia API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="Literal['us-west', 'eu-west']" default="None"&gt;   Region used to process audio. Defaults to <code>"eu-west"</code> when <code>None</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="https://api.gladia.io/v2/live"&gt;   Gladia API URL for session initialization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="wav/pcm"&gt;   Audio encoding format. Init-only -- not part of runtime-updatable settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bit_depth" type="int" default="16"&gt;   Audio bit depth. Init-only -- not part of runtime-updatable settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channels" type="int" default="1"&gt;   Number of audio channels. Init-only -- not part of runtime-updatable settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   Model to use for transcription. *Deprecated in v0.0.105. Use   <code>settings=GladiaSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="GladiaInputParams" default="None" deprecated&gt;   Additional configuration parameters. *Deprecated in v0.0.105. Use   <code>settings=GladiaSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GladiaSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_buffer_size" type="int" default="20971520"&gt;   Maximum size of audio buffer in bytes (default 20MB). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether the bot should be interrupted when Gladia VAD detects user speech. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="1.49"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GladiaSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language_config</code></td><td><code>LanguageConfig</code></td><td><code>None</code></td><td>Detailed language configuration with code switching support.</td></tr><tr><td><code>custom_metadata</code></td><td><code>Dict[str, Any]</code></td><td><code>None</code></td><td>Additional metadata to include with requests.</td></tr><tr><td><code>endpointing</code></td><td><code>float</code></td><td><code>None</code></td><td>Silence duration in seconds to mark end of speech.</td></tr><tr><td><code>maximum_duration_without_endpointing</code></td><td><code>int</code></td><td><code>5</code></td><td>Maximum utterance duration (seconds) without silence.</td></tr><tr><td><code>pre_processing</code></td><td><code>PreProcessingConfig</code></td><td><code>None</code></td><td>Audio pre-processing options (audio enhancer, speech threshold).</td></tr><tr><td><code>realtime_processing</code></td><td><code>RealtimeProcessingConfig</code></td><td><code>None</code></td><td>Real-time processing features (custom vocabulary, translation, NER, sentiment).</td></tr><tr><td><code>messages_config</code></td><td><code>MessagesConfig</code></td><td><code>None</code></td><td>WebSocket message filtering options.</td></tr><tr><td><code>enable_vad</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable Gladia VAD for end-of-utterance detection. Use without other VAD in the agent.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.gladia.stt import GladiaSTTService
+
+stt = GladiaSTTService(
+    api_key=os.getenv("GLADIA_API_KEY"),
+)</code></pre>
+<h3>With Language Configuration</h3>
+<pre><code>from pipecat.services.gladia.stt import GladiaSTTService
+from pipecat.services.gladia.config import LanguageConfig
+
+stt = GladiaSTTService(
+    api_key=os.getenv("GLADIA_API_KEY"),
+    region="us-west",
+    settings=GladiaSTTService.Settings(
+        model="solaria-1",
+        language_config=LanguageConfig(
+            languages=["en", "es"],
+            code_switching=True,
+        ),
+    ),
+)</code></pre>
+<h3>With Real-time Processing</h3>
+<pre><code>from pipecat.services.gladia.stt import GladiaSTTService
+from pipecat.services.gladia.config import (
+    RealtimeProcessingConfig,
+    CustomVocabularyConfig,
+    CustomVocabularyItem,
+    TranslationConfig,
+)
+
+stt = GladiaSTTService(
+    api_key=os.getenv("GLADIA_API_KEY"),
+    settings=GladiaSTTService.Settings(
+        realtime_processing=RealtimeProcessingConfig(
+            custom_vocabulary=True,
+            custom_vocabulary_config=CustomVocabularyConfig(
+                vocabulary=[
+                    CustomVocabularyItem(value="Pipecat", intensity=0.8),
+                    "Gladia",
+                ],
+            ),
+            translation=True,
+            translation_config=TranslationConfig(
+                target_languages=["fr", "de"],
+                model="enhanced",
+            ),
+        ),
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Session-based connection</strong>: Gladia uses a two-step connection process: first an HTTP POST to initialize a session, then a WebSocket connection to the returned session URL. The session URL and ID are managed automatically.</li><li><strong>Audio buffering</strong>: The service buffers audio data locally and sends it when connected. If the connection drops and reconnects, buffered audio is automatically re-sent to minimize transcript gaps.</li><li><strong>Keepalive</strong>: Empty audio chunks are sent periodically to keep the Gladia connection alive (keepalive interval: 5s, timeout: 20s).</li><li><strong>Built-in VAD</strong>: Set <code>enable_vad=True</code> in Settings to use Gladia's server-side VAD, which emits <code>UserStartedSpeakingFrame</code> and <code>UserStoppedSpeakingFrame</code> and automatically requests <code>ExternalUserTurnStrategies</code>, so you don't need to configure turn strategies manually. Pass your own <code>user_turn_strategies</code> only to override this. When using Gladia's VAD, do not enable another VAD in your pipeline.</li><li><strong>Translation</strong>: Gladia supports real-time translation to multiple target languages. Translation results are pushed as <code>TranslationFrame</code>s.</li></ul>
+<p>&lt;Tip&gt;   The <code>GladiaInputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>Gladia STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Gladia WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Gladia WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Gladia")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/gladia">https://docs.pipecat.ai/api-reference/server/services/stt/gladia</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Native SDK Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>React Native SDK Overview</h1>
+<blockquote>The Pipecat React Native SDK brings PipecatClient from the JavaScript SDK to React Native voice and multimodal apps.</blockquote>
+<p>The Pipecat React Native SDK leverages the <a href="/api-reference/client/js/overview">Pipecat JavaScript SDK</a> and its <code>PipecatClient</code> to provide seamless integration for React Native applications. Since the JavaScript SDK is designed to work across both web and React Native platforms, the core functionalities remain the same:</p>
+<ul><li>Device and media stream management</li><li>Connecting to Pipecat bots</li><li>Messaging with Pipecat bots and handling responses using the RTVI standard</li><li>Managing session state and errors</li></ul>
+<p>The primary difference lies in the transport layer, which is tailored to support the unique requirements of the React Native environment.</p>
+<p>For example, when using the SDK with React Native, you would install <code>RNDailyTransport</code> instead of <code>DailyTransport</code>.</p>
+<h2>Installation</h2>
+<p>Install the SDK and a transport implementation. Follow the appropriate docs for each transport:</p>
+<ul><li><a href="https://github.com/pipecat-ai/pipecat-client-react-native-transports/tree/main/transports/daily#installation">Daily</a></li><li><a href="https://github.com/pipecat-ai/pipecat-client-react-native-transports/tree/main/transports/smallwebrtc#installation">SmallWebRTC</a></li></ul>
+<p>&lt;Note&gt;   Installing the React Native automatically includes the corresponding version   of the JavaScript SDK. &lt;/Note&gt;</p>
+<h2>Requirements</h2>
+<p>This package introduces some constraints on what OS/SDK versions your project can support:</p>
+<ul><li>iOS: Deployment target &gt;= 15</li><li>Android: <code>minSdkVersion</code> &gt;= 24</li></ul>
+<h2>Quick start</h2>
+<p>Here's a simple example using Daily as the transport layer:</p>
+<pre><code>import { RNDailyTransport } from "@pipecat-ai/react-native-daily-transport";
+import { PipecatClient } from "@pipecat-ai/client-js";
+
+// Create and configure the client
+let pipecatClient = new PipecatClient({
+  transport: new RNDailyTransport(),
+  enableMic: true,
+  enableCam: false,
+});
+
+// Connect to your bot
+await pipecatClient.startBotAndConnect({
+  endpoint: `${process.env.PIPECAT_API_URL || "/start"}`,
+});</code></pre>
+<h3>More Examples</h3>
+<p>&lt;CardGroup&gt;   &lt;Card title="Basic Example" icon="file-code" href="https://github.com/pipecat-ai/pipecat-client-react-native-transports/tree/main/examples"&gt;     A basic example demonstrating how to integrate an RNDailyTransport with a     React Native project.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Daily Full Example" icon="mobile" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/simple-chatbot/client/react-native"&gt;     A more comprehensive Daily example showcasing a more feature-rich React     Native application along with a server-side bot component.   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SmallWebRTC Full Example" icon="mobile" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/video-transform"&gt;     A more comprehensive SmallWebRTC example showcasing a more feature-rich     React Native application along with a server-side bot component.   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Explore the SDK</h2>
+<p>The Pipecat React Native SDK leverages the Pipecat JavaScript SDK for seamless integration with React Native applications. For detailed information, refer to our JavaScript documentation.</p>
+<blockquote>Just ensure you use the appropriate transport layer for React Native.</blockquote>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="React Native API Reference" icon="book" href="/api-reference/client/react-native/api-reference"&gt;     React Native-specific API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Transport Packages" icon="network-wired" href="/api-reference/client/react-native/transports/daily"&gt;     Daily and SmallWebRTC transports for React Native   &lt;/Card&gt;</p>
+<p>  &lt;Card title="JS Client Constructor" icon="cube" href="/api-reference/client/js/client-constructor"&gt;     Configure your client instance with transport and callbacks   &lt;/Card&gt;</p>
+<p>  &lt;Card title="JS Client Methods" icon="code" href="/api-reference/client/js/client-methods"&gt;     Core methods for interacting with your bot   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react-native/overview">https://docs.pipecat.ai/api-reference/client/react-native/overview</a></p>
+</div></main></div></body></html>

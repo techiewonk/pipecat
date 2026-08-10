@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session API · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Session API</h1>
+<blockquote>Proxy HTTP requests to endpoints defined in your running Pipecat Cloud bot: GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.</blockquote>
+<p>Send HTTP requests to endpoints defined in your running bot. Supports <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code>, and <code>HEAD</code> methods.</p>
+<h2>Request Headers</h2>
+<p>Headers are forwarded to your bot with these exceptions:</p>
+<ul><li><code>host</code> - Excluded</li><li><code>content-length</code> - Excluded</li><li><code>authorization</code> - Excluded (authentication is handled by the API gateway)</li></ul>
+<p>&lt;Note&gt;   Requires base image version <code>0.1.2</code> or later. See the <a href="/pipecat-cloud/guides/session-api">Session API   guide</a> for setup instructions and examples. &lt;/Note&gt;</p>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /{serviceName}/sessions/{sessionId}/{path}:
+    servers:
+      - url: https://api.pipecat.daily.co/v1/public
+        description: Public API server
+    get:
+      summary: Send GET request to session
+      description: &gt;-
+        Proxies a GET request to an endpoint defined in your running bot. The
+        response is returned directly from the bot.
+      operationId: sessionProxyGet
+      parameters:
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/Path'
+      responses:
+        '200':
+          description: Successful response from the bot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxiedResponse'
+        '400':
+          $ref: '#/components/responses/ServiceNotAvailable'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - PublicKeyAuth: []
+components:
+  parameters:
+    ServiceName:
+      name: serviceName
+      in: path
+      required: true
+      description: Name of the deployed agent
+      schema:
+        type: string
+      example: my-agent
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      description: Session ID returned from the start endpoint
+      schema:
+        type: string
+        format: uuid
+      example: 57af5437-97a2-4646-9873-a5c5935bd705
+    Path:
+      name: path
+      in: path
+      required: true
+      description: The endpoint path defined in your bot using the `@app` decorator
+      schema:
+        type: string
+      example: status
+  schemas:
+    ProxiedResponse:
+      type: object
+      description: &gt;-
+        Response from your bot endpoint. The schema depends on what your bot
+        returns.
+      additionalProperties: true
+      example:
+        status: active
+        message_count: 5
+        user_name: Alice
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+  responses:
+    ServiceNotAvailable:
+      description: Service deployment is not available
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: &gt;-
+              Attempt to start agent when deployment is not in ready state. Is
+              your image pull secret valid?
+            code: PCC-1001
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Unauthorized / token expired
+            code: '401'
+    NotFound:
+      description: Service or session not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Service not found
+            code: '404'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: &gt;-
+              Internal server error. Please check logs for more information or
+              contact support.
+            code: '500'
+  securitySchemes:
+    PublicKeyAuth:
+      type: http
+      scheme: bearer
+      description: &gt;-
+        Authentication using a Pipecat Cloud public API key.
+
+
+        Generate a public API key from your Dashboard (Settings &gt; API Keys &gt;
+        Public &gt; Create key) and include it as a Bearer token in the
+        Authorization header.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/session-proxy">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/session-proxy</a></p>
+</div></main></div></body></html>

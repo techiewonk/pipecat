@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L28 · Distributed & proxy — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 28 · Part V — Multi-agent</div>
+      <h1>Distributed & proxy</h1>
+      <div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">The payoff of the bus abstraction: run the exact same agents across separate processes or machines by changing one line — the bus.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Same code, network bus</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="Process 1:main+bus|RedisBus / PgmqBus|Process 2:agent A|Process 3:agent B|same agent code"
+           data-caption="The main worker runs in one process with the runner|the bus is now Redis or PGMQ instead of in-memory|agent A runs in a separate process, subscribed to the same bus|agent B runs on another machine entirely|the agent code did not change — only bus= did">
+      </div>
+
+      <h2 id="swap">The one-line change</h2>
+      <pre><code class="language-python">from pipecat.bus.network.redis import RedisBus
+# LOCAL (default): runner owns an in-memory AsyncQueueBus
+runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+# DISTRIBUTED: point every process at the same Redis channel
+runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))
+# PgmqBus(...) is the Postgres/Supabase alternative
+# Each process runs its own WorkerRunner with the SAME bus config and adds its workers.</code></pre>
+      <div class="box concept">
+        <p class="title">🧠 Why this is the whole point</p>
+        <p>You develop and debug locally with the in-memory bus, then scale out to separate machines by swapping the bus — no rewrite. Cross-runner registries let workers discover each other across the network.</p>
+      </div>
+
+      <h2 id="proxy">Proxy: bridge without a shared bus</h2>
+      <p>When two agents can't share a bus (different networks, firewalls), a pair of WebSocket <strong>proxy workers</strong> forward messages between them point-to-point.</p>
+      <pre><code class="language-python">from pipecat.workers.proxy.websocket.server import WebSocketProxyServer
+# a server proxy exposes local bus traffic over WebSocket; a client proxy connects remotely
+# see examples/multi-worker/remote-proxy-assistant/</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>bus/network/redis.py</code> — <code>RedisBus</code>. <code>bus/network/pgmq.py</code> + <code>pgmq_backends.py</code> — <code>PgmqBus</code>. <code>workers/proxy/websocket/{server,client}.py</code> — proxy workers. <code>workers/runner.py</code> — cross-runner registry exchange. Examples: <code>multi-worker/distributed-handoff/{redis-handoff,pgmq-handoff}/</code>, <code>multi-worker/remote-proxy-assistant/</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 12</p>
+        <p>Split Atlas across processes: run the main worker + one specialist over a <code>RedisBus</code>. Confirm the agent code is byte-for-byte the same as the local version.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Start Redis, then run <code>distributed-handoff/redis-handoff/</code> and trigger a handoff across processes. (2) Compare it to the local-handoff code — spot the single difference. (3) Skim <code>remote-proxy-assistant/</code>.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What single change moves agents from local to distributed?</summary><p>The <code>bus=</code> passed to the <code>WorkerRunner</code> — in-memory vs. <code>RedisBus</code>/<code>PgmqBus</code>. Agent code is unchanged.</p></details>
+      <details><summary>2. When do you need proxy workers instead of a shared bus?</summary><p>When agents can't share a bus (separate networks/firewalls) — proxies forward messages point-to-point over WebSocket.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l29-uiworker-rtvi.html">Lesson 29 — UIWorker + RTVI client →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

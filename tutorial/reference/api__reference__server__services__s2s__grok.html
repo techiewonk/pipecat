@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grok Realtime · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Grok Realtime</h1>
+<blockquote>GrokRealtimeLLMService provides real-time multimodal speech-to-speech conversation using xAI's Grok Realtime API.</blockquote>
+<h2>Overview</h2>
+<p><code>GrokRealtimeLLMService</code> provides real-time, multimodal conversation capabilities using xAI's Grok Voice Agent API. It supports speech-to-speech interactions with integrated LLM processing, function calling, and advanced conversation management with low-latency response times.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Grok Realtime API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.xai.realtime.llm.html"&gt;     Pipecat's API methods for Grok Realtime integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/realtime/realtime-grok.py"&gt;     Complete Grok Realtime conversation example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Async Tool Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/realtime/realtime-grok-async-tool.py"&gt;     Grok with async function calling (cancel\_on\_interruption=False)   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Grok Voice Documentation" icon="book" href="https://docs.x.ai/docs/guides/voice/agent"&gt;     Official xAI Grok Voice Agent API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="xAI Console" icon="external-link" href="https://console.x.ai/"&gt;     Access Grok models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Grok Realtime services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[grok]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>xAI Account Setup</h3>
+<p>Before using Grok Realtime services, you need:</p>
+<ol><li><strong>xAI Account</strong>: Sign up at <a href="https://console.x.ai/">xAI Console</a></li><li><strong>API Key</strong>: Generate a Grok API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to Grok Voice Agent models</li><li><strong>Usage Limits</strong>: Configure appropriate usage limits and billing</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>XAI_API_KEY</code>: Your xAI API key for authentication</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Real-time Speech-to-Speech</strong>: Direct audio processing with low latency</li><li><strong>Multilingual Support</strong>: Support for multiple languages</li><li><strong>Voice Activity Detection</strong>: Server-side VAD for automatic speech detection</li><li><strong>Function Calling</strong>: Seamless support for external functions and tool integration</li><li><strong>Multiple Voice Options</strong>: Various voice personalities available</li><li><strong>WebSocket Support</strong>: Real-time bidirectional audio streaming</li></ul>
+<h2>Configuration</h2>
+<h3>GrokRealtimeLLMService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   xAI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.x.ai/v1/realtime"&gt;   WebSocket base URL for the Grok Realtime API. Override for custom deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_properties" type="SessionProperties" default="None" deprecated&gt;   Configuration properties for the realtime session. If <code>None</code>, uses default   <code>SessionProperties</code> with voice <code>"eve"</code> and server-side VAD enabled. See   <a href="#sessionproperties">SessionProperties</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=GrokRealtimeLLMService.Settings(session_properties=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GrokRealtimeLLMService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="start_audio_paused" type="bool" default="False"&gt;   Whether to start with audio input paused. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GrokRealtimeLLMService.Settings(...)</code>. These can be updated mid-conversation with <code>LLMUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"grok-voice-think-fast-1.0"</code></td><td>Model identifier. Defaults to xAI's recommended Voice Agent model. *(Inherited from base settings.)*</td></tr><tr><td><code>system_instruction</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>System instruction/prompt. *(Inherited from base settings.)*</td></tr><tr><td><code>session_properties</code></td><td><code>SessionProperties</code></td><td><code>NOT_GIVEN</code></td><td>Session-level configuration (voice, audio config, tools, etc.).</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted, letting the service use its own defaults. Only   parameters that are explicitly set are included. &lt;/Note&gt;</p>
+<h3>SessionProperties</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>instructions</code></td><td><code>str</code></td><td><code>None</code></td><td>System instructions for the assistant.</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>"eve"</code></td><td>Voice the model uses to respond. Accepts any built-in voice ID (see <a href="https://docs.x.ai/docs/guides/voice/agent">xAI's voice catalogue</a>) or a custom voice ID from the Custom Voices API. Case-insensitive.</td></tr><tr><td><code>turn_detection</code></td><td><code>TurnDetection</code></td><td><code>TurnDetection(type="server_vad")</code></td><td>Turn detection configuration. Set to <code>None</code> for manual turn detection.</td></tr><tr><td><code>audio</code></td><td><code>AudioConfiguration</code></td><td><code>None</code></td><td>Configuration for input and output audio formats.</td></tr><tr><td><code>tools</code></td><td><code>List[GrokTool]</code></td><td><code>None</code></td><td>Available tools: <code>web_search</code>, <code>x_search</code>, <code>file_search</code>, or custom <code>function</code> tools.</td></tr></tbody></table></div>
+<h3>AudioConfiguration</h3>
+<p>The <code>audio</code> field in <code>SessionProperties</code> accepts an <code>AudioConfiguration</code> with <code>input</code> and <code>output</code> sub-configurations:</p>
+<p><strong>AudioInput</strong> (<code>audio.input</code>):</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>format</code></td><td><code>AudioFormat</code></td><td><code>None</code></td><td>Input audio format. Supports <code>PCMAudioFormat</code> (configurable rate), <code>PCMUAudioFormat</code> (8kHz), or <code>PCMAAudioFormat</code> (8kHz).</td></tr></tbody></table></div>
+<p><strong>AudioOutput</strong> (<code>audio.output</code>):</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>format</code></td><td><code>AudioFormat</code></td><td><code>None</code></td><td>Output audio format. Same format options as input.</td></tr></tbody></table></div>
+<p>Grok PCM audio supports sample rates: 8000, 16000, 21050, 24000, 32000, 44100, and 48000 Hz.</p>
+<h3>Built-in Tools</h3>
+<p>Grok provides several built-in tools in addition to custom function tools:</p>
+<div class="tablewrap"><table><thead><tr><th>Tool</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>WebSearchTool</code></td><td><code>web_search</code></td><td>Search the web for current information</td></tr><tr><td><code>XSearchTool</code></td><td><code>x_search</code></td><td>Search X (Twitter) for posts. Supports <code>allowed_x_handles</code> filter.</td></tr><tr><td><code>FileSearchTool</code></td><td><code>file_search</code></td><td>Search uploaded document collections by <code>vector_store_ids</code></td></tr></tbody></table></div>
+<h2>Usage</h2>
+<p>&lt;Tip&gt;   Pair this service with <code>LLMContextAggregatorPair(context,       realtime_service_mode=True)</code>. Realtime mode keeps context-writing correct for   speech-to-speech services and adapts turn handling to the service. See   <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services">Realtime (Speech-to-Speech)   Services</a>. &lt;/Tip&gt;</p>
+<h3>Basic Setup</h3>
+<pre><code>import os
+from pipecat.services.xai.realtime.llm import GrokRealtimeLLMService
+
+llm = GrokRealtimeLLMService(
+    api_key=os.getenv("XAI_API_KEY"),
+)</code></pre>
+<h3>With Session Configuration</h3>
+<pre><code>from pipecat.services.xai.realtime.llm import GrokRealtimeLLMService
+from pipecat.services.xai.realtime.events import (
+    SessionProperties,
+    TurnDetection,
+    AudioConfiguration,
+    AudioInput,
+    AudioOutput,
+    PCMAudioFormat,
+)
+
+session_properties = SessionProperties(
+    instructions="You are a helpful assistant.",
+    voice="rex",
+    turn_detection=TurnDetection(type="server_vad"),
+    audio=AudioConfiguration(
+        input=AudioInput(format=PCMAudioFormat(rate=16000)),
+        output=AudioOutput(format=PCMAudioFormat(rate=16000)),
+    ),
+)
+
+llm = GrokRealtimeLLMService(
+    api_key=os.getenv("XAI_API_KEY"),
+    settings=GrokRealtimeLLMService.Settings(
+        session_properties=session_properties,
+    ),
+)</code></pre>
+<h3>With Built-in Tools</h3>
+<pre><code>from pipecat.services.xai.realtime.llm import GrokRealtimeLLMService
+from pipecat.services.xai.realtime.events import (
+    SessionProperties,
+    WebSearchTool,
+    XSearchTool,
+)
+
+llm = GrokRealtimeLLMService(
+    api_key=os.getenv("XAI_API_KEY"),
+    settings=GrokRealtimeLLMService.Settings(
+        session_properties=SessionProperties(
+            instructions="You are a helpful assistant with access to web search.",
+            voice="eve",
+            tools=[
+                WebSearchTool(),
+                XSearchTool(allowed_x_handles=["@elonmusk"]),
+            ],
+        ),
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<pre><code>from pipecat.frames.frames import LLMUpdateSettingsFrame
+from pipecat.services.xai.realtime.llm import GrokRealtimeLLMSettings
+from pipecat.services.xai.realtime.events import SessionProperties
+
+await worker.queue_frame(
+    LLMUpdateSettingsFrame(
+        delta=GrokRealtimeLLMSettings(
+            session_properties=SessionProperties(
+                instructions="Now speak in Spanish.",
+                voice="eve",
+            ),
+        )
+    )
+)</code></pre>
+<p>&lt;Tip&gt;   The deprecated <code>session_properties</code> constructor parameter is replaced by   <code>Settings</code> as of v0.0.105. Use <code>Settings</code> / <code>settings=</code> instead. See the   <a href="/pipecat/fundamentals/service-settings">Service Settings guide</a> for migration   details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Audio format auto-configuration</strong>: If audio format is not specified in <code>session_properties</code>, the service automatically configures PCM input/output using the pipeline's sample rates.</li><li><strong>Server-side VAD</strong>: Enabled by default. When VAD is enabled, the server handles speech detection and turn management automatically. Set <code>turn_detection</code> to <code>None</code> for manual turn detection.</li><li><strong>Audio before setup</strong>: Audio is not sent to Grok until the conversation setup is complete, preventing sample rate mismatches.</li><li><strong>Voice IDs</strong>: Accepts any built-in voice ID from <a href="https://docs.x.ai/docs/guides/voice/agent">xAI's catalogue</a> or a custom voice ID from the Custom Voices API. Voice IDs are case-insensitive. Default is <code>"eve"</code>.</li><li><strong>G.711 support</strong>: PCMU and PCMA formats are supported at a fixed 8000 Hz rate, useful for telephony integrations.</li><li><strong>System instruction precedence</strong>: The <code>system_instruction</code> from service settings takes precedence over an initial system message in the LLM context. A warning is logged when both are set.</li><li><strong>Async tool support</strong>: Functions registered with <code>cancel_on_interruption=False</code> are supported. The final tool result is delivered via the formal tool-result channel once the async function completes. Streamed intermediate results (<code>is_final=False</code>) are not supported.</li></ul>
+<h2>Event Handlers</h2>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_item_created</code></td><td>Called when a new conversation item is created in the session</td></tr><tr><td><code>on_conversation_item_updated</code></td><td>Called when a conversation item is updated or completed</td></tr></tbody></table></div>
+<pre><code>@llm.event_handler("on_conversation_item_created")
+async def on_item_created(service, item_id, item):
+    print(f"New conversation item: {item_id}")
+
+@llm.event_handler("on_conversation_item_updated")
+async def on_item_updated(service, item_id, item):
+    print(f"Conversation item updated: {item_id}")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/s2s/grok">https://docs.pipecat.ai/api-reference/server/services/s2s/grok</a></p>
+</div></main></div></body></html>

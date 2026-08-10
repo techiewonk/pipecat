@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 8 — RAG &amp; Grounding · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 8 · Part B — Modalities &amp; knowledge</div>
+<h1>RAG &amp; Grounding: answers from your data</h1>
+<div class="meta"><span class="pill">⏱ 30 min</span><span class="pill grey">Level: intermediate</span></div>
+<p class="lead">LLMs don't know your private documents and will confidently make things up. Retrieval-Augmented Generation fetches relevant text and drops it into the context so answers are grounded — and can cite sources.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">RAG is smart context-building</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>On each question: retrieve matching chunks (from a vector store or a file), add them to the context as a message, then let the LLM answer using them. No new pipeline magic — it's <a href="ch04-brain-memory.html">Chapter 4</a> context, filled intelligently. <strong>Grounding metadata</strong> adds citations; <strong>Mem0</strong> adds long-term memory across sessions.</p></div>
+<pre class="diagram">question ─▶ retrieve relevant text ─▶ add to LLMContext ─▶ LLM answers grounded in it
+                                                          └▶ (optional) cite sources</pre>
+
+<div class="box py"><p class="title">🐍 Python note — "context stuffing"</p>
+<p>RAG is mostly "fetch relevant text, add it to the messages list before calling the LLM." The examples use Gemini grounding and Mem0 to do the fetching.</p></div>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python rag/rag-gemini.py          # ask about examples/assets/rag-content.txt
+uv run python rag/rag-mem0.py            # teach a fact, reconnect, it recalls</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Replace the knowledge file with your own text and ask about it. Use <code>rag-gemini-grounding-metadata.py</code> to print citations.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>Answers ignore your docs → retrieval returned nothing (empty/mismatched source). No citations → use the <code>-grounding-metadata</code> variant.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>In one sentence, what does RAG add to a plain LLM call?</summary><p>Relevant retrieved text injected into the context so the answer is grounded in your data.</p></details>
+
+<h2 id="files">Example files</h2><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>rag-gemini.py</code></td><td>CrossFit Games 2025 Rulebook RAG Demo</td></tr><tr><td><code>rag-gemini-grounding-metadata.py</code></td><td>rag gemini grounding metadata — grounding metadata</td></tr><tr><td><code>rag-mem0.py</code></td><td>Mem0 Personalized Voice Agent Example with Pipecat</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

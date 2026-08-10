@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartesia Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Cartesia Speech-to-Text</h1>
+<blockquote>Real-time STT with CartesiaSTTService and turn-aware CartesiaTurnsSTTService over Cartesia's streaming transcription API.</blockquote>
+<h2>Overview</h2>
+<p>Cartesia provides two STT service implementations:</p>
+<ul><li><code>CartesiaSTTService</code> for real-time speech recognition using Cartesia's WebSocket API with the <code>ink-whisper</code> model, supporting streaming transcription with both interim and final results for low-latency applications</li><li><code>CartesiaTurnsSTTService</code> for turn-based speech recognition using Cartesia's v2 WebSocket API with the <code>ink-2</code> model, where the server drives turn boundaries and pushes structured events for turn lifecycle management including start, updates, eager end predictions, resume, and final turn completion</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Cartesia STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.cartesia.stt.html"&gt;     Pipecat's API methods for Cartesia STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cartesia Turns STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.cartesia.turns.stt.html"&gt;     Pipecat's API methods for Cartesia Turns STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Standard STT Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transcription/transcription-cartesia.py"&gt;     Complete example with transcription logging   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Turns STT Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transcription/transcription-cartesia-turns.py"&gt;     Complete example with turn-based transcription   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cartesia Documentation" icon="book" href="https://docs.cartesia.ai/api-reference/stt/stt"&gt;     Official Cartesia STT documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cartesia Platform" icon="microphone" href="https://cartesia.ai/"&gt;     Access API keys and transcription models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Cartesia services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[cartesia]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Cartesia Account Setup</h3>
+<p>Before using Cartesia STT services, you need:</p>
+<ol><li><strong>Cartesia Account</strong>: Sign up at <a href="https://cartesia.ai/">Cartesia</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to the transcription model you plan to use (<code>ink-whisper</code> for <code>CartesiaSTTService</code>, <code>ink-2</code> for <code>CartesiaTurnsSTTService</code>)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>CARTESIA_API_KEY</code>: Your Cartesia API key for authentication</li></ul>
+<h2>CartesiaSTTService</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Cartesia API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default=""&gt;   Custom API endpoint URL. If empty, defaults to <code>"api.cartesia.ai"</code>. Override   for proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm_s16le"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="live_options" type="CartesiaLiveOptions | None" default="None" deprecated&gt;   Configuration options for the transcription service. *Deprecated in v0.0.105.   Use <code>settings=CartesiaSTTService.Settings(...)</code> for model/language and direct   init parameters for encoding/sample\_rate instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="CartesiaSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="CARTESIA_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>CartesiaSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>, which triggers an automatic reconnection with the new parameters. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"ink-whisper"</code></td><td>The transcription model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>"en"</code></td><td>Target language for transcription. *(Inherited from base STT settings.)*</td></tr><tr><td><code>keyterm</code></td><td>`list[str] \</td><td>None`</td><td><code>None</code></td><td>Key terms or phrases to bias transcription towards (e.g., product names, jargon). Only honored by <code>ink-2</code> models; ignored with a warning for other models. Cartesia binds keyterms to a connection, so updating this setting via <code>STTUpdateSettingsFrame</code> triggers a reconnect. Lists longer than Cartesia's limit of 100 keyterms or 1200 total characters are truncated with a warning.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<h4>Basic Setup</h4>
+<pre><code>from pipecat.services.cartesia.stt import CartesiaSTTService
+
+stt = CartesiaSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+)</code></pre>
+<h4>With Custom Options</h4>
+<pre><code>from pipecat.services.cartesia.stt import CartesiaSTTService
+
+stt = CartesiaSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaSTTService.Settings(
+        model="ink-whisper",
+        language="es",
+    ),
+    sample_rate=16000,
+)</code></pre>
+<h4>With Keyterms (ink-2 only)</h4>
+<pre><code>from pipecat.services.cartesia.stt import CartesiaSTTService
+
+stt = CartesiaSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaSTTService.Settings(
+        model="ink-2",
+        keyterm=["Pipecat", "Ink 2", "Cartesia"],
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Inactivity timeout</strong>: Cartesia disconnects WebSocket connections after 3 minutes of inactivity. The timeout resets with each message sent. Silence-based keepalive is enabled by default to prevent disconnections.</li><li><strong>Auto-reconnect on send</strong>: If the connection is closed (e.g., due to timeout), the service automatically reconnects when the next audio data is sent.</li><li><strong>Runtime settings updates</strong>: Changing settings (e.g., <code>language</code>, <code>model</code>, or <code>keyterm</code>) via <code>STTUpdateSettingsFrame</code> triggers a reconnection with the new parameters. To avoid audio loss, reconnection is deferred until the current user turn ends (i.e., until <code>UserStoppedSpeakingFrame</code> is received). Audio frames arriving during the reconnect are buffered and replayed once the new connection is ready. This enables safe dynamic language switching and keyterm updates mid-conversation.</li><li><strong>Keyterm model support</strong>: Keyterms are only supported by <code>ink-2</code> models. If keyterms are set for any other model (e.g., <code>ink-whisper</code>), they are ignored with a warning.</li><li><strong>Finalize on VAD stop</strong>: When the pipeline's VAD detects the user has stopped speaking, the service sends a <code>"finalize"</code> command to flush the transcription session and produce a final result.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> / <code>live_options=</code> pattern is deprecated as of   v0.0.105. Use <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h3>Event Handlers</h3>
+<p>Cartesia STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Cartesia WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Cartesia WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Cartesia STT")</code></pre>
+<h2>CartesiaTurnsSTTService</h2>
+<p>The server drives turn boundaries with the <code>ink-2</code> model, pushing structured events for turn lifecycle management including start, updates, eager end predictions, resume, and final turn completion.</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Cartesia API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.cartesia.ai/stt/turns/websocket"&gt;   WebSocket URL for the Cartesia Streaming ASR v2 endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int | None" default="None"&gt;   Audio sample rate in Hz. If <code>None</code>, uses the pipeline sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether to broadcast an interruption when the server signals the start of a   new turn. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="watchdog_min_timeout" type="float" default="0.5"&gt;   Minimum idle timeout (in seconds) before sending silence to prevent dangling   turns. The actual threshold is <code>max(chunk_duration * 2,       watchdog_min_timeout)</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="extra_headers" type="dict[str, str] | None" default="None"&gt;   Optional additional HTTP headers to send with the WebSocket handshake. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="CartesiaTurnsSTTService.Settings" default="None"&gt;   Runtime-updatable settings. See <a href="#settings-2">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>CartesiaTurnsSTTService.Settings(...)</code>. The ink-2 model family is English-only and does not support runtime model or language switching. Attempts to update these fields will be reported as unhandled.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"ink-2"</code></td><td>The transcription model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Target language (fixed to English). *(Inherited from base STT settings.)*</td></tr><tr><td><code>keyterm</code></td><td>`list[str] \</td><td>None`</td><td><code>None</code></td><td>Key terms or phrases to bias transcription towards (e.g., product names, jargon). Cartesia binds keyterms to a connection, so updating this setting via <code>STTUpdateSettingsFrame</code> triggers a reconnect. Lists longer than Cartesia's limit of 100 keyterms or 1200 total characters are truncated with a warning.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<h4>Basic Setup</h4>
+<pre><code>from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
+
+stt = CartesiaTurnsSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+)</code></pre>
+<h4>With Custom Configuration</h4>
+<pre><code>from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
+
+stt = CartesiaTurnsSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    sample_rate=16000,
+    should_interrupt=True,
+    watchdog_min_timeout=1.0,
+)</code></pre>
+<h4>With Keyterms</h4>
+<pre><code>from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
+
+stt = CartesiaTurnsSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaTurnsSTTService.Settings(
+        keyterm=["Pipecat", "Ink 2", "Cartesia"],
+    ),
+)</code></pre>
+<h4>With Event Handlers</h4>
+<pre><code>from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
+
+stt = CartesiaTurnsSTTService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+)
+
+@stt.event_handler("on_turn_start")
+async def on_turn_start(service, transcript):
+    print(f"User started speaking: {transcript}")
+
+@stt.event_handler("on_turn_end")
+async def on_turn_end(service, transcript):
+    print(f"Final transcript: {transcript}")</code></pre>
+<h3>Turn-Based Protocol</h3>
+<p>The service speaks the v2 turn-based wire protocol:</p>
+<pre><code>connected → turn.start → turn.update* → (turn.eager_end → turn.resume?)* → turn.end → ...</code></pre>
+<ul><li><strong><code>turn.start</code></strong>: Server detected the start of a turn. Pushes <code>UserStartedSpeakingFrame</code> and optionally broadcasts an interruption.</li><li><strong><code>turn.update</code></strong>: Incremental transcript update. Pushes <code>InterimTranscriptionFrame</code>.</li><li><strong><code>turn.eager_end</code></strong>: Server eagerly predicted the end of turn. Available via event handler for speculative downstream processing.</li><li><strong><code>turn.resume</code></strong>: User resumed speaking after an eager end. Available via event handler.</li><li><strong><code>turn.end</code></strong>: Final transcript for the completed turn. Pushes <code>TranscriptionFrame</code> and <code>UserStoppedSpeakingFrame</code>.</li></ul>
+<p>Transcripts are cumulative per turn. There is no <code>is_final</code> flag and no <code>finalize</code> command — closing the socket ends the session.</p>
+<h3>Notes</h3>
+<ul><li><strong>English-only</strong>: The ink-2 model family supports English transcription only at launch.</li><li><strong>No runtime model switching</strong>: Unlike the v1 API, the ink-2 model does not support runtime model or language switching. However, <code>keyterm</code> can be updated at runtime via <code>STTUpdateSettingsFrame</code>, which triggers a reconnect.</li><li><strong>Watchdog for dangling turns</strong>: If audio stops flowing after a <code>turn.start</code>, the service sends silence to prevent the turn from hanging indefinitely. Configure the threshold with <code>watchdog_min_timeout</code>.</li><li><strong>Server-driven turns</strong>: The server controls turn boundaries and automatically requests <code>ExternalUserTurnStrategies</code>, so you don't need to configure turn strategies manually. Pass your own <code>user_turn_strategies</code> only to override this. There is no client-side <code>finalize</code> command.</li><li><strong>Interruption support</strong>: Set <code>should_interrupt=True</code> to broadcast interruptions when the user starts speaking, enabling natural turn-taking.</li></ul>
+<h3>Event Handlers</h3>
+<p>Cartesia Turns STT supports the following event handlers:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Handler Signature</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td><code>async def(service)</code></td><td>Connected to Cartesia WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td><code>async def(service)</code></td><td>Disconnected from Cartesia WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td><code>async def(service, error_msg)</code></td><td>Connection error occurred</td></tr><tr><td><code>on_turn_start</code></td><td><code>async def(service, transcript: str)</code></td><td>Server detected start of a turn</td></tr><tr><td><code>on_turn_update</code></td><td><code>async def(service, transcript: str)</code></td><td>Incremental transcript update</td></tr><tr><td><code>on_turn_eager_end</code></td><td><code>async def(service, transcript: str)</code></td><td>Server eagerly predicted end of turn</td></tr><tr><td><code>on_turn_resume</code></td><td><code>async def(service)</code></td><td>User resumed speaking after an eager end</td></tr><tr><td><code>on_turn_end</code></td><td><code>async def(service, transcript: str)</code></td><td>Final transcript for the completed turn</td></tr></tbody></table></div>
+<p>Example:</p>
+<pre><code>@stt.event_handler("on_turn_eager_end")
+async def on_turn_eager_end(service, transcript):
+    print(f"Eager end prediction: {transcript}")
+    # Optionally start processing speculatively
+
+@stt.event_handler("on_turn_resume")
+async def on_turn_resume(service):
+    print("User resumed speaking, discard speculative processing")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/cartesia">https://docs.pipecat.ai/api-reference/server/services/stt/cartesia</a></p>
+</div></main></div></body></html>

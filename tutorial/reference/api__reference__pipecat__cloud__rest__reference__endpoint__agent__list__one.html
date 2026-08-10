@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Agent Details · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Get Agent Details</h1>
+<blockquote>GET /agents/{agentName} returns details for one Pipecat Cloud agent, including its deployment status and configuration.</blockquote>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /agents/{agentName}:
+    get:
+      summary: Get agent details
+      operationId: getService
+      parameters:
+        - name: agentName
+          in: path
+          required: true
+          description: Name of the agent to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDetailsResponse'
+              example:
+                name: voice-starter
+                region: us-west
+                ready: true
+                available: true
+                createdAt: '2025-04-19T01:20:27.564Z'
+                updatedAt: '2025-04-19T01:25:47.229Z'
+                desiredDeploymentId: 19db578d-808c-420a-a047-87edde4410c1
+                activeDeploymentId: 19db578d-808c-420a-a047-87edde4410c1
+                reconciledDeploymentId: 19db578d-808c-420a-a047-87edde4410c1
+                activeDeploymentReady: true
+                autoScaling:
+                  maxReplicas: 10
+                  minReplicas: 1
+                activeSessionCount: 0
+                agentProfile: agent-1x
+                deployment:
+                  id: 19db578d-808c-420a-a047-87edde4410c1
+                  manifest:
+                    apiVersion: pipecatcloud.daily.co/v1
+                    kind: PCService
+                    metadata:
+                      name: voice-starter
+                      namespace: tiny-ferret-maroon-123
+                    spec:
+                      dailyNodeType: arm
+                      image: your-dockername/voice-starter:0.1
+                      autoScaling:
+                        minReplicas: 1
+                        maxReplicas: 10
+                      imagePullSecretName: dockerhub-credentials
+                      envFromSecretNames:
+                        - voice-starter-secrets
+                      resources:
+                        cpu: 500m
+                        memory: 1Gi
+                      krispModels:
+                        enabled: false
+                      krispViva:
+                        audioFilters: true
+                      maxSessionDurationSeconds: 3600
+                  serviceId: b59a68ee-61c8-4d99-9ceb-e99a3953bdac
+                  createdAt: '2025-04-19T01:25:47.225Z'
+                  updatedAt: '2025-04-19T01:25:47.225Z'
+                krispViva:
+                  audioFilter: tel
+                currentRevision:
+                  deploymentID: 19db578d-808c-420a-a047-87edde4410c1
+                  phase: Active
+                  readyReplicas: 1
+                  phaseStartedAt: '2025-04-19T01:26:00.000Z'
+                  health:
+                    ready: true
+                    state: running
+                    restartCount: 0
+                    replicasStarted: 1
+                previousRevision: null
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Not found
+                code: NOT_FOUND
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Internal server error
+                code: INTERNAL_SERVER_ERROR
+      security:
+        - PrivateKeyAuth: []
+components:
+  schemas:
+    ServiceDetailsResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the agent
+        region:
+          type: string
+          description: The region where the agent is deployed
+        ready:
+          type: boolean
+          description: &gt;-
+            Whether the latest deployment has passed validation and is ready.
+            For scale-to-zero agents, this is true even when scaled down to zero
+            replicas.
+        available:
+          type: boolean
+          description: &gt;-
+            Whether the agent can accept new sessions. True when any pods are
+            ready to handle traffic, or when scaled to zero but healthy
+            (requests will queue and trigger scale-up). During rolling updates,
+            this may be true even if `ready` is false, as old pods continue
+            serving while new ones validate.
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp of the agent
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        desiredDeploymentId:
+          type: string
+          description: &gt;-
+            ID of the deployment that was requested. Use this to track which
+            deployment should be running.
+        activeDeploymentId:
+          type: string
+          description: &gt;-
+            **Deprecated**: Use `desiredDeploymentId` instead. ID of the
+            requested deployment.
+          deprecated: true
+        reconciledDeploymentId:
+          type: string
+          description: &gt;-
+            ID of the deployment that the operator has actually reconciled.
+            Compare with `desiredDeploymentId` to determine if a deployment
+            update has been processed. When these match and `ready` is true, the
+            deployment is fully complete.
+        activeDeploymentReady:
+          type: boolean
+          description: &gt;-
+            **Deprecated**: Use `ready` instead. Whether the active deployment
+            is ready. This field is redundant with `ready` and will be removed
+            in a future version.
+          deprecated: true
+        autoScaling:
+          type: object
+          properties:
+            maxReplicas:
+              type: integer
+              description: Maximum number of agent replicas
+            minReplicas:
+              type: integer
+              description: Minimum number of agent replicas
+        activeSessionCount:
+          type: integer
+          description: Number of active sessions
+        deployment:
+          type: object
+          nullable: true
+          description: Details of the current deployment
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the deployment
+            manifest:
+              type: object
+              description: Kubernetes manifest for the deployment
+              properties:
+                apiVersion:
+                  type: string
+                  description: API version of the manifest
+                kind:
+                  type: string
+                  description: Kind of Kubernetes resource
+                metadata:
+                  type: object
+                  description: Metadata for the resource
+                  properties:
+                    name:
+                      type: string
+                      description: Name of the agent
+                    namespace:
+                      type: string
+                      description: Kubernetes namespace
+                spec:
+                  type: object
+                  description: Specification for the agent deployment
+                  properties:
+                    dailyNodeType:
+                      type: string
+                      description: Type of node to run on
+                    image:
+                      type: string
+                      description: &gt;-
+                        Container image used. Redacted when deployed via a
+                        build.
+                    autoScaling:
+                      type: object
+                      description: Auto-scaling configuration
+                      properties:
+                        minReplicas:
+                          type: integer
+                          description: Minimum number of replicas
+                        maxReplicas:
+                          type: integer
+                          description: Maximum number of replicas
+                    imagePullSecretName:
+                      type: string
+                      description: Name of the image pull secret used
+                    envFromSecretNames:
+                      type: array
+                      description: Names of secrets to use as environment variables
+                      items:
+                        type: string
+                    resources:
+                      type: object
+                      description: Resource allocation for the agent
+                      properties:
+                        cpu:
+                          type: string
+                          description: CPU allocation
+                        memory:
+                          type: string
+                          description: Memory allocation
+                    krispViva:
+                      type: object
+                      description: Krisp VIVA configuration
+                      properties:
+                        audioFilters:
+                          type: boolean
+                          description: Whether Krisp VIVA audio filters are enabled
+                    maxSessionDurationSeconds:
+                      type: integer
+                      description: &gt;-
+                        Maximum session duration in seconds configured for this
+                        service. Absent when the service is using the platform
+                        default.
+            serviceId:
+              type: string
+              description: ID of the service this deployment belongs to
+            createdAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the deployment
+            updatedAt:
+              type: string
+              format: date-time
+              description: Last update timestamp of the deployment
+        agentProfile:
+          type: string
+          description: The agent profile used for resource allocation
+          nullable: true
+        krispViva:
+          type: object
+          nullable: true
+          description: Krisp VIVA status
+          properties:
+            audioFilter:
+              type: string
+              nullable: true
+              description: &gt;-
+                The currently configured Krisp VIVA audio filter model (tel,
+                pro, or null if disabled)
+        currentRevision:
+          description: Status of the current (latest) deployment revision
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RevisionInfo'
+        previousRevision:
+          description: &gt;-
+            Status of the previous deployment revision (present during rolling
+            updates)
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/RevisionInfo'
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+    RevisionInfo:
+      type: object
+      properties:
+        deploymentID:
+          type: string
+          description: ID of the deployment for this revision
+        phase:
+          type: string
+          enum:
+            - Creating
+            - Validating
+            - Active
+            - Draining
+            - Failed
+          description: Current phase of the revision
+        readyReplicas:
+          type: integer
+          description: Number of ready replicas for this revision
+        phaseStartedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the current phase started
+        health:
+          $ref: '#/components/schemas/RevisionHealth'
+        hasInfrastructureIssue:
+          type: boolean
+          description: &gt;-
+            Set to true when an internal infrastructure component is
+            experiencing issues. If absent, infrastructure is healthy. Contact
+            support if this flag appears.
+    RevisionHealth:
+      type: object
+      description: &gt;-
+        Health summary for the agent's code. Present once replicas have started
+        running.
+      properties:
+        ready:
+          type: boolean
+          description: Whether the agent code is passing readiness checks
+        state:
+          type: string
+          enum:
+            - running
+            - waiting
+            - terminated
+          description: Current state of the agent code
+        restartCount:
+          type: integer
+          description: Total number of restarts across all replicas
+        replicasStarted:
+          type: integer
+          description: Number of replicas that have been started (may or may not be ready)
+        reason:
+          type: string
+          description: &gt;-
+            Reason for the current state (e.g., CrashLoopBackOff,
+            ImagePullBackOff, OOMKilled, Error)
+        lastExitCode:
+          type: integer
+          description: &gt;-
+            Exit code from the most recent crash (e.g., 1 for application error,
+            137 for out-of-memory)
+        lastTerminationReason:
+          type: string
+          description: &gt;-
+            Why the agent code last exited. When reason is CrashLoopBackOff,
+            this reveals the underlying cause (e.g., OOMKilled, Error)
+        message:
+          type: string
+          description: &gt;-
+            Detailed error output from the crash, such as a Python traceback.
+            Captured from the agent's stderr/stdout on non-zero exit.
+  securitySchemes:
+    PrivateKeyAuth:
+      type: http
+      scheme: bearer
+      description: &gt;-
+        Authentication requires a Pipecat Cloud Private API token.
+
+
+        Generate a Private API key from your Dashboard (Settings &gt; API Keys &gt;
+        Private &gt; Create key) and include it as a Bearer token in the
+        Authorization header.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-one">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-list-one</a></p>
+</div></main></div></body></html>

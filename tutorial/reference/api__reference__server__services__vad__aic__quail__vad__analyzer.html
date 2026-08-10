@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIC Quail VAD · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AIC Quail VAD</h1>
+<blockquote>AICQuailVADAnalyzer is a standalone voice activity detection (VAD) analyzer powered by ai-coustics Quail.</blockquote>
+<h2>Overview</h2>
+<p><code>AICQuailVADAnalyzer</code> is a standalone voice activity detection (VAD) analyzer powered by ai-coustics' Quail VAD models (Quail VAD 2.0, VF VAD 2.0). Unlike the deprecated <code>AICVADAnalyzer</code> which relies on <code>AICFilter</code>'s internal VAD, this analyzer owns its own dedicated processor and can be placed anywhere in the pipeline, working independently of audio enhancement.</p>
+<p>The analyzer reports the model's continuous raw speech probability (range <code>0.0</code> to <code>1.0</code>), which is then gated by Pipecat's <code>VADParams</code> to determine speech start and stop events. This means speech detection thresholds and timing are controlled by your <code>VADParams</code> configuration (<code>confidence</code>, <code>start_secs</code>, <code>stop_secs</code>) rather than by the SDK's internal post-processing.</p>
+<p>To use AIC, you need a license key. Get started at <a href="https://docs.ai-coustics.com/tutorials/pipecat-quickstart">ai-coustics.com</a>.</p>
+<h2>Installation</h2>
+<p>The AIC Quail VAD analyzer requires additional dependencies:</p>
+<pre><code>uv add "pipecat-ai[aic]"</code></pre>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="license_key" type="str" required&gt;   ai-coustics SDK license key for authentication. Get your key at   <a href="https://developers.ai-coustics.io">developers.ai-coustics.io</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_id" type="str | None" default="&amp;#x22;quail-vad-2.0-xxs-16khz&amp;#x22;"&gt;   Quail VAD model identifier. Defaults to the published standalone VAD model   <code>"quail-vad-2.0-xxs-16khz"</code>. See   <a href="https://artifacts.ai-coustics.io/">artifacts.ai-coustics.io</a> for the   catalogue. Ignored if <code>model_path</code> is provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_path" type="Path | None" default="None"&gt;   Optional path to a local <code>.aicmodel</code> file. Overrides <code>model_id</code> when set.   Useful for offline deployments or custom models. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_download_dir" type="Path | None" default="None"&gt;   Directory for downloaded models. Defaults to <code>~/.cache/pipecat/aic-models</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="speech_hold_duration" type="float | None" default="None" deprecated&gt;   <strong>Deprecated since 1.5.0. Will be removed in 2.0.0.</strong></p>
+<p>  This parameter is ignored. Speech timing is now governed by <code>VADParams</code> (<code>start_secs</code>/<code>stop_secs</code>). Use those parameters instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="minimum_speech_duration" type="float | None" default="None" deprecated&gt;   <strong>Deprecated since 1.5.0. Will be removed in 2.0.0.</strong></p>
+<p>  This parameter is ignored. Speech timing is now governed by <code>VADParams</code> (<code>start_secs</code>/<code>stop_secs</code>). Use those parameters instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sensitivity" type="float | None" default="None" deprecated&gt;   <strong>Deprecated since 1.5.0. Will be removed in 2.0.0.</strong></p>
+<p>  This parameter is ignored. The speech-probability threshold is now governed by <code>VADParams.confidence</code>. Use that parameter instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int | None" default="None"&gt;   Initial sample rate; the pipeline will set this via <code>set_sample_rate</code> once the   transport rate is known. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="VADParams | None" default="None"&gt;   Optional <code>VADParams</code> for the base VAD state machine configuration. &lt;/ParamField&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Basic Usage</h3>
+<p>The recommended approach for AIC-powered voice detection:</p>
+<pre><code>import os
+from pipecat.audio.filters.aic_filter import AICFilter
+from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.transports.services.daily import DailyTransport, DailyParams
+
+# Create the AIC filter for audio enhancement
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-vf-2.0-l-16khz",
+)
+
+# Create standalone Quail VAD 2.0 analyzer
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+)
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        audio_in_filter=aic_filter,
+    ),
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=aic_vad,
+    ),
+)</code></pre>
+<h3>With Custom VAD Parameters</h3>
+<p>Fine-tune the VAD behavior using <code>VADParams</code>:</p>
+<pre><code>from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
+
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    params=VADParams(
+        confidence=0.7,      # Speech probability threshold (0.0-1.0)
+        start_secs=0.1,     # Seconds of speech before triggering
+        stop_secs=0.5,      # Seconds of silence before stopping
+    ),
+)</code></pre>
+<h3>VAD-Only (Without Enhancement)</h3>
+<p>Use Quail VAD without audio enhancement:</p>
+<pre><code>from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.transports.services.daily import DailyTransport, DailyParams
+
+# Just VAD, no enhancement filter
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+)
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        # No audio_in_filter - raw audio goes directly to VAD
+    ),
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=aic_vad,
+    ),
+)</code></pre>
+<h3>Using a Local Model</h3>
+<p>For offline deployments or custom Quail VAD models:</p>
+<pre><code>from pathlib import Path
+from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_path=Path("/path/to/your/quail-vad-model.aicmodel"),
+)</code></pre>
+<p>&lt;Info&gt;   See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-aicoustics-vad-only.py">AIC Quail VAD   example</a>   for a complete working example with detailed logging. &lt;/Info&gt;</p>
+<h2>Comparison to Deprecated AICVADAnalyzer</h2>
+<div class="tablewrap"><table><thead><tr><th>Feature</th><th>AICQuailVADAnalyzer (Recommended)</th><th>AICVADAnalyzer (Deprecated)</th></tr></thead><tbody><tr><td><strong>Model</strong></td><td>Standalone Quail VAD models (Quail VAD 2.0, VF VAD 2.0)</td><td>Enhancement model's internal VAD</td></tr><tr><td><strong>Independence</strong></td><td>Owns its own processor</td><td>Bound to <code>AICFilter</code> instance</td></tr><tr><td><strong>Audio path</strong></td><td>Processes whatever the pipeline feeds it</td><td>Reads post-enhancement VAD state</td></tr><tr><td><strong>Output</strong></td><td>Continuous raw probability gated by Pipecat's <code>VADParams.confidence</code></td><td>Binary speech flag (0.0/1.0)</td></tr><tr><td><strong>Configuration</strong></td><td>Controlled by <code>VADParams</code> (<code>confidence</code>, <code>start_secs</code>, <code>stop_secs</code>)</td><td>Energy threshold (1.0-15.0)</td></tr><tr><td><strong>Placement</strong></td><td>Can be placed anywhere in pipeline</td><td>Must follow <code>AICFilter</code></td></tr><tr><td><strong>Use case</strong></td><td>Noise-robust VAD as primary differentiator</td><td>Legacy coupling to enhancement pipeline</td></tr><tr><td><strong>Removal timeline</strong></td><td>N/A (current recommended approach)</td><td>Will be removed in Pipecat 1.6.0</td></tr></tbody></table></div>
+<p>The Quail VAD analyzer can work with or without the AIC enhancement filter, providing flexibility in your pipeline architecture.</p>
+<h2>Notes</h2>
+<ul><li>Requires ai-coustics license key (get one at <a href="https://developers.ai-coustics.io">developers.ai-coustics.io</a>)</li><li><strong>Environment variable</strong>: Use <code>AIC_SDK_LICENSE</code> for authentication</li><li>Default model is <code>quail-vad-2.0-xxs-16khz</code>, optimized for 16kHz audio</li><li>Model is downloaded and cached on first use</li><li>Works independently of <code>AICFilter</code> - can be used with or without audio enhancement</li><li>Provides noise-robust speech detection in challenging acoustic environments</li><li>Handles PCM\_16 audio format (int16 samples)</li><li>Thread-safe for pipeline processing</li><li>For available models, visit <a href="https://artifacts.ai-coustics.io/">artifacts.ai-coustics.io</a></li></ul>
+<p>&lt;Warning&gt;   <strong>Behavior change in Pipecat 1.5.0</strong>: The analyzer now reports the model's   continuous raw VAD probability instead of a binary speech flag. This means   <code>VADParams.confidence</code> now governs the speech threshold (previously had no   effect due to the binary output). Existing users should review their   <code>VADParams.confidence</code> setting after upgrading. &lt;/Warning&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vad/aic-quail-vad-analyzer">https://docs.pipecat.ai/api-reference/server/services/vad/aic-quail-vad-analyzer</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLMContextSummarizer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LLMContextSummarizer</h1>
+<blockquote>Reference for LLMContextSummarizer, LLMAutoContextSummarizationConfig, LLMContextSummaryConfig, and SummaryAppliedEvent.</blockquote>
+<h2>Overview</h2>
+<p>Context summarization automatically compresses older conversation history when token or message limits are reached. It is enabled on <code>LLMAssistantAggregatorParams</code>, configured via <code>LLMAutoContextSummarizationConfig</code> (auto-trigger thresholds) and <code>LLMContextSummaryConfig</code> (summary generation params), and managed by <code>LLMContextSummarizer</code>.</p>
+<p>For a walkthrough of how to enable and customize context summarization, see the <a href="/pipecat/fundamentals/context-summarization">Context Summarization guide</a>.</p>
+<h2>LLMAssistantAggregatorParams</h2>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import LLMAssistantAggregatorParams</code></pre>
+<p>The summarization-related fields on <code>LLMAssistantAggregatorParams</code>.</p>
+<p>&lt;ParamField path="enable_auto_context_summarization" type="bool" default="False"&gt;   Enables automatic context summarization. When <code>False</code> (the default), the   summarizer is still created internally so that on-demand summarization via   <code>LLMSummarizeContextFrame</code> works, but automatic trigger checks are skipped.   Set to <code>True</code> to enable automatic summarization when either   <code>max_context_tokens</code> or <code>max_unsummarized_messages</code> is reached. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auto_context_summarization_config" type="LLMAutoContextSummarizationConfig | None" default="None"&gt;   Configuration for automatic summarization thresholds and summary generation.   When <code>None</code>, default <code>LLMAutoContextSummarizationConfig</code> values are used. &lt;/ParamField&gt;</p>
+<h2>LLMAutoContextSummarizationConfig</h2>
+<pre><code>from pipecat.utils.context.llm_context_summarization import LLMAutoContextSummarizationConfig</code></pre>
+<p>Controls when automatic context summarization triggers.</p>
+<p>&lt;ParamField path="max_context_tokens" type="int | None" default="8000"&gt;   Maximum context size in estimated tokens before triggering summarization.   Tokens are estimated using the heuristic of 1 token per 4 characters. Set to   <code>None</code> to disable token-based triggering. At least one of <code>max_context_tokens</code>   or <code>max_unsummarized_messages</code> must be set. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_unsummarized_messages" type="int | None" default="20"&gt;   Maximum number of new messages before triggering summarization, even if the   token limit has not been reached. Set to <code>None</code> to disable message-count   triggering. At least one of <code>max_context_tokens</code> or   <code>max_unsummarized_messages</code> must be set. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summary_config" type="LLMContextSummaryConfig" default="LLMContextSummaryConfig()"&gt;   Configuration for how summaries are generated. See below. &lt;/ParamField&gt;</p>
+<h2>LLMContextSummaryConfig</h2>
+<pre><code>from pipecat.utils.context.llm_context_summarization import LLMContextSummaryConfig</code></pre>
+<p>Controls how summaries are generated. Used as <code>summary_config</code> inside <code>LLMAutoContextSummarizationConfig</code>, or passed directly to <code>LLMSummarizeContextFrame</code> for on-demand summarization.</p>
+<p>&lt;ParamField path="target_context_tokens" type="int" default="6000"&gt;   Target token count for the generated summary. Passed to the LLM as   <code>max_tokens</code>. Auto-adjusted to 80% of <code>max_context_tokens</code> if it exceeds that   value. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="min_messages_after_summary" type="int" default="4"&gt;   Number of recent messages to preserve uncompressed after each summarization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summarization_prompt" type="str | None" default="None"&gt;   Custom system prompt for the LLM when generating summaries. When <code>None</code>, uses   a built-in default prompt. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summary_message_template" type="str" default="&amp;#x22;Conversation summary: {summary}&amp;#x22;"&gt;   Template for formatting the summary when injected into context. Must contain <code>   {summary}</code> as a placeholder. Allows wrapping summaries in custom delimiters   (e.g., XML tags) so system prompts can distinguish summaries from live   conversation. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="llm" type="LLMService | None" default="None"&gt;   Dedicated LLM service for generating summaries. When set, summarization   requests are sent to this service instead of the pipeline's primary LLM.   Useful for routing summarization to a cheaper or faster model. When <code>None</code>,   the pipeline LLM handles summarization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summarization_timeout" type="float" default="120.0"&gt;   Maximum time in seconds to wait for the LLM to generate a summary. If   exceeded, summarization is aborted and future summarization attempts are   unblocked. &lt;/ParamField&gt;</p>
+<h2>LLMSummarizeContextFrame</h2>
+<pre><code>from pipecat.frames.frames import LLMSummarizeContextFrame</code></pre>
+<p>Push this frame into the pipeline to trigger on-demand context summarization without waiting for automatic thresholds.</p>
+<p>&lt;ParamField path="config" type="LLMContextSummaryConfig | None" default="None"&gt;   Per-request override for summary generation settings (prompt, token budget,   messages to keep). When <code>None</code>, the summarizer's default   <code>LLMContextSummaryConfig</code> is used. &lt;/ParamField&gt;</p>
+<p>On-demand summarization works even when <code>enable_auto_context_summarization</code> is <code>False</code> — the summarizer is always created internally to handle manually pushed frames.</p>
+<pre><code>from pipecat.frames.frames import LLMSummarizeContextFrame
+
+# Trigger with default settings
+await llm.queue_frame(LLMSummarizeContextFrame())
+
+# Trigger with per-request overrides
+await llm.queue_frame(
+    LLMSummarizeContextFrame(
+        config=LLMContextSummaryConfig(
+            target_context_tokens=2000,
+            min_messages_after_summary=2,
+        )
+    )
+)</code></pre>
+<p>&lt;Note&gt;   If a summarization is already in progress, the manual request is ignored. &lt;/Note&gt;</p>
+<h2>LLMContextSummarizer</h2>
+<pre><code>from pipecat.processors.aggregators.llm_context_summarizer import LLMContextSummarizer</code></pre>
+<p>Monitors context size and orchestrates summarization. Created automatically by <code>LLMAssistantAggregator</code> when <code>enable_auto_context_summarization=True</code>.</p>
+<h3>Event Handlers</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Parameters</th><th>Description</th></tr></thead><tbody><tr><td><code>on_summary_applied</code></td><td><code>event: SummaryAppliedEvent</code></td><td>Emitted after a summary has been successfully applied to the context.</td></tr></tbody></table></div>
+<h4>on\_summary\_applied</h4>
+<p>The <code>on_summary_applied</code> event is exposed on both <code>LLMContextSummarizer</code> and <code>LLMAssistantAggregator</code>. Register handlers on the aggregator for cleaner access:</p>
+<pre><code>@assistant_aggregator.event_handler("on_summary_applied")
+async def on_summary_applied(aggregator, summarizer, event: SummaryAppliedEvent):
+    logger.info(
+        f"Context summarized: {event.original_message_count} -&gt; "
+        f"{event.new_message_count} messages "
+        f"({event.summarized_message_count} summarized, "
+        f"{event.preserved_message_count} preserved)"
+    )</code></pre>
+<p>You can also register handlers directly on the summarizer if you have access to it:</p>
+<pre><code>summarizer = assistant_aggregator._summarizer
+@summarizer.event_handler("on_summary_applied")
+async def on_summary_applied(summarizer, event: SummaryAppliedEvent):
+    logger.info(
+        f"Context summarized: {event.original_message_count} -&gt; "
+        f"{event.new_message_count} messages"
+    )</code></pre>
+<h2>SummaryAppliedEvent</h2>
+<pre><code>from pipecat.processors.aggregators.llm_context_summarizer import SummaryAppliedEvent</code></pre>
+<p>Event data emitted when context summarization completes successfully.</p>
+<p>&lt;ParamField path="original_message_count" type="int"&gt;   Number of messages in context before summarization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="new_message_count" type="int"&gt;   Number of messages in context after summarization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summarized_message_count" type="int"&gt;   Number of messages that were compressed into the summary. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="preserved_message_count" type="int"&gt;   Number of messages preserved uncompressed (initial system message at   <code>messages[0]</code> if present, plus recent messages). &lt;/ParamField&gt;</p>
+<h2>Deprecated: LLMContextSummarizationConfig</h2>
+<pre><code>from pipecat.utils.context.llm_context_summarization import LLMContextSummarizationConfig</code></pre>
+<p>&lt;Warning&gt;   <code>LLMContextSummarizationConfig</code> is deprecated since v0.0.104. Use   <code>LLMAutoContextSummarizationConfig</code> with a nested <code>LLMContextSummaryConfig</code>   instead. The old class still works but emits a <code>DeprecationWarning</code>. &lt;/Warning&gt;</p>
+<p>&lt;Note&gt;   Both <code>max_context_tokens</code> and <code>max_unsummarized_messages</code> can now be set to   <code>None</code> independently to disable that threshold. At least one must remain set. &lt;/Note&gt;</p>
+<p>The old class flattened all parameters into a single object. Migrate by splitting trigger thresholds (<code>max_context_tokens</code>, <code>max_unsummarized_messages</code>) into <code>LLMAutoContextSummarizationConfig</code> and summary generation params into <code>LLMContextSummaryConfig</code>:</p>
+<pre><code># Before (deprecated)
+config = LLMContextSummarizationConfig(
+    max_context_tokens=4000,
+    target_context_tokens=3000,
+    max_unsummarized_messages=10,
+)
+
+# After
+config = LLMAutoContextSummarizationConfig(
+    max_context_tokens=4000,
+    max_unsummarized_messages=10,
+    summary_config=LLMContextSummaryConfig(
+        target_context_tokens=3000,
+    ),
+)</code></pre>
+<p>Similarly, the <code>LLMAssistantAggregatorParams</code> fields were renamed:</p>
+<ul><li><code>enable_context_summarization</code> → <code>enable_auto_context_summarization</code></li><li><code>context_summarization_config</code> → <code>auto_context_summarization_config</code></li></ul>
+<p>The old field names still work with a <code>DeprecationWarning</code>.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/context-summarization">https://docs.pipecat.ai/api-reference/server/utilities/context-summarization</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix B · Glossary — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix B · Reference</div>
+      <h1>Glossary</h1>
+      <p class="lead">Every term in the course, one place. Each links to where it's taught.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="core">Core</h2>
+      <div class="tablewrap"><table><tbody>
+        <tr><td><strong>Frame</strong></td><td>A typed data packet flowing through the app (audio, text, image, control). <a href="l03-frame-model.html">L3</a></td></tr>
+        <tr><td><strong>FrameProcessor</strong></td><td>A node that handles frames and pushes them onward. <a href="l04-frameprocessor.html">L4</a></td></tr>
+        <tr><td><strong>Pipeline</strong></td><td>An ordered list of processors; order = data flow. <a href="l05-pipeline-workers.html">L5</a></td></tr>
+        <tr><td><strong>PipelineWorker</strong></td><td>One agent = one pipeline. <a href="l05-pipeline-workers.html">L5</a></td></tr>
+        <tr><td><strong>WorkerRunner</strong></td><td>Owns the bus; supervises one or many workers. <a href="l05-pipeline-workers.html">L5</a></td></tr>
+        <tr><td><strong>Transport</strong></td><td>How users connect (WebRTC, Daily, phone); first &amp; last processor. <a href="l06-transports.html">L6</a></td></tr>
+      </tbody></table></div>
+
+      <h2 id="voice">Voice loop</h2>
+      <div class="tablewrap"><table><tbody>
+        <tr><td><strong>VAD</strong></td><td>Voice Activity Detection — speech vs silence. <a href="l07-audio-processing.html">L7</a></td></tr>
+        <tr><td><strong>Resampler</strong></td><td>Converts audio sample rates (SOXR/Resampy). <a href="l07-audio-processing.html">L7</a></td></tr>
+        <tr><td><strong>STT / TTS / LLM service</strong></td><td>Speech-to-text / text-to-speech / language model; drop-in. <a href="l08-stt.html">L8</a>, <a href="l13-tts.html">L13</a>, <a href="l11-llm-settings.html">L11</a></td></tr>
+        <tr><td><strong>LLMContext</strong></td><td>The running message list sent to the LLM each turn. <a href="l09-context-aggregators.html">L9</a></td></tr>
+        <tr><td><strong>Aggregator pair</strong></td><td>Records user &amp; assistant turns into the context. <a href="l09-context-aggregators.html">L9</a></td></tr>
+        <tr><td><strong>Turn strategy</strong></td><td>Start/stop rules for end-of-turn (VAD, transcript, smart-turn). <a href="l10-turn-taking.html">L10</a></td></tr>
+        <tr><td><strong>Smart turn</strong></td><td>An ML model that judges real end-of-turn vs a pause. <a href="l10-turn-taking.html">L10</a></td></tr>
+        <tr><td><strong>Settings pattern (NOT_GIVEN)</strong></td><td>Store vs sparse delta — how every runtime change works. <a href="l11-llm-settings.html">L11</a></td></tr>
+        <tr><td><strong>Adapter</strong></td><td>Translates context/tools to a provider's wire format. <a href="l11-llm-settings.html">L11</a></td></tr>
+        <tr><td><strong>Function calling / tool</strong></td><td>The LLM returns a structured call your code fulfills. <a href="l12-function-calling.html">L12</a></td></tr>
+        <tr><td><strong>MCP</strong></td><td>Model Context Protocol — tools hosted in a separate server. <a href="l12-function-calling.html">L12</a></td></tr>
+      </tbody></table></div>
+
+      <h2 id="multi">Realtime &amp; multi-agent</h2>
+      <div class="tablewrap"><table><tbody>
+        <tr><td><strong>Realtime / speech-to-speech</strong></td><td>One model replacing STT+LLM+TTS (Gemini Live). <a href="l15-realtime.html">L15</a></td></tr>
+        <tr><td><strong>Flows</strong></td><td>Conversation as a graph of nodes with scoped tools. <a href="l19-flows.html">L19</a></td></tr>
+        <tr><td><strong>Observer</strong></td><td>Watches frames read-only for logging/metrics. <a href="l23-observability.html">L23</a></td></tr>
+        <tr><td><strong>Bus</strong></td><td>Shared channel workers communicate over (in-memory/Redis/PGMQ). <a href="l24-bus.html">L24</a></td></tr>
+        <tr><td><strong>BusBridgeProcessor</strong></td><td>Tees pipeline frames onto the bus. <a href="l24-bus.html">L24</a></td></tr>
+        <tr><td><strong>Worker / LLMWorker / UIWorker</strong></td><td>Units of work on the bus. <a href="l25-workers-registry.html">L25</a></td></tr>
+        <tr><td><strong>@tool</strong></td><td>Decorator exposing a method to an agent's LLM. <a href="l25-workers-registry.html">L25</a></td></tr>
+        <tr><td><strong>Handoff</strong></td><td>Moving control between agents via <code>activate_worker</code>. <a href="l26-handoff.html">L26</a></td></tr>
+        <tr><td><strong>Job / job group</strong></td><td>Dispatch work to peers in parallel and collect results. <a href="l27-job-coordination.html">L27</a></td></tr>
+        <tr><td><strong>RTVI</strong></td><td>The typed event protocol between bot and web/mobile client. <a href="l29-uiworker-rtvi.html">L29</a></td></tr>
+        <tr><td><strong>Serializer</strong></td><td>Converts a telephony provider's stream to/from frames. <a href="l30-runner-telephony.html">L30</a></td></tr>
+        <tr><td><strong>Eval / Judge</strong></td><td>Scripted headless test + LLM scoring. <a href="l34-evals-testing.html">L34</a></td></tr>
+      </tbody></table></div>
+
+      <p class="lead" style="margin-top:26px">See also: <a href="ax-migration.html">Appendix C — What changed →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

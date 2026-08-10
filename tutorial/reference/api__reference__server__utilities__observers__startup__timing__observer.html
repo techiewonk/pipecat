@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Startup Timing Observer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Startup Timing Observer</h1>
+<blockquote>Measure processor startup times and transport readiness during pipeline initialization</blockquote>
+<p>The <code>StartupTimingObserver</code> measures how long each processor's <code>start()</code> method takes during pipeline startup, and tracks transport connection timing. This is useful for diagnosing startup slowness and identifying initialization bottlenecks such as WebSocket connections, API authentication, or model loading.</p>
+<h2>Features</h2>
+<ul><li>Measures per-processor <code>start()</code> duration by tracking <code>StartFrame</code> propagation</li><li>Reports total pipeline startup time and per-processor breakdown</li><li>Tracks transport connection milestones (bot connected, client connected)</li><li>Emits <code>on_startup_timing_report</code> with processor timing data</li><li>Emits <code>on_transport_timing_report</code> with transport connection timing</li><li>Supports filtering to measure only specific processor types</li><li>Excludes internal pipeline processors by default</li></ul>
+<h2>Usage</h2>
+<h3>Basic Startup Monitoring</h3>
+<p>Add startup monitoring to your pipeline and handle the events:</p>
+<pre><code>from pipecat.observers.startup_timing_observer import StartupTimingObserver
+
+observer = StartupTimingObserver()
+
+@observer.event_handler("on_startup_timing_report")
+async def on_startup_timing_report(observer, report):
+    print(f"Total startup: {report.total_duration_secs:.3f}s")
+    for timing in report.processor_timings:
+        print(f"  {timing.processor_name}: {timing.duration_secs:.3f}s")
+
+@observer.event_handler("on_transport_timing_report")
+async def on_transport_timing_report(observer, report):
+    if report.bot_connected_secs is not None:
+        print(f"Bot connected: {report.bot_connected_secs:.3f}s")
+    print(f"Client connected: {report.client_connected_secs:.3f}s")
+
+worker = PipelineWorker(
+    pipeline,
+    observers=[observer],
+)</code></pre>
+<h3>Filtering Processor Types</h3>
+<p>To measure only specific processor types, pass a <code>processor_types</code> tuple:</p>
+<pre><code>from pipecat.services.stt_service import STTService
+from pipecat.services.tts_service import TTSService
+
+observer = StartupTimingObserver(
+    processor_types=(STTService, TTSService)
+)</code></pre>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="processor_types" type="Tuple[Type[FrameProcessor], ...] | None" default="None"&gt;   Optional tuple of processor types to measure. If <code>None</code>, all non-internal   processors are measured. Internal pipeline processors (<code>PipelineSource</code>,   <code>Pipeline</code>) are always excluded. &lt;/ParamField&gt;</p>
+<h2>Event Handlers</h2>
+<h3>on\_startup\_timing\_report</h3>
+<p>Called once after the pipeline has fully started, with timing data for all measured processors.</p>
+<pre><code>@observer.event_handler("on_startup_timing_report")
+async def on_startup_timing_report(observer, report):
+    # report is a StartupTimingReport
+    print(f"Total: {report.total_duration_secs:.3f}s")
+    for timing in report.processor_timings:
+        print(f"  {timing.processor_name}: {timing.duration_secs:.3f}s")</code></pre>
+<p><strong>Report fields (<code>StartupTimingReport</code>):</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>start_time</code></td><td><code>float</code></td><td>Unix timestamp when the first processor began starting</td></tr><tr><td><code>total_duration_secs</code></td><td><code>float</code></td><td>Sum of all measured processor <code>start()</code> durations</td></tr><tr><td><code>processor_timings</code></td><td><code>List[ProcessorStartupTiming]</code></td><td>Per-processor timing data, in pipeline order</td></tr></tbody></table></div>
+<p><strong>Processor timing fields (<code>ProcessorStartupTiming</code>):</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>processor_name</code></td><td><code>str</code></td><td>The name of the processor</td></tr><tr><td><code>start_offset_secs</code></td><td><code>float</code></td><td>Offset from the StartFrame to when this processor's start began</td></tr><tr><td><code>duration_secs</code></td><td><code>float</code></td><td>How long the processor's <code>start()</code> took</td></tr></tbody></table></div>
+<h3>on\_transport\_timing\_report</h3>
+<p>Called once when the first client connects, with transport connection timing relative to the <code>StartFrame</code>.</p>
+<pre><code>@observer.event_handler("on_transport_timing_report")
+async def on_transport_timing_report(observer, report):
+    # report is a TransportTimingReport
+    if report.bot_connected_secs is not None:
+        print(f"Bot connected: {report.bot_connected_secs:.3f}s")
+    print(f"Client connected: {report.client_connected_secs:.3f}s")</code></pre>
+<p><strong>Report fields (<code>TransportTimingReport</code>):</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>start_time</code></td><td><code>float</code></td><td>Unix timestamp of the StartFrame (pipeline start)</td></tr><tr><td><code>bot_connected_secs</code></td><td><code>Optional[float]</code></td><td>Seconds from StartFrame to <code>BotConnectedFrame</code> (SFU transports only)</td></tr><tr><td><code>client_connected_secs</code></td><td><code>Optional[float]</code></td><td>Seconds from StartFrame to first <code>ClientConnectedFrame</code></td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>bot_connected_secs</code> is only set for SFU transports (Daily, LiveKit, HeyGen,   Tavus) that emit a <code>BotConnectedFrame</code> when the bot joins the room. Non-SFU   transports (WebSocket, SmallWebRTC) will have this field set to <code>None</code>. &lt;/Note&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/observers/startup-timing-observer">https://docs.pipecat.ai/api-reference/server/utilities/observers/startup-timing-observer</a></p>
+</div></main></div></body></html>

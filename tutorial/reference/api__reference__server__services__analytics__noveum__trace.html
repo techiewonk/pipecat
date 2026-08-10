@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noveum Trace · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Noveum Trace</h1>
+<blockquote>Community-maintained observability integration that maps Pipecat pipeline events into Noveum traces and spans</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="Noveum" maintainerUrl="https://github.com/Noveum" repo="https://github.com/Noveum/noveum-trace" /&gt;</p>
+<h2>Overview</h2>
+<p><code>NoveumPipecatTracer</code> is an observability integration that maps Pipecat pipeline events into <a href="https://noveum.ai">Noveum</a> traces and spans — conversation turns, STT, LLM, TTS, tool/function calls, metrics, errors, and optional audio capture. Traces are viewable in the Noveum dashboard for debugging, analytics, and evaluation of voice agents.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Integration Docs" icon="book" href="https://noveum.ai/en/docs/integration-examples/pipecat/overview"&gt;     Noveum Trace documentation for the Pipecat integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Source Repository" icon="github" href="https://github.com/Noveum/noveum-trace"&gt;     Source code, examples, and issues for the Noveum Trace SDK   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/noveum-trace/"&gt;     The <code>noveum-trace</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Noveum Platform" icon="chart-line" href="https://noveum.ai"&gt;     AI observability and evaluation platform for viewing traces   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add "noveum-trace[pipecat]"</code></pre>
+<h2>Prerequisites</h2>
+<p>You need a Noveum account and API key. Credentials are configured via <code>noveum_trace.init()</code> — the tracer itself does not accept <code>api_key</code> or <code>project</code> arguments. Set your API key in the <code>NOVEUM_API_KEY</code> environment variable or pass it to <code>init()</code>.</p>
+<h2>Usage</h2>
+<p>Initialize Noveum Trace, then attach the tracer to your pipeline and task using the two-call API:</p>
+<pre><code>import os
+
+import noveum_trace
+from noveum_trace.integrations.pipecat import NoveumPipecatTracer
+
+noveum_trace.init(
+    project="my-voice-agent",
+    api_key=os.environ["NOVEUM_API_KEY"],
+)
+
+tracer = NoveumPipecatTracer(record_audio=True)
+
+pipeline = tracer.observe_pipeline(Pipeline([...]))
+task = await tracer.register_task_handlers(task, transport=transport)</code></pre>
+<p>Once attached, conversation turns and per-service spans are exported to your Noveum project as the pipeline runs.</p>
+<p>&lt;Note&gt;   Audio and transcript capture are configurable: <code>record_audio</code> controls audio   upload and <code>capture_text</code> controls transcript/text capture. Review these   settings before using the integration with sensitive data. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>Requires <code>pipecat-ai &gt;= 0.0.108</code> and Python 3.11+. See the <a href="https://github.com/Noveum/noveum-trace">source repository</a> for the latest tested versions and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/analytics/noveum-trace">https://docs.pipecat.ai/api-reference/server/services/analytics/noveum-trace</a></p>
+</div></main></div></body></html>

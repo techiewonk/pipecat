@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmolVLM Vision · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>SmolVLM Vision</h1>
+<blockquote>SmolVlmService runs HuggingFace SmolVLM vision-language models locally for image analysis in Pipecat pipelines.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="rahulsolanki001" maintainerUrl="https://github.com/rahulsolanki001" repo="https://github.com/rahulsolanki001/pipecat-smolvlm" /&gt;</p>
+<h2>Overview</h2>
+<p><code>SmolVlmService</code> runs HuggingFace <a href="https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM</a> vision-language models locally to describe images flowing through a Pipecat pipeline. The compact, instruction-tuned models run entirely on your own hardware — no external API calls, no per-image billing, and no data leaving your infrastructure. It accepts <code>UserImageRawFrame</code> input and emits a <code>VisionTextFrame</code> containing the generated description.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/rahulsolanki001/pipecat-smolvlm"&gt;     Source code, examples, and issues for the SmolVLM integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-smolvlm/"&gt;     The <code>pipecat-smolvlm</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SmolVLM Models" icon="image" href="https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct"&gt;     Browse the SmolVLM checkpoints on HuggingFace   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code># Core install
+uv add pipecat-smolvlm
+
+# With Flash Attention 2 (CUDA only — significant speedup)
+uv add "pipecat-smolvlm[flash-attn]"
+
+# Intel XPU support
+uv add "pipecat-smolvlm[xpu]"</code></pre>
+<p>Model weights are downloaded from HuggingFace on first use and cached in <code>~/.cache/huggingface/</code>.</p>
+<h2>Prerequisites</h2>
+<p>No accounts or API keys are required — inference runs locally. The service automatically selects the best available device (Intel XPU, CUDA, Apple MPS, then CPU). Pass <code>use_cpu=True</code> to force CPU execution.</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="model" type="str" default="None"&gt;   *(Deprecated)* HuggingFace model identifier. Prefer   <code>settings=SmolVlmService.Settings(model=...)</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_cpu" type="bool" default="False"&gt;   Force CPU execution even when a GPU is available. Useful for reproducibility   or constrained environments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SmolVlmService.Settings" default="None"&gt;   Runtime-configurable generation settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SmolVlmService.Settings(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"HuggingFaceTB/SmolVLM-256M-Instruct"</code></td><td>HuggingFace model ID or local path.</td></tr><tr><td><code>max_new_tokens</code></td><td><code>int</code></td><td><code>500</code></td><td>Maximum tokens to generate per image.</td></tr><tr><td><code>default_prompt</code></td><td><code>str</code></td><td><code>"Describe the given image."</code></td><td>Fallback prompt when the frame carries no text.</td></tr><tr><td><code>temperature</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Sampling temperature. <code>None</code> uses greedy decoding.</td></tr><tr><td><code>do_sample</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable sampling without a fixed temperature.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Available parameters and defaults are defined by the integration. See the   <a href="https://github.com/rahulsolanki001/pipecat-smolvlm">source repository</a> for   the authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat_smolvlm import SmolVlmService
+
+# Default: SmolVLM-256M-Instruct, auto device detection
+service = SmolVlmService()
+
+# Custom model and generation settings
+service = SmolVlmService(
+    settings=SmolVlmService.Settings(
+        model="HuggingFaceTB/SmolVLM-500M-Instruct",
+        max_new_tokens=256,
+        default_prompt="What objects can you see?",
+        temperature=0.3,
+        do_sample=True,
+    )
+)
+
+# Force CPU (no GPU required)
+service = SmolVlmService(use_cpu=True)</code></pre>
+<p>Drop <code>SmolVlmService</code> into a Pipeline wherever a vision service is expected:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    image_capture_processor,   # converts camera frames → UserImageRawFrame
+    SmolVlmService(),
+    vision_to_speech,          # VisionTextFrame → TextFrame
+    tts_service,
+    transport.output(),
+])</code></pre>
+<p>To use a custom per-image prompt, set the <code>text</code> field on the incoming <code>UserImageRawFrame</code>; the service falls back to <code>settings.default_prompt</code> when it is empty.</p>
+<h2>Compatibility</h2>
+<p>The package targets <code>pipecat-ai&gt;=0.0.100</code>. Check the <a href="https://github.com/rahulsolanki001/pipecat-smolvlm">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vision/smolvlm">https://docs.pipecat.ai/api-reference/server/services/vision/smolvlm</a></p>
+</div></main></div></body></html>

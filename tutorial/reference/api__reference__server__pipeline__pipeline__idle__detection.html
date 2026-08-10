@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline Idle Detection · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipeline Idle Detection</h1>
+<blockquote>Detect and handle idle Pipecat pipelines with no bot or user activity, and shut them down automatically.</blockquote>
+<h2>Overview</h2>
+<p>Pipeline idle detection monitors activity in your pipeline and can automatically cancel tasks when no meaningful interactions are occurring. This helps prevent pipelines from running indefinitely when a conversation has naturally ended but wasn't properly terminated.</p>
+<h2>How It Works</h2>
+<p>The system monitors specific "activity frames" that indicate the bot is actively engaged in the conversation. By default, these are:</p>
+<ul><li><code>BotSpeakingFrame</code> - When the bot is speaking</li><li><code>UserSpeakingFrame</code> - When the user is speaking</li></ul>
+<p>If no activity frames are detected within the configured timeout period (5 minutes by default), the system considers the pipeline idle and can automatically terminate it.</p>
+<p>&lt;Note&gt;   Idle detection only starts after the pipeline has begun processing frames. The   idle timer resets whenever an activity frame (as specified in   <code>idle_timeout_frames</code>) is received. &lt;/Note&gt;</p>
+<h2>Configuration</h2>
+<p>You can configure idle detection behavior when creating a <code>PipelineWorker</code>:</p>
+<pre><code>from pipecat.pipeline.worker import PipelineParams, PipelineWorker
+
+# Default configuration - cancel after 5 minutes of inactivity
+worker = PipelineWorker(pipeline)
+
+# Custom configuration
+worker = PipelineWorker(
+    pipeline,
+    idle_timeout_secs=600,  # 10 minute timeout
+    idle_timeout_frames=(BotSpeakingFrame,),  # Only monitor bot speaking
+    cancel_on_idle_timeout=False,  # Don't auto-cancel, just notify
+)</code></pre>
+<h2>Configuration Parameters</h2>
+<p>&lt;ParamField path="idle_timeout_secs" type="float | None" default="300"&gt;   Timeout in seconds before considering the pipeline idle. Set to <code>None</code> to   disable idle detection. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="idle_timeout_frames" type="Tuple[Type[Frame], ...]" default="(BotSpeakingFrame, UserSpeakingFrame)"&gt;   Frame types that should prevent the pipeline from being considered idle. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cancel_on_idle_timeout" type="bool" default="True"&gt;   Whether to automatically cancel the pipeline worker when idle timeout is   reached. &lt;/ParamField&gt;</p>
+<h2>Handling Idle Timeouts</h2>
+<p>You can respond to idle timeout events by adding an event handler:</p>
+<pre><code>@worker.event_handler("on_idle_timeout")
+async def on_idle_timeout(worker):
+    logger.info("Pipeline has been idle for too long")
+    # Perform any custom cleanup or logging
+    # Note: If cancel_on_idle_timeout=True, the pipeline will be cancelled after this handler runs</code></pre>
+<h2>Example Implementation</h2>
+<p>Here's a complete example showing how to configure idle detection with custom handling:</p>
+<pre><code>from pipecat.frames.frames import EndFrame, TTSSpeakFrame
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.workers.runner import WorkerRunner
+from pipecat.pipeline.worker import PipelineWorker
+
+# Create pipeline
+pipeline = Pipeline([...])
+
+# Configure worker with custom idle settings
+worker = PipelineWorker(
+    pipeline,
+    idle_timeout_secs=180,  # 3 minutes
+    cancel_on_idle_timeout=False  # Don't auto-cancel
+)
+
+# Add event handler for idle timeout
+@worker.event_handler("on_idle_timeout")
+async def on_idle_timeout(worker):
+    logger.info("Conversation has been idle for 3 minutes")
+
+    # Add a farewell message
+    await worker.queue_frame(TTSSpeakFrame("I haven't heard from you in a while. Goodbye!"))
+
+    # Then end the conversation gracefully
+    await worker.queue_frame(EndFrame())
+
+runner = WorkerRunner()
+
+await runner.run(worker)</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-idle-detection">https://docs.pipecat.ai/api-reference/server/pipeline/pipeline-idle-detection</a></p>
+</div></main></div></body></html>

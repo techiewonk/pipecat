@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorkerRunner · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>WorkerRunner</h1>
+<blockquote>WorkerRunner orchestrates the lifecycle of Pipecat multi-agent systems: starting, supervising, and stopping workers.</blockquote>
+<h2>Overview</h2>
+<p><code>WorkerRunner</code> runs agents to completion and acts as the host for a multi-agent session. It owns the shared <a href="/api-reference/server/bus/bus#workerbus"><code>WorkerBus</code></a> and <a href="/api-reference/server/workers/types#workerregistry"><code>WorkerRegistry</code></a> that back the whole session, and responds to bus messages for lifecycle coordination.</p>
+<pre><code>from pipecat.workers.runner import WorkerRunner</code></pre>
+<p>&lt;Note&gt;   <code>PipelineRunner</code> is a deprecated alias for <code>WorkerRunner</code>; existing code that   uses it keeps working but should migrate to <code>WorkerRunner</code>. &lt;/Note&gt;</p>
+<pre><code>runner = WorkerRunner()
+
+agent = MyAgent("my_agent", ...)
+await runner.add_workers(agent)
+
+await runner.run()</code></pre>
+<p>Adding an agent with <code>add_workers()</code> attaches it to the runner's bus and registry, so agents do not take a bus in their constructor.</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="name" type="str | None" default="None"&gt;   Unique name for this runner. Defaults to a UUID-based name. Must be unique   across all runners in a distributed setup. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bus" type="WorkerBus | None" default="None"&gt;   The <a href="/api-reference/server/bus/bus#workerbus"><code>WorkerBus</code></a> instance. Creates   an <a href="/api-reference/server/bus/bus#asyncqueuebus"><code>AsyncQueueBus</code></a> if not   provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="handle_sigint" type="bool" default="True"&gt;   Whether to automatically handle SIGINT signals for graceful shutdown. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="handle_sigterm" type="bool" default="False"&gt;   Whether to automatically handle SIGTERM signals for graceful shutdown. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="force_gc" type="bool" default="False"&gt;   Whether to force garbage collection after the main worker completes. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="check_dangling_tasks" type="bool" default="True"&gt;   Whether to warn about tasks left running on the shared task manager once every   worker has finished. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task_manager" type="BaseTaskManager | None" default="None"&gt;   Optional task manager for handling asyncio tasks. If <code>None</code>, a default   <code>TaskManager</code> is created with the current running loop. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="loop" type="asyncio.AbstractEventLoop | None" default="None"&gt;   Event loop to use. If <code>None</code>, uses the current running loop.</p>
+<p>  &lt;Warning&gt;     Deprecated since 1.5.0. Use <code>task_manager</code> (which owns its own loop) instead.     This parameter will be removed in 2.0.0.   &lt;/Warning&gt; &lt;/ParamField&gt;</p>
+<h2>Properties</h2>
+<h3>bus</h3>
+<pre><code>runner.bus -&gt; WorkerBus</code></pre>
+<p>The bus this runner hosts, shared across all added agents.</p>
+<h3>registry</h3>
+<pre><code>runner.registry -&gt; WorkerRegistry</code></pre>
+<p>The shared agent registry this runner owns.</p>
+<h2>Methods</h2>
+<h3>add\_workers</h3>
+<pre><code>async def add_workers(self, *workers: BaseWorker) -&gt; None</code></pre>
+<p>Add one or more agents to this runner. Each agent is attached to the runner's bus and registry and started in the background. Can be called before or after <code>run()</code>. When called after <code>run()</code> has started, each agent starts immediately; otherwise agents are queued and started during run setup.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>*workers</code></td><td><a href="/api-reference/server/workers/base-worker"><code>BaseWorker</code></a></td><td>One or more agents to add</td></tr></tbody></table></div>
+<h3>run</h3>
+<pre><code>async def run(self, worker: BaseWorker | None = None, *, auto_end: bool = True) -&gt; None</code></pre>
+<p>Run all added agents and block until the runner is stopped. By default (<code>auto_end=True</code>), the runner ends once every root agent has finished. For long-lived hosts that add and remove agents over many sessions, pass <code>auto_end=False</code> so the runner does not exit when no agents are left.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>worker</code></td><td>`BaseWorker \</td><td>None`</td><td><code>None</code></td><td>Optional agent to run. Deprecated -- register with <code>add_workers()</code> before calling <code>run()</code> instead.</td></tr><tr><td><code>auto_end</code></td><td><code>bool</code></td><td><code>True</code></td><td>When <code>True</code>, the runner ends once every root agent has finished. When <code>False</code>, it blocks until <code>end()</code> or <code>cancel()</code> is called.</td></tr></tbody></table></div>
+<h3>end</h3>
+<pre><code>async def end(self, reason: str | None = None) -&gt; None</code></pre>
+<p>Gracefully end all agents and shut down. Ends root agents first; parent agents propagate shutdown to their children automatically. Idempotent.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>reason</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Human-readable reason for ending</td></tr></tbody></table></div>
+<h3>cancel</h3>
+<pre><code>async def cancel(self, reason: str | None = None) -&gt; None</code></pre>
+<p>Immediately cancel all agents and shut down. Cancels root agents first; parent agents propagate cancellation to their children automatically. Idempotent.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>reason</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Human-readable reason for cancelling</td></tr></tbody></table></div>
+<h2>Event Handlers</h2>
+<pre><code>@runner.event_handler("on_ready")
+async def on_ready(runner):
+    print("All agents started")
+
+@runner.event_handler("on_error")
+async def on_error(runner, error):
+    print(f"Runner error: {error}")</code></pre>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_ready</code></td><td>Fired after the runner has finished setup and any added agents have started</td></tr><tr><td><code>on_error</code></td><td>Fired when starting an added agent fails</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/workers/runner">https://docs.pipecat.ai/api-reference/server/workers/runner</a></p>
+</div></main></div></body></html>

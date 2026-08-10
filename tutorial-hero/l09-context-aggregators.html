@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L9 · Context & aggregators — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 9 · Part II — The voice loop</div>
+      <h1>Context & aggregators</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">The LLM has no memory of its own. The <strong>context</strong> is the conversation, and the <strong>aggregators</strong> are the hub that fills it — and where turn-taking and muting attach next lesson.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="context">The context is the memory</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="user aggregator|LLMContext:[system,user,assistant,…]|LLM|assistant aggregator|back to context"
+           data-caption="The user aggregator captures your transcribed turn|and appends it to the LLMContext (the running transcript)|The whole context is sent to the LLM every turn|The assistant aggregator captures the bot's reply|and appends it back — so the next turn remembers">
+      </div>
+      <p>An <code>LLMContext</code> is a list of messages (<code>system</code>/<code>developer</code>, <code>user</code>, <code>assistant</code>). Because LLMs are stateless, Pipecat resends the whole context each turn — the aggregators keep it current automatically.</p>
+
+      <h2 id="pair">The aggregator pair</h2>
+      <pre><code class="language-python">from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair, LLMUserAggregatorParams)
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+
+context = LLMContext()                                  # optionally LLMContext(tools=[...])
+user_agg, assistant_agg = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
+).pair()
+
+pipeline = Pipeline([
+    transport.input(), stt,
+    user_agg,                     # ← user turn goes IN here
+    llm,
+    tts, transport.output(),
+    assistant_agg,               # ← bot turn recorded here (after output)
+])</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Why the assistant aggregator sits after <code>transport.output()</code></p>
+        <p>So the bot's words are recorded into context only once they've actually been sent — keeping memory faithful to what the user really heard, even across interruptions.</p>
+      </div>
+
+      <h2 id="kick">Kicking off a turn</h2>
+      <pre><code class="language-python">context.add_message({"role": "developer", "content": "Please introduce yourself."})
+await worker.queue_frames([LLMRunFrame()])              # trigger a response now</code></pre>
+      <p>An <code>LLMRunFrame</code> tells the LLM to respond to the current context — that's how you make the bot speak first on connect.</p>
+
+      <h2 id="more">The aggregator family</h2>
+      <p>Beyond the pair, <code>processors/aggregators/</code> holds specialized aggregators you'll meet later: <code>sentence.py</code> (sentence assembly), <code>dtmf_aggregator.py</code> (keypad), <code>gated.py</code>/<code>gated_llm_context.py</code> (hold frames until a condition), <code>llm_context_summarizer.py</code> (<a href="l21-summarization.html">Lesson 21</a>), <code>llm_text_processor.py</code> (<a href="l13-tts.html">Lesson 13</a>), and <code>async_tool_messages.py</code> (<a href="l12-function-calling.html">Lesson 12</a>).</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/aggregators/llm_context.py</code> — <code>LLMContext</code>. <code>processors/aggregators/llm_response_universal.py</code> — <code>LLMUserAggregatorParams</code> (~116), <code>LLMAssistantAggregatorParams</code> (~201), the user aggregator (~625), assistant aggregator (~1368), and <code>LLMContextAggregatorPair</code> (~2129).</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas</p>
+        <p>Wire the aggregator pair into Atlas and add a developer message that gives it a personality. It now has memory — ask a follow-up question that depends on the previous turn.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Log <code>context.get_messages()</code> each turn and watch it grow. (2) Remove the assistant aggregator and observe the bot "forget" its own last reply. (3) Add <code>LLMContext(tools=[...])</code> in prep for Lesson 12.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why must Pipecat resend the whole context every turn?</summary><p>LLMs are stateless — they don't remember prior turns, so the full conversation is resent each time.</p></details>
+      <details><summary>2. What do the two aggregators do?</summary><p>The user aggregator records your turn into the context; the assistant aggregator records the bot's reply after it's sent.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l10-turn-taking.html">Lesson 10 — Turn-taking & muting →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

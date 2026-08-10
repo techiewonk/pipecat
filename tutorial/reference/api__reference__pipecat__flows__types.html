@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Types · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Types</h1>
+<blockquote>Type definitions and configuration schemas for Pipecat Flows: NodeConfig, task messages, and flow configuration structures.</blockquote>
+<h2>NodeConfig</h2>
+<p>Configuration for a single node in a conversation flow. <code>task_messages</code> is the only required field.</p>
+<p>&lt;ParamField path="task_messages" type="list[dict]" required&gt;   List of message dicts defining the current node's objectives. These tell the   LLM what to do in this conversation state.</p>
+<pre><code>  "task_messages": [
+      {"role": "developer", "content": "Ask the user for their name and email address."}
+  ]</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="name" type="str"&gt;   Identifier for the node. Useful for debug logging. If not provided, a UUID is   generated automatically. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="role_message" type="str"&gt;   The bot's role and personality as a plain string. Sent as the LLM's system   instruction via <code>LLMUpdateSettingsFrame</code>. Once set, the system instruction   persists across node transitions until a new node explicitly sets   <code>role_message</code> again.</p>
+<pre><code>  "role_message": "You are a friendly customer service agent."</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="role_messages" type="list[dict[str, Any]]" deprecated&gt;   Deprecated list-of-dicts format for the bot's role and personality. Use   <a href="#"><code>role_message</code></a> (<code>str</code>) instead. Will be removed in 2.0.0.</p>
+<pre><code>  "role_messages": [
+      {"role": "developer", "content": "You are a friendly customer service agent."}
+  ]</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="functions" type="list[FlowsFunctionSchema | FlowsDirectFunction]"&gt;   List of function definitions available in this node. Accepts   <a href="#flowsfunctionschema"><code>FlowsFunctionSchema</code></a> objects or <a href="#flowsdirectfunction">direct   functions</a>. See <a href="/api-reference/pipecat-flows/overview#function-types">Function   Types</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="pre_actions" type="list[ActionConfig]"&gt;   Actions to execute before LLM inference when transitioning to this node. See   <a href="#actionconfig">ActionConfig</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="post_actions" type="list[ActionConfig]"&gt;   Actions to execute after LLM inference when transitioning to this node. If   <code>respond_immediately</code> is <code>False</code>, post-actions are deferred until after the   first LLM response in this node. See <a href="#actionconfig">ActionConfig</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="context_strategy" type="ContextStrategyConfig"&gt;   Strategy for managing conversation context when transitioning to this node.   Overrides the default strategy set on   <a href="/api-reference/pipecat-flows/flow-manager">FlowManager</a>. See   <a href="#contextstrategyconfig">ContextStrategyConfig</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="respond_immediately" type="bool" default="True"&gt;   Whether to trigger LLM inference immediately upon entering the node. Set to   <code>False</code> when you want to wait for user input before the LLM responds (e.g.,   after a <code>tts_say</code> pre-action that asks a question). &lt;/ParamField&gt;</p>
+<h2>FlowsFunctionSchema</h2>
+<p>Dataclass for defining function call schemas with Flows-specific properties. Provides a uniform way to define functions that works across all LLM providers.</p>
+<p>&lt;ParamField path="name" type="str" required&gt;   Name of the function. This is used to identify the function in LLM tool calls. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="description" type="str" required&gt;   Description of what the function does. The LLM uses this to decide when to   call the function. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="properties" type="dict[str, Any]" required&gt;   Dictionary defining the function's parameters using JSON Schema format.</p>
+<pre><code>  "properties": {
+      "city": {
+          "type": "string",
+          "description": "The city to get weather for"
+      },
+      "units": {
+          "type": "string",
+          "enum": ["celsius", "fahrenheit"],
+          "description": "Temperature units"
+      }
+  }</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="required" type="list[str]" required&gt;   List of required parameter names from <code>properties</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="handler" type="FunctionHandler" required&gt;   Function handler to process the function call. Can be a modern handler <code>(args,       flow_manager)</code>, legacy handler <code>(args)</code>, or zero-arg handler <code>()</code>. Legacy and   zero-arg handlers are deprecated. The handler returns any JSON-serializable   value, or a <a href="#consolidatedfunctionresult"><code>ConsolidatedFunctionResult</code></a> tuple   to also specify the next node. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cancel_on_interruption" type="bool" default="False"&gt;   Whether to cancel this function call when the user interrupts. Set to <code>True</code>   if you want the function call to be cancelled when the user speaks. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timeout_secs" type="float" default="None"&gt;   Optional per-tool timeout in seconds. Overrides the global   <code>function_call_timeout_secs</code> set on the LLM service. When <code>None</code>, the global   timeout is used. &lt;/ParamField&gt;</p>
+<h3>Methods</h3>
+<h4>to\_function\_schema</h4>
+<pre><code>schema.to_function_schema() -&gt; FunctionSchema</code></pre>
+<p>Convert to a standard <code>FunctionSchema</code> for use with LLMs. Strips Flows-specific fields (<code>handler</code>, <code>cancel_on_interruption</code>, <code>timeout_secs</code>).</p>
+<h3>Example</h3>
+<pre><code>from pipecat.flows import FlowsFunctionSchema, FlowResult
+
+async def handle_weather(args, flow_manager):
+    city = args["city"]
+    weather = await get_weather(city)
+    return {"status": "success", "weather": weather}
+
+weather_function = FlowsFunctionSchema(
+    name="get_weather",
+    description="Get current weather for a city",
+    properties={
+        "city": {"type": "string", "description": "City name"}
+    },
+    required=["city"],
+    handler=handle_weather,
+)</code></pre>
+<h2>ActionConfig</h2>
+<p>TypedDict for configuring actions that execute during node transitions.</p>
+<p>&lt;ParamField path="type" type="str" required&gt;   Action type identifier. Must match a registered action handler. Built-in types   are <code>"tts_say"</code>, <code>"end_conversation"</code>, and <code>"function"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="handler" type="Callable" default="None"&gt;   Action handler function. Required for custom action types if not previously   registered via   <a href="/api-reference/pipecat-flows/flow-manager#register_action"><code>FlowManager.register_action()</code></a>.   Can be a legacy handler <code>(action)</code> or modern handler <code>(action, flow_manager)</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text" type="str" default="None"&gt;   Text to speak for the <code>tts_say</code> action, or the optional goodbye message for   the <code>end_conversation</code> action. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="append_text_to_context" type="bool" default="True"&gt;   For the built-in TTS actions (<code>tts_say</code> and <code>end_conversation</code>), whether the   spoken text is appended to the LLM context. Defaults to <code>True</code>. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   Additional fields are allowed and passed through to the handler. For example,   a <code>"notify_slack"</code> action could include <code>"channel"</code> and <code>"text"</code> fields. &lt;/Note&gt;</p>
+<h3>Built-in Action Types</h3>
+<div class="tablewrap"><table><thead><tr><th>Type</th><th>Description</th><th>Required Fields</th></tr></thead><tbody><tr><td><code>tts_say</code></td><td>Speak text using the pipeline's TTS service. The spoken text is appended to the LLM context by default.</td><td><code>text</code></td></tr><tr><td><code>end_conversation</code></td><td>End the conversation, optionally speaking a goodbye message.</td><td><code>text</code> (optional)</td></tr><tr><td><code>function</code></td><td>Execute a function inline in the pipeline</td><td><code>handler</code></td></tr></tbody></table></div>
+<h3>Example</h3>
+<pre><code>node_config = NodeConfig(
+    task_messages=[{"role": "developer", "content": "Help the user."}],
+    pre_actions=[
+        {"type": "tts_say", "text": "Welcome! Let me help you with that."},
+    ],
+    post_actions=[
+        {"type": "end_conversation", "text": "Goodbye!"},
+    ],
+)</code></pre>
+<h2>ContextStrategy</h2>
+<p>Enum defining strategies for managing conversation context during node transitions.</p>
+<div class="tablewrap"><table><thead><tr><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>APPEND</code></td><td>Append new messages to existing context. This is the default behavior.</td></tr><tr><td><code>RESET</code></td><td>Reset context with new messages only. Previous conversation history is discarded.</td></tr><tr><td><code>RESET_WITH_SUMMARY</code></td><td><strong>Deprecated.</strong> Reset context but include an LLM-generated summary. Use Pipecat's native <a href="/pipecat/fundamentals/context-summarization">context summarization</a> instead. Requires <code>summary_prompt</code> in <code>ContextStrategyConfig</code>.</td></tr></tbody></table></div>
+<pre><code>from pipecat.flows import ContextStrategy
+
+strategy = ContextStrategy.APPEND
+strategy = ContextStrategy.RESET
+strategy = ContextStrategy.RESET_WITH_SUMMARY</code></pre>
+<h2>ContextStrategyConfig</h2>
+<p>Dataclass for configuring context management behavior.</p>
+<p>&lt;ParamField path="strategy" type="ContextStrategy" required&gt;   The context management strategy to use. See   <a href="#contextstrategy">ContextStrategy</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="summary_prompt" type="str" default="None"&gt;   Prompt text for generating a conversation summary. Required when using   <code>RESET_WITH_SUMMARY</code> (deprecated). The LLM uses this prompt to summarize the   conversation before resetting context. &lt;/ParamField&gt;</p>
+<p><strong>Raises:</strong> <code>ValueError</code> if <code>summary_prompt</code> is not provided when using <code>RESET_WITH_SUMMARY</code> (deprecated).</p>
+<h3>Example</h3>
+<pre><code>from pipecat.flows import ContextStrategy, ContextStrategyConfig
+
+# Append (default)
+config = ContextStrategyConfig(strategy=ContextStrategy.APPEND)
+
+# Reset
+config = ContextStrategyConfig(strategy=ContextStrategy.RESET)
+
+# Reset with summary (deprecated — use Pipecat's native context summarization instead)
+config = ContextStrategyConfig(
+    strategy=ContextStrategy.RESET_WITH_SUMMARY,
+    summary_prompt="Summarize the key information collected so far.",
+)</code></pre>
+<h2>flows\_tool\_options Decorator</h2>
+<p>Decorator that overrides a function's default call options. It's optional — a function works without it.</p>
+<pre><code>@flows_tool_options(*, cancel_on_interruption: bool = False, timeout_secs: float | None = None)</code></pre>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>cancel_on_interruption</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether to cancel the function call when the user interrupts.</td></tr><tr><td><code>timeout_secs</code></td><td><code>float</code></td><td><code>None</code></td><td>Optional per-tool timeout in seconds, overriding the global <code>function_call_timeout_secs</code>.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>@flows_direct_function</code> is a deprecated alias of <code>@flows_tool_options</code>. It   still works but emits a <code>DeprecationWarning</code>; use <code>@flows_tool_options</code>   instead. &lt;/Note&gt;</p>
+<h3>Example</h3>
+<pre><code>from pipecat.flows import FlowManager, flows_tool_options, ConsolidatedFunctionResult
+
+@flows_tool_options(cancel_on_interruption=True)
+async def lookup_order(
+    flow_manager: FlowManager, order_id: str
+) -&gt; ConsolidatedFunctionResult:
+    """Look up an order by its ID.
+
+    Args:
+        order_id: The order ID to look up.
+    """
+    order = await db.get_order(order_id)
+    flow_manager.state["order"] = order
+    result = {"status": "success", "order": order}
+    next_node = create_order_details_node(order)
+    return result, next_node</code></pre>
+<p>The function can then be passed directly in a node's <code>functions</code> list:</p>
+<pre><code>node_config = NodeConfig(
+    task_messages=[{"role": "developer", "content": "Ask for the order ID."}],
+    functions=[lookup_order],
+)</code></pre>
+<h3>Deprecated: flows\_direct\_function</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated.</strong> The <code>@flows_direct_function</code> decorator has been renamed to   <code>@flows_tool_options</code>. The old name still works but emits a   <code>DeprecationWarning</code> and will be removed in a future version. Update your code   to use <code>@flows_tool_options</code> instead. &lt;/Warning&gt;</p>
+<h2>FlowsDirectFunction</h2>
+<p>Type alias for direct functions with automatic metadata extraction. Any async callable matching this signature can be used as a direct function in node configurations.</p>
+<pre><code>FlowsDirectFunction = Callable[..., Awaitable[ConsolidatedFunctionResult]]</code></pre>
+<p>Direct functions must accept <code>flow_manager: FlowManager</code> as the first parameter, followed by any named parameters described in the function's docstring. Python's <code>Protocol</code> system cannot express "any concrete named-parameter list", so this is defined as a generic <code>Callable</code>. Runtime validation is handled by <code>FlowsDirectFunctionWrapper.validate_function</code>.</p>
+<h2>NO\_RESPONSE</h2>
+<p>Sentinel value used in <a href="#consolidatedfunctionresult"><code>ConsolidatedFunctionResult</code></a> to indicate that a function should finish without an immediate response or node transition.</p>
+<pre><code>from pipecat.flows import NO_RESPONSE
+
+async def handoff_to_router(flow_manager: FlowManager, reason: str):
+    # Transfer control to another worker
+    await flow_manager.worker.activate_worker("router", deactivate_self=True)
+    # Don't respond - the other worker will handle the next turn
+    return {"status": "transferred"}, NO_RESPONSE</code></pre>
+<p>When a function returns <code>NO_RESPONSE</code> as the second element:</p>
+<ul><li>The function result is added to the conversation context</li><li>No LLM inference is triggered</li><li>No node transition occurs</li><li>The next response is triggered by something else (e.g., user input or another worker)</li></ul>
+<p>This is useful for multi-worker handoffs where control is passed to another worker that should respond next, or when a function needs to pause the conversation until an external event occurs.</p>
+<p>For functions that transition to a new node, use <code>respond_immediately: False</code> in <a href="#nodeconfig"><code>NodeConfig</code></a> instead.</p>
+<h2>Type Aliases</h2>
+<h3>FlowResult</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated.</strong> No replacement. <code>FlowResult</code> is no longer required or   referenced by any handler type, and Pipecat's upstream function-call-result   contract is <code>Any</code> — define your own <code>TypedDict</code> or return any   JSON-serializable value. Will be removed in 2.0.0. &lt;/Warning&gt;</p>
+<pre><code>class FlowResult(TypedDict, total=False):
+    status: str
+    error: str</code></pre>
+<p>Optional convention TypedDict for <code>status</code>/<code>error</code> results. The <code>status</code> field indicates the outcome. The optional <code>error</code> field contains an error message if execution failed. Additional fields are allowed and passed through to the LLM.</p>
+<h3>FlowArgs</h3>
+<pre><code>FlowArgs = dict[str, Any]</code></pre>
+<p>Type alias for function handler arguments. Contains the parameters extracted from the LLM's function call. Each invocation gets its own dict, so handlers may mutate it freely.</p>
+<p>&lt;Note&gt;   In 2.0.0, this alias is planned to widen to <code>Mapping[str, Any]</code> to align with   Pipecat's typing. Handlers that only read args will be unaffected; handlers   that mutate args will need to keep the annotation as <code>dict[str, Any]</code>   explicitly. &lt;/Note&gt;</p>
+<h3>ConsolidatedFunctionResult</h3>
+<pre><code>ConsolidatedFunctionResult = tuple[Any, NodeConfig | None | NO_RESPONSE]</code></pre>
+<p>Return type for consolidated function handlers that both do work and specify the next node:</p>
+<ul><li>First element: Any JSON-serializable value (or <code>None</code> for transition-only functions)</li><li>Second element: The next node as a <code>NodeConfig</code>, <code>None</code> to stay on the current node and respond, or <a href="#no_response"><code>NO_RESPONSE</code></a> to finish without transitioning or responding</li></ul>
+<h3>FlowFunctionHandler</h3>
+<pre><code>FlowFunctionHandler = Callable[[FlowArgs, FlowManager], Awaitable[Any]]</code></pre>
+<p>Type for modern function handlers that receive both arguments and the <code>FlowManager</code> instance.</p>
+<p><strong>Args:</strong></p>
+<ul><li><code>args</code> (<code>FlowArgs</code>): Dictionary of arguments from the function call.</li><li><code>flow_manager</code> (<code>FlowManager</code>): Reference to the FlowManager instance.</li></ul>
+<p><strong>Returns:</strong> Any JSON-serializable value, or a <code>ConsolidatedFunctionResult</code> tuple to also specify the next node.</p>
+<h3>ZeroArgFunctionHandler</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated.</strong> Zero-argument function handlers are deprecated and will be   removed in 2.0.0. Update handlers to accept <code>(args, flow_manager)</code> instead. &lt;/Warning&gt;</p>
+<pre><code>ZeroArgFunctionHandler = Callable[[], Awaitable[Any]]</code></pre>
+<p>Type for function handlers that take no arguments. The flow manager detects the signature automatically and emits a <code>DeprecationWarning</code>.</p>
+<p><strong>Returns:</strong> Any JSON-serializable value, or a <code>ConsolidatedFunctionResult</code> tuple to also specify the next node.</p>
+<h3>LegacyFunctionHandler</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated.</strong> Single-argument function handlers are deprecated and will be   removed in 2.0.0. Update handlers to accept <code>(args, flow_manager)</code> instead. &lt;/Warning&gt;</p>
+<pre><code>LegacyFunctionHandler = Callable[[FlowArgs], Awaitable[Any]]</code></pre>
+<p>Type for legacy function handlers that only receive arguments. Both legacy and modern handlers are supported; the flow manager detects the signature automatically and emits a <code>DeprecationWarning</code>.</p>
+<p><strong>Args:</strong></p>
+<ul><li><code>args</code> (<code>FlowArgs</code>): Dictionary of arguments from the function call.</li></ul>
+<p><strong>Returns:</strong> Any JSON-serializable value, or a <code>ConsolidatedFunctionResult</code> tuple to also specify the next node.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-flows/types">https://docs.pipecat.ai/api-reference/pipecat-flows/types</a></p>
+</div></main></div></body></html>

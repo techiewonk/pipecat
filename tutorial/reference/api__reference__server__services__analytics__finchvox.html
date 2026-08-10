@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finchvox Session Replay · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Finchvox Session Replay</h1>
+<blockquote>Finchvox is local session replay for voice AI: unified conversation timelines, audio, and traces for Pipecat debugging.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="finchvox" maintainerUrl="https://github.com/finchvox" repo="https://github.com/finchvox/finchvox" /&gt;</p>
+<h2>Overview</h2>
+<p>Finchvox is local session replay purpose-built for Voice AI apps. It unifies conversation audio, logs, traces, and metrics in a single UI, highlighting voice-specific problems like interruptions and high user ↔ bot latency. It exports OpenTelemetry traces from your Pipecat application to a local Finchvox server and records conversation audio via the <code>FinchvoxProcessor</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/finchvox/finchvox"&gt;     Source code, examples, and issues for the Finchvox integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/finchvox/"&gt;     The <code>finchvox</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Finchvox Website" icon="book" href="https://finchvox.dev/"&gt;     Sign up for the production-ready self-hosted option   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>. Finchvox relies on Pipecat's tracing support, so install it alongside the <code>tracing</code> extra:</p>
+<pre><code>uv add finchvox "pipecat-ai[tracing]"</code></pre>
+<h2>Prerequisites</h2>
+<ul><li>Python 3.11 or higher</li><li>Pipecat 0.0.68 or higher</li></ul>
+<p>Finchvox is currently designed for local, development usage and sends telemetry to a local Finchvox server (the collector) over gRPC. No external account or API key is required for local use. Visit <a href="https://finchvox.dev/">Finchvox.dev</a> to sign up for the production-ready self-hosted option.</p>
+<h2>Setup</h2>
+<p>Enabling observability in a Pipecat app involves three steps: initialize Finchvox, add the <code>FinchvoxProcessor</code> to your pipeline, and enable metrics, tracing, and turn tracking on your <code>PipelineTask</code>.</p>
+<ol><li>Initialize Finchvox at the top of your bot (e.g., <code>bot.py</code>):</li></ol>
+<pre><code>import finchvox
+from finchvox import FinchvoxProcessor
+
+finchvox.init(service_name="my-voice-app")</code></pre>
+<ol><li>Add <code>FinchvoxProcessor</code> to your pipeline, ensuring it comes after</li></ol>
+<p>   <code>transport.output()</code>:</p>
+<pre><code>pipeline = Pipeline([
+    # STT, LLM, TTS, etc. processors
+    transport.output(),
+    FinchvoxProcessor(),  # Must come after transport.output()
+    context_aggregator.assistant(),
+])</code></pre>
+<ol><li>Initialize your <code>PipelineTask</code> with metrics, tracing, and turn tracking</li></ol>
+<p>   enabled:</p>
+<pre><code>task = PipelineTask(
+    pipeline,
+    params=PipelineParams(enable_metrics=True),
+    enable_tracing=True,
+    enable_turn_tracking=True,
+)</code></pre>
+<h3>Running the Finchvox server</h3>
+<p>Start the local Finchvox server to receive and view sessions:</p>
+<pre><code>uv run finchvox start</code></pre>
+<p>For the list of available options, run <code>uv run finchvox --help</code>.</p>
+<h2>Configuration</h2>
+<p>The <code>finchvox.init()</code> function accepts the following optional parameters:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>service_name</code></td><td><code>str</code></td><td><code>"pipecat-app"</code></td><td>Name identifying this application in traces.</td></tr><tr><td><code>endpoint</code></td><td><code>str</code></td><td><code>"http://localhost:4317"</code></td><td>Finchvox collector gRPC endpoint.</td></tr><tr><td><code>insecure</code></td><td><code>bool</code></td><td><code>True</code></td><td>Use an insecure (non-TLS) gRPC connection.</td></tr><tr><td><code>capture_logs</code></td><td><code>bool</code></td><td><code>True</code></td><td>Send logs to the collector alongside traces.</td></tr><tr><td><code>log_modules</code></td><td><code>list</code></td><td><code>None</code></td><td>Additional module prefixes to capture (e.g., <code>["myapp"]</code>).</td></tr><tr><td><code>app_root</code></td><td><code>str</code></td><td><code>None</code></td><td>Root directory of the app source. Defaults to <code>cwd()</code>.</td></tr></tbody></table></div>
+<p>By default, logs from <code>pipecat.*</code>, <code>finchvox.*</code>, <code>__main__</code>, and any source files in your project directory are captured. Use <code>log_modules</code> to include additional third-party modules.</p>
+<p>The <code>FinchvoxProcessor</code> constructor accepts the following optional parameters:</p>
+<p>&lt;ParamField path="endpoint" type="str" default="http://localhost:3000"&gt;   URL of the Finchvox HTTP server used to upload conversation audio. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="chunk_duration_seconds" type="int" default="5"&gt;   Duration of each audio chunk uploaded. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="16000"&gt;   Audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   Available parameters and defaults are defined by the integration. See the   <a href="https://github.com/finchvox/finchvox">source repository</a> for the   authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Compatibility</h2>
+<p>Requires Pipecat 0.0.68 or higher. Check the <a href="https://github.com/finchvox/finchvox">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/analytics/finchvox">https://docs.pipecat.ai/api-reference/server/services/analytics/finchvox</a></p>
+</div></main></div></body></html>

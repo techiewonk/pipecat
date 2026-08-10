@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline Heartbeats · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipeline Heartbeats</h1>
+<blockquote>Monitor Pipecat pipeline health with heartbeat frames that verify frames still flow end to end.</blockquote>
+<h2>Overview</h2>
+<p>Pipeline heartbeats provide a way to monitor the health of your pipeline by sending periodic heartbeat frames through the system. When enabled, the pipeline will send heartbeat frames every second and monitor their progress through the pipeline.</p>
+<h2>Enabling Heartbeats</h2>
+<p>Heartbeats can be enabled by setting <code>enable_heartbeats</code> to <code>True</code> in the <code>PipelineParams</code>:</p>
+<pre><code>from pipecat.pipeline.worker import PipelineParams, PipelineWorker
+
+pipeline = Pipeline([...])
+params = params=PipelineParams(enable_heartbeats=True)
+worker = PipelineWorker(pipeline, params)</code></pre>
+<h2>How It Works</h2>
+<p>When heartbeats are enabled:</p>
+<ol><li>The pipeline sends a <code>HeartbeatFrame</code> every second</li><li>The frame traverses through all processors in the pipeline, from source to sink</li><li>The pipeline monitors how long it takes for heartbeat frames to complete their journey</li><li>If a heartbeat frame isn't received within 10 seconds, a warning is logged</li></ol>
+<h2>Monitoring Output</h2>
+<p>The system will log:</p>
+<ul><li>Trace-level logs showing heartbeat processing time</li><li>Warning messages if heartbeats aren't received within the monitoring window</li></ul>
+<p>Example warning message:</p>
+<pre><code>WARNING    PipelineWorker#1: heartbeat frame not received for more than 5.0 seconds</code></pre>
+<h2>Use Cases</h2>
+<p>Heartbeat monitoring is useful for:</p>
+<ul><li>Detecting pipeline stalls or blockages</li><li>Monitoring processing latency through the pipeline</li><li>Identifying performance issues in specific processors</li><li>Ensuring the pipeline remains responsive</li></ul>
+<h2>Configuration</h2>
+<p>The heartbeat system uses two timing values:</p>
+<ul><li><strong>Interval</strong> (default 1.0s) — how often heartbeat frames are sent. Configurable via <code>heartbeats_period_secs</code> in <code>PipelineParams</code>.</li><li><strong>Monitor window</strong> (10x the interval) — how long to wait before logging a warning if no heartbeat is received.</li></ul>
+<p>&lt;Note&gt;   The heartbeat interval is configurable via the <code>heartbeats_period_secs</code>   parameter in <code>PipelineParams</code>. The monitor window is always 10x the interval. &lt;/Note&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/pipeline/heartbeats">https://docs.pipecat.ai/api-reference/server/pipeline/heartbeats</a></p>
+</div></main></div></body></html>

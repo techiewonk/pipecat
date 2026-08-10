@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniMax Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>MiniMax Text-to-Speech</h1>
+<blockquote>TTS with MiniMaxTTSService and MiniMaxHttpTTSService on MiniMax's T2A API: streaming, emotional voice control, and voice options.</blockquote>
+<h2>Overview</h2>
+<p><code>MiniMaxTTSService</code> provides high-quality text-to-speech synthesis using MiniMax's T2A (Text-to-Audio) API with streaming capabilities, emotional voice control, and support for multiple languages. The service offers various models optimized for different use cases, from low-latency to high-definition audio quality.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="MiniMax TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.minimax.tts.html"&gt;     Pipecat's API methods for MiniMax TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-minimax.py"&gt;     Complete example with emotional voice settings   &lt;/Card&gt;</p>
+<p>  &lt;Card title="MiniMax Documentation" icon="book" href="https://platform.minimax.io/docs/api-reference/speech-t2a-http"&gt;     Official MiniMax T2A API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="MiniMax Platform" icon="microphone" href="https://www.minimax.io/platform/"&gt;     Access voice models and API credentials   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use MiniMax services, no additional dependencies are required beyond the base installation:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Prerequisites</h2>
+<h3>MiniMax Account Setup</h3>
+<p>Before using MiniMax TTS services, you need:</p>
+<ol><li><strong>MiniMax Account</strong>: Sign up at <a href="https://www.minimax.io/platform/">MiniMax Platform</a></li><li><strong>API Credentials</strong>: Get your API key and Group ID from the platform</li><li><strong>Voice Selection</strong>: Choose from available voice models and emotional settings</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>MINIMAX_API_KEY</code>: Your MiniMax API key for authentication</li><li><code>MINIMAX_GROUP_ID</code>: Your MiniMax group ID</li></ul>
+<h2>Configuration</h2>
+<h3>MiniMaxHttpTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   MiniMax API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="group_id" type="str" required&gt;   MiniMax Group ID to identify project. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="Calm_Woman" deprecated&gt;   Voice identifier for synthesis.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=MiniMaxHttpTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="speech-02-turbo" deprecated&gt;   TTS model name. Options include <code>speech-2.6-hd</code>, <code>speech-2.6-turbo</code>,   <code>speech-02-hd</code>, <code>speech-02-turbo</code>, <code>speech-01-hd</code>, <code>speech-01-turbo</code>.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=MiniMaxHttpTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.minimax.io/v1/t2a_v2"&gt;   API base URL. Use <code>https://api.minimaxi.chat/v1/t2a_v2</code> for mainland China or   <code>https://api-uw.minimax.io/v1/t2a_v2</code> for western United States. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable voice and generation settings. See   <a href="#settings">Settings</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=MiniMaxHttpTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="MiniMaxHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>MiniMaxHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speech speed.</td></tr><tr><td><code>volume</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Volume level.</td></tr><tr><td><code>pitch</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Pitch adjustment.</td></tr><tr><td><code>emotion</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Emotion for synthesis.</td></tr><tr><td><code>text_normalization</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to apply text normalization.</td></tr><tr><td><code>latex_read</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to read LaTeX formulas.</td></tr><tr><td><code>language_boost</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Language boost setting.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import aiohttp
+from pipecat.services.minimax import MiniMaxHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = MiniMaxHttpTTSService(
+        api_key=os.getenv("MINIMAX_API_KEY"),
+        group_id=os.getenv("MINIMAX_GROUP_ID"),
+        aiohttp_session=session,
+    )</code></pre>
+<h3>With Voice Customization</h3>
+<pre><code>import aiohttp
+from pipecat.services.minimax import MiniMaxHttpTTSService
+from pipecat.transcriptions.language import Language
+
+async with aiohttp.ClientSession() as session:
+    tts = MiniMaxHttpTTSService(
+        api_key=os.getenv("MINIMAX_API_KEY"),
+        group_id=os.getenv("MINIMAX_GROUP_ID"),
+        aiohttp_session=session,
+        settings=MiniMaxHttpTTSService.Settings(
+            voice="Calm_Woman",
+            model="speech-02-hd",
+            language=Language.ZH,
+            speed=1.2,
+            emotion="happy",
+        ),
+    )</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>HTTP-based streaming</strong>: MiniMax uses an HTTP streaming API, not WebSocket. Audio data is returned in hex-encoded PCM chunks.</li><li><strong>Emotional voice control</strong>: The <code>emotion</code> parameter lets you adjust the emotional tone of the voice without changing the voice model itself.</li><li><strong>Model selection</strong>: The <code>speech-2.6-*</code> models are the latest and support additional languages (Filipino, Tamil, Persian). Use <code>turbo</code> variants for lower latency or <code>hd</code> variants for higher quality.</li><li><strong>The Python class is named <code>MiniMaxHttpTTSService</code></strong>, not <code>MiniMaxTTSService</code>.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/minimax">https://docs.pipecat.ai/api-reference/server/services/tts/minimax</a></p>
+</div></main></div></body></html>

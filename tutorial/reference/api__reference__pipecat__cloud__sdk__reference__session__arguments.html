@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session Arguments · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Session Arguments</h1>
+<blockquote>Understand the session arguments Pipecat Cloud passes to your bot entry point at session start, from the Python SDK.</blockquote>
+<p>When creating agents with Pipecat Cloud, your <code>bot()</code> entry point function receives different types of arguments depending on the session type. These classes represent the structure of those arguments.</p>
+<h2>PipecatSessionArguments</h2>
+<p>Standard Pipecat Cloud agent session arguments, used for basic sessions.</p>
+<pre><code>from pipecatcloud.agent import PipecatSessionArguments
+
+def bot(args: PipecatSessionArguments):
+    print(f"Session ID: {args.session_id}")
+    print(f"Custom data: {args.body}")</code></pre>
+<h3>Properties</h3>
+<p>&lt;ParamField path="session_id" type="Optional[str]"&gt;   The unique identifier for the current session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="body" type="Any"&gt;   The custom data passed to the agent via the session parameters. &lt;/ParamField&gt;</p>
+<h2>DailySessionArguments</h2>
+<p>Arguments for sessions that involve Daily WebRTC rooms for voice/video interaction.</p>
+<pre><code>from pipecat.runner.types import DailyRunnerArguments
+
+def bot(args: DailyRunnerArguments):
+    print(f"Session ID: {args.session_id}")
+    print(f"Daily room URL: {args.room_url}")
+    print(f"Daily token: {args.token}")
+    print(f"Custom data: {args.body}")</code></pre>
+<h3>Properties</h3>
+<p>&lt;ParamField path="session_id" type="Optional[str]"&gt;   The unique identifier for the current session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="room_url" type="str"&gt;   The URL for the Daily room. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="token" type="str"&gt;   The authentication token for the Daily room. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="body" type="Any"&gt;   The custom data passed to the agent via the session parameters. &lt;/ParamField&gt;</p>
+<h2>WebSocketSessionArguments</h2>
+<p>Arguments for sessions that use WebSocket connections for real-time communication.</p>
+<pre><code>from pipecat.runner.types import WebSocketRunnerArguments
+
+async def bot(args: WebSocketRunnerArguments):
+    print(f"Session ID: {args.session_id}")
+    await args.websocket.send_text("Hello from the agent!")</code></pre>
+<h3>Properties</h3>
+<p>&lt;ParamField path="session_id" type="Optional[str]"&gt;   The unique identifier for the current session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="websocket" type="WebSocket"&gt;   The FastAPI WebSocket connection used to communicate with the client. &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/session-arguments">https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/session-arguments</a></p>
+</div></main></div></body></html>

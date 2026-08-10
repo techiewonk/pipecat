@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Image Generation · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google Image Generation</h1>
+<blockquote>GoogleImageGenService generates images with Google's Imagen models from text prompts in Pipecat pipelines.</blockquote>
+<h2>Overview</h2>
+<p><code>GoogleImageGenService</code> provides high-quality image generation capabilities using Google's Imagen models. It supports generating multiple images from text prompts with various customization options and advanced prompt understanding for photorealistic and artistic image creation.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Google Imagen API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.image.html"&gt;     Pipecat's API methods for Google Imagen integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/getting-started/03-still-frame.py"&gt;     Browse examples using Google Imagen   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Imagen Documentation" icon="book" href="https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview"&gt;     Official Google Imagen API documentation and guides   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Google Cloud Console" icon="image" href="https://console.cloud.google.com/"&gt;     Access Imagen models and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Google Imagen services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Google Cloud Setup</h3>
+<p>Before using Google Imagen services, you need:</p>
+<ol><li><strong>Google Cloud Account</strong>: Set up at <a href="https://console.cloud.google.com/">Google Cloud Console</a></li><li><strong>API Key</strong>: Generate a Google API key with Vertex AI access</li><li><strong>Project Configuration</strong>: Enable Vertex AI API for your project</li><li><strong>Model Access</strong>: Ensure access to Imagen generation models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GOOGLE_API_KEY</code>: Your Google API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Google AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Configuration parameters for image generation. *Deprecated in v0.0.105. Use   <code>settings=GoogleImageGenService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_options" type="Any" default="None"&gt;   HTTP options for the Google AI client. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GoogleImageGenService.Settings" default="None"&gt;   Runtime-configurable generation settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GoogleImageGenService.Settings(...)</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Google Imagen model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>number_of_images</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Number of images to generate (1-8).</td></tr><tr><td><code>negative_prompt</code></td><td>`str \</td><td>None`</td><td><code>NOT_GIVEN</code></td><td>Optional negative prompt to guide what not to include in the generated image.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted from the request, letting the service use its   own defaults (<code>"imagen-4.0-generate-001"</code> for model, <code>1</code> for   number\_of\_images). Only parameters that are explicitly set are included. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.google import GoogleImageGenService
+
+image_gen = GoogleImageGenService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+)</code></pre>
+<h3>With Settings</h3>
+<pre><code>image_gen = GoogleImageGenService(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    settings=GoogleImageGenService.Settings(
+        model="imagen-4.0-generate-001",
+        number_of_images=2,
+        negative_prompt="blurry, low quality",
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>No HTTP session needed</strong>: Unlike OpenAI and fal, Google returns image data directly in the API response, so no separate HTTP session is required for downloading.</li><li><strong>Negative prompts</strong>: Use the <code>negative_prompt</code> parameter to specify what should not appear in the generated image, giving you more control over the output.</li><li><strong>Metrics support</strong>: Google Imagen supports TTFB metrics tracking.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/image-generation/google">https://docs.pipecat.ai/api-reference/server/services/image-generation/google</a></p>
+</div></main></div></body></html>

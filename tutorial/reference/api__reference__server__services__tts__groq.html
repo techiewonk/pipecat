@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groq Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Groq Text-to-Speech</h1>
+<blockquote>GroqTTSService delivers fast TTS from Groq's API with multiple voice options at a fixed 48kHz sample rate for voice agents.</blockquote>
+<h2>Overview</h2>
+<p><code>GroqTTSService</code> provides fast text-to-speech synthesis using Groq's TTS API with multiple voice options. The service operates at a fixed 48kHz sample rate and offers efficient audio streaming for real-time applications with ultra-low latency.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Groq TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.groq.tts.html"&gt;     Pipecat's API methods for Groq TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-groq.py"&gt;     Complete example with Groq STT and LLM   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Groq Documentation" icon="book" href="https://console.groq.com/docs/api-reference#models"&gt;     Official Groq API documentation and models   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Options" icon="microphone" href="https://console.groq.com/"&gt;     Explore available voice models and features   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Groq services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[groq]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Groq Account Setup</h3>
+<p>Before using Groq TTS services, you need:</p>
+<ol><li><strong>Groq Account</strong>: Sign up at <a href="https://console.groq.com/login">Groq Console</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Selection</strong>: Choose from available voice models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GROQ_API_KEY</code>: Your Groq API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>GroqTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Groq API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_name" type="str" default="canopylabs/orpheus-v1-english" deprecated&gt;   TTS model to use. *Deprecated in v0.0.105. Use   <code>settings=GroqTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="autumn" deprecated&gt;   Voice identifier to use. *Deprecated in v0.0.105. Use   <code>settings=GroqTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_format" type="str" default="wav"&gt;   Audio output format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="48000"&gt;   Audio sample rate. Must be 48000 Hz for Groq TTS. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=GroqTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="GroqTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GroqTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speech rate control.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.groq import GroqTTSService
+
+tts = GroqTTSService(
+    api_key=os.getenv("GROQ_API_KEY"),
+    settings=GroqTTSService.Settings(
+        voice="autumn",
+    ),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.transcriptions.language import Language
+
+tts = GroqTTSService(
+    api_key=os.getenv("GROQ_API_KEY"),
+    settings=GroqTTSService.Settings(
+        model="canopylabs/orpheus-v1-english",
+        voice="autumn",
+        language=Language.EN,
+        speed=1.2,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Fixed sample rate</strong>: Groq TTS only supports 48kHz sample rate. Setting a different value will produce a warning.</li><li><strong>WAV output</strong>: The service outputs WAV-formatted audio, which is decoded internally to extract raw PCM frames.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/groq">https://docs.pipecat.ai/api-reference/server/services/tts/groq</a></p>
+</div></main></div></body></html>

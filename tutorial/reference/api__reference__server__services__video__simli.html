@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simli Video Avatar · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Simli Video Avatar</h1>
+<blockquote>SimliVideoService creates real-time Simli AI avatar video over WebRTC, animated by your Pipecat agent's audio.</blockquote>
+<h2>Overview</h2>
+<p><code>SimliVideoService</code> integrates with Simli to create real-time AI avatar video experiences using WebRTC streaming. The service processes audio input to generate synchronized avatar video and audio output, handling real-time streaming, audio resampling, and conversation interruptions for engaging conversational AI applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Simli Video API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.simli.video.html"&gt;     Pipecat's API methods for Simli video integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-simli-video-service.py"&gt;     Complete example with avatar streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Simli Documentation" icon="book" href="https://docs.simli.com/overview"&gt;     Official Simli API documentation and guides   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Simli Platform" icon="microphone" href="https://www.simli.com/"&gt;     Access avatar faces and manage API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Simli services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[simli]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Simli Account Setup</h3>
+<p>Before using Simli video services, you need:</p>
+<ol><li><strong>Simli Account</strong>: Sign up at <a href="https://www.simli.com/">Simli Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Face Selection</strong>: Choose or create avatar faces for video generation</li><li><strong>WebRTC Setup</strong>: Configure real-time streaming capabilities</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SIMLI_API_KEY</code>: Your Simli API key for authentication</li><li><code>SIMLI_FACE_ID</code>: ID of your avatar face</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Simli API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="face_id" type="str" required&gt;   Simli Face ID. For Trinity avatars, specify <code>"faceId/emotionId"</code> to use a   different emotion than the default. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="simli_url" type="str" default="https://api.simli.ai"&gt;   URL of the Simli servers. Can be changed for custom deployments by enterprise   users. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="is_trinity_avatar" type="bool" default="False"&gt;   Whether this is a Trinity avatar, which reduces latency when using Trinity. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_session_length" type="int" default="None"&gt;   Absolute maximum session duration in seconds. Avatar disconnects after this   time even if speaking. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_idle_time" type="int" default="None"&gt;   Maximum duration in seconds the avatar can be idle (not speaking) before   disconnecting. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_logging" type="bool" default="None"&gt;   Whether to enable Simli logging. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SimliVideoSettings" default="None"&gt;   Service settings. Use <code>SimliVideoService.Settings(...)</code> for configuration. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None"&gt;   &lt;Warning&gt;     <strong>Deprecated since 0.0.106</strong>: Use the direct constructor parameters     (<code>max_session_length</code>, <code>max_idle_time</code>, <code>enable_logging</code>) or     <code>settings=SimliVideoService.Settings(...)</code> instead.   &lt;/Warning&gt;</p>
+<p>  Additional input parameters for session configuration. See   <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated since 0.0.106</strong>: Use the direct constructor parameters   (<code>max_session_length</code>, <code>max_idle_time</code>, <code>enable_logging</code>) instead of   <code>SimliVideoService.InputParams</code>. &lt;/Warning&gt;</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>enable_logging</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether to enable Simli logging.</td></tr><tr><td><code>max_session_length</code></td><td><code>int</code></td><td><code>None</code></td><td>Absolute maximum session duration in seconds. Avatar disconnects after this time even if speaking.</td></tr><tr><td><code>max_idle_time</code></td><td><code>int</code></td><td><code>None</code></td><td>Maximum duration in seconds the avatar can be idle (not speaking) before disconnecting.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.simli import SimliVideoService
+
+simli = SimliVideoService(
+    api_key=os.getenv("SIMLI_API_KEY"),
+    face_id=os.getenv("SIMLI_FACE_ID"),
+)</code></pre>
+<h3>With Session Configuration</h3>
+<pre><code>simli = SimliVideoService(
+    api_key=os.getenv("SIMLI_API_KEY"),
+    face_id=os.getenv("SIMLI_FACE_ID"),
+    is_trinity_avatar=True,
+    max_session_length=600,
+    max_idle_time=120,
+    enable_logging=True,
+)</code></pre>
+<h3>Using Settings (Alternative)</h3>
+<pre><code>simli = SimliVideoService(
+    api_key=os.getenv("SIMLI_API_KEY"),
+    face_id=os.getenv("SIMLI_FACE_ID"),
+    settings=SimliVideoService.Settings(),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Service architecture</strong>: As of version 0.0.106, <code>SimliVideoService</code> extends <code>AIService</code> and supports <code>SimliVideoService.Settings(...)</code> for configuration, aligning it with other video services like HeyGen and Tavus.</li><li><strong>Audio resampling</strong>: The service resamples audio to 16kHz internally for the Simli API and resamples received audio back to the pipeline's sample rate.</li><li><strong>Trinity avatars</strong>: When <code>is_trinity_avatar=True</code>, the service uses <code>playImmediate</code> for the first audio chunk after an interruption to reduce latency.</li><li><strong>Deprecated parameters</strong>:</li><li><code>SimliVideoService.InputParams</code> is deprecated since 0.0.106. Use direct constructor parameters (<code>max_session_length</code>, <code>max_idle_time</code>, <code>enable_logging</code>) instead.</li><li>The <code>simli_config</code> and <code>use_turn_server</code> parameters have been removed. Use <code>api_key</code> and <code>face_id</code> directly as constructor parameters.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/video/simli">https://docs.pipecat.ai/api-reference/server/services/video/simli</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini Live WebSocket Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Gemini Live WebSocket Transport</h1>
+<blockquote>The Gemini Live WebSocket transport for the Pipecat iOS SDK: connect Swift apps directly to Google's Gemini Live service.</blockquote>
+<p>The Gemini Live Websocket transport implementation enables real-time audio communication with the Gemini Live service, using a direct websocket connection.</p>
+<p>&lt;Note&gt;   Transports of this type are designed primarily for development and testing   purposes. For production applications, you will need to build a server   component with a server-friendly transport, like the   <a href="./daily">DailyTransport</a>, to securely handle API keys. &lt;/Note&gt;</p>
+<h2>Installation</h2>
+<p>Add the Gemini transport package to your project:</p>
+<pre><code>.package(url: "https://github.com/pipecat-ai/pipecat-client-ios-gemini-live-websocket.git", from: "0.3.1"),
+
+// Add to your target dependencies
+.target(name: "YourApp", dependencies: [
+    .product(name: "PipecatClientIOSGeminiLiveWebSocket", package: "pipecat-client-ios-gemini-live-websocket")
+],</code></pre>
+<h2>Usage</h2>
+<p>Create a client:</p>
+<pre><code>let options: RTVIClientOptions = .init(
+    params: .init(config: [
+        .init(
+            service: "llm",
+            options: [
+                .init(name: "api_key", value: .string("&lt;your Gemini api key&gt;")),
+                .init(name: "initial_messages", value: .array([
+                    .object([
+                        "role": .string("user"), // "user" | "system"
+                        "content": .string("I need your help planning my next vacation.")
+                    ])
+                ])),
+                .init(name: "generation_config", value: .object([
+                    "speech_config": .object([
+                        "voice_config": .object([
+                            "prebuilt_voice_config": .object([
+                                "voice_name": .string("Puck") // "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede"
+                            ])
+                        ])
+                    ])
+                ]))
+            ]
+        )
+    ])
+)
+
+let client = GeminiLiveWebSocketVoiceClient(options: options)
+
+try await client.start()</code></pre>
+<h2>API Reference</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-client-ios-gemini-live-websocket-demo"&gt;     Simple Chatbot Gemini Demo   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-ios-gemini-live-websocket"&gt;     iOS Gemini Live WebSocket   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card title="Pipecat iOS Client Reference" icon="book-open" href="https://docs-ios.pipecat.ai/PipecatClientIOSGeminiLiveWebSocket/documentation/pipecatclientiosgeminilivewebsocket"&gt;   Complete API documentation for the Gemini transport implementation &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/ios/transports/gemini-websocket">https://docs.pipecat.ai/api-reference/client/ios/transports/gemini-websocket</a></p>
+</div></main></div></body></html>

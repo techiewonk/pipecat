@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transports · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Transports</h1>
+<blockquote>Learn about the different ways users can connect to your Pipecat voice AI bot</blockquote>
+<p><strong>Transports</strong> are the communication layer between users and your Pipecat bot. They handle receiving and sending audio, video, and data, serving as the media interface that enables real-time interaction.</p>
+<h2>Available Transport Types</h2>
+<p>Pipecat supports multiple transport types to fit different use cases and deployment scenarios:</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="DailyTransport" icon="microphone" href="/api-reference/server/services/transport/daily"&gt;     WebRTC-based transport using Daily's infrastructure for video calls and     conferencing   &lt;/Card&gt;</p>
+<p>  &lt;Card title="FastAPIWebsocketTransport" icon="plug" href="/api-reference/server/services/transport/fastapi-websocket"&gt;     WebSocket transport for telephony providers and custom WebSocket connections   &lt;/Card&gt;</p>
+<p>  &lt;Card title="HeyGenTransport" icon="camera" href="/api-reference/server/services/transport/heygen"&gt;     Specialized transport for HeyGen LiveAvatar video generation and streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="LiveKitTransport" icon="microphone" href="/api-reference/server/services/transport/livekit"&gt;     WebRTC transport using LiveKit's real-time communication platform   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SmallWebRTCTransport" icon="link" href="/api-reference/server/services/transport/small-webrtc"&gt;     Direct peer-to-peer WebRTC connections without cloud infrastructure   &lt;/Card&gt;</p>
+<p>  &lt;Card title="TavusTransport" icon="camera" href="/api-reference/server/services/transport/tavus"&gt;     Specialized transport for Tavus video generation and streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebsocketTransport" icon="globe" href="/api-reference/server/services/transport/websocket-server"&gt;     General-purpose WebSocket transport for custom implementations   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Pipeline Integration</h2>
+<p>Transports provide two key components for your pipeline: <code>input()</code> and <code>output()</code> methods. These methods define how the transport interacts with the pipeline:</p>
+<h3>Transport Input and Output</h3>
+<pre><code>pipeline = Pipeline([
+    transport.input(),              # Receives user audio/video
+    stt,
+    context_aggregator.user(),
+    llm,
+    tts,
+    transport.output(),             # Sends bot audio/video
+    context_aggregator.assistant(), # Processes after output
+])</code></pre>
+<p><strong>Key points about transport placement:</strong></p>
+<ul><li><strong><code>transport.input()</code></strong> typically goes first in the pipeline to receive user input</li><li><strong><code>transport.output()</code></strong> doesn't always go last - you may want processors after it</li><li><strong>Post-output processing</strong> enables synchronized actions like:</li><li>Recording with word-level accuracy</li><li>Displaying subtitles synchronized to audio</li><li>Capturing context information precisely timed to output</li></ul>
+<h2>Transport Modularity</h2>
+<p>Transports are modular components in your Pipeline, allowing you to flexibly change how users connect to your bot depending on the context. This modularity enables you to:</p>
+<ul><li><strong>Switch environments easily</strong>: Use P2P WebRTC for development, Daily for production</li><li><strong>Support multiple connection types</strong>: Same bot logic works across different transports</li><li><strong>Optimize for use case</strong>: Choose the best transport for your specific requirements</li></ul>
+<h2>Transport Configuration</h2>
+<p>All transports are configured using <code>TransportParams</code>, which provides common settings across transport types:</p>
+<pre><code>from pipecat.transports.base_transport import TransportParams
+
+params = TransportParams(
+    # Audio settings
+    audio_in_enabled=True,
+    audio_out_enabled=True,
+
+    # Video settings
+    video_in_enabled=False,
+    video_out_enabled=False,
+
+    # Video stream configuration
+    video_out_width=1024,
+    video_out_height=576,
+    video_out_bitrate=800000,
+    video_out_framerate=30,
+)</code></pre>
+<p>&lt;Note&gt;   Each transport may have its own specialized parameters class that extends   TransportParams with transport-specific options. Check the individual   transport documentation for details. &lt;/Note&gt;</p>
+<p>&lt;Tip&gt;   For advanced turn detection (like Smart Turn), configure <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn   Strategies</a>   on the context aggregator instead of using the transport's turn\_analyzer   parameter. &lt;/Tip&gt;</p>
+<p>&lt;Card title="TransportParams Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.base_transport.html#pipecat.transports.base_transport.TransportParams"&gt;   Complete reference for all transport configuration options &lt;/Card&gt;</p>
+<h2>Telephony Integration</h2>
+<p>Telephony services (phone calls) use WebSocket connections with specialized serialization:</p>
+<h3>Supported Telephony Providers</h3>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Twilio" href="/api-reference/server/services/serializers/twilio"&gt;     Media Streams over WebSocket with TwilioFrameSerializer   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Telnyx" href="/api-reference/server/services/serializers/telnyx"&gt;     Real-time media streaming with TelnyxFrameSerializer   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Plivo" href="/api-reference/server/services/serializers/plivo"&gt;     Voice streaming API with PlivoFrameSerializer   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Exotel" href="/api-reference/server/services/serializers/exotel"&gt;     Voice streaming integration with ExotelFrameSerializer   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h3>Telephony Transport Setup</h3>
+<p>Telephony requires a <code>FrameSerializer</code> to handle provider-specific message formats:</p>
+<pre><code># Create provider-specific serializer
+serializer = TwilioFrameSerializer(
+    stream_sid=stream_sid,
+    call_sid=call_sid,
+    account_sid=os.getenv("TWILIO_ACCOUNT_SID", ""),
+    auth_token=os.getenv("TWILIO_AUTH_TOKEN", ""),
+)
+
+# Configure transport with serializer
+transport = FastAPIWebsocketTransport(
+    websocket=websocket_client,
+    params=FastAPIWebsocketParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        add_wav_header=False,
+        serializer=serializer,  # Provider-specific serialization
+    ),
+)</code></pre>
+<p>&lt;Note&gt;   The development runner automatically detects and configures the appropriate   serializer when using <code>parse_telephony_websocket()</code>. &lt;/Note&gt;</p>
+<h2>Conditional Transport Selection</h2>
+<p>The development runner provides a pattern for conditionally selecting transports based on the environment:</p>
+<pre><code>async def bot(runner_args: RunnerArguments):
+    """Main bot entry point compatible with Pipecat Cloud."""
+
+    transport = None
+
+    if isinstance(runner_args, DailyRunnerArguments):
+        from pipecat.transports.daily.transport import DailyParams, DailyTransport
+
+        transport = DailyTransport(
+            runner_args.room_url,
+            runner_args.token,
+            "Pipecat Bot",
+            params=DailyParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+            ),
+        )
+
+    elif isinstance(runner_args, SmallWebRTCRunnerArguments):
+        from pipecat.transports.base_transport import TransportParams
+        from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
+
+        transport = SmallWebRTCTransport(
+            params=TransportParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+            ),
+            webrtc_connection=runner_args.webrtc_connection,
+        )
+    else:
+        logger.error(f"Unsupported runner arguments type: {type(runner_args)}")
+        return
+
+    if transport is None:
+        logger.error("Failed to create transport")
+        return
+
+    await run_bot(transport)</code></pre>
+<p>This pattern allows you to run the same bot code across different environments with different connection types.</p>
+<h2>WebRTC vs WebSocket Considerations</h2>
+<p>Understanding when to use each connection type is crucial for building effective voice AI applications:</p>
+<h3>WebRTC (Recommended for Client Applications)</h3>
+<p><strong>Best for:</strong> Browser apps, mobile apps, real-time conversations</p>
+<p><strong>Advantages:</strong></p>
+<ul><li><strong>Low latency</strong>: Optimized for real-time media with minimal delay</li><li><strong>Built-in resilience</strong>: Handles packet loss and network variations</li><li><strong>Advanced audio processing</strong>: Echo cancellation, noise reduction, automatic gain control</li><li><strong>Quality monitoring</strong>: Detailed performance and media quality statistics</li><li><strong>Automatic timestamping</strong>: Simplifies interruption and playout logic</li><li><strong>Robust reconnection</strong>: Built-in connection management</li></ul>
+<p><strong>Use WebRTC when:</strong></p>
+<ul><li>Building client-facing applications (web, mobile)</li><li>Conversational latency is critical</li><li>Users are on potentially unreliable networks</li><li>You need built-in audio processing features</li></ul>
+<h3>WebSocket (Good for Server-to-Server)</h3>
+<p><strong>Best for:</strong> Telephony integration, server-to-server communication, prototyping</p>
+<p><strong>Limitations for real-time media:</strong></p>
+<ul><li><strong>TCP-based</strong>: Subject to head-of-line blocking</li><li><strong>Network sensitivity</strong>: Less resilient to packet loss and jitter</li><li><strong>Manual implementation</strong>: Requires custom logic for reconnection, timestamping</li><li><strong>Limited observability</strong>: Harder to monitor connection quality</li></ul>
+<p><strong>Use WebSocket when:</strong></p>
+<ul><li>Integrating with telephony providers (Twilio, Telnyx, etc.)</li><li>Building server-to-server connections</li><li>Prototyping or latency isn't critical</li><li>Working within existing WebSocket infrastructure</li></ul>
+<h2>Key Takeaways</h2>
+<ul><li><strong>Transports are modular</strong> - swap them without changing bot logic</li><li><strong>Choose based on use case</strong> - WebRTC for clients, WebSocket for telephony</li><li><strong>Configuration is standardized</strong> - TransportParams work across transport types</li><li><strong>Pipeline placement matters</strong> - consider what processing happens after output</li><li><strong>Development runner helps</strong> - provides patterns for multi-transport bots</li></ul>
+<h2>What's Next</h2>
+<p>Now that you understand how transports connect users to your bot, let's explore how to configure speech recognition to convert user audio into text.</p>
+<p>&lt;Card title="Speech Input &amp; Turn Detection" icon="arrow-right" href="/pipecat/learn/speech-input"&gt;   Learn how to configure speech recognition in your voice AI pipeline &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/transports">https://docs.pipecat.ai/pipecat/learn/transports</a></p>
+</div></main></div></body></html>

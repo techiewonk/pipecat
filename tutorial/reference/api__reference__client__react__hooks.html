@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hooks · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Hooks</h1>
+<blockquote>React hooks from the Pipecat React SDK for client access, media device management, and bot event handling, like usePipecatClient.</blockquote>
+<p>The Pipecat React SDK provides hooks for accessing client functionality, managing media devices, and handling events.</p>
+<h2>usePipecatClient</h2>
+<p>Provides access to the <code>PipecatClient</code> instance originally passed to <code>PipecatClientProvider</code>.</p>
+<pre><code>import { usePipecatClient } from "@pipecat-ai/client-react";
+
+function MyComponent() {
+  const pcClient = usePipecatClient();
+
+  await pcClient.startBotAndConnect({
+    endpoint: '/api/start',
+    requestData: {
+      // Any custom data your /start endpoint requires
+    }
+  });
+}</code></pre>
+<h2>useRTVIClientEvent</h2>
+<p>Allows subscribing to RTVI client events. It is advised to wrap handlers with <code>useCallback</code>.</p>
+<pre><code>import { useCallback } from "react";
+import { RTVIEvent, TransportState } from "@pipecat-ai/client-js";
+import { useRTVIClientEvent } from "@pipecat-ai/client-react";
+
+function EventListener() {
+  useRTVIClientEvent(
+    RTVIEvent.TransportStateChanged,
+    useCallback((transportState: TransportState) =&gt; {
+      console.log("Transport state changed to", transportState);
+    }, [])
+  );
+}</code></pre>
+<p><strong>Arguments</strong></p>
+<p>&lt;ParamField path="event" type="RTVIEvent" required /&gt;</p>
+<p>&lt;ParamField path="handler" type="function" required /&gt;</p>
+<h2>usePipecatClientMediaDevices</h2>
+<p>Manage and list available media devices.</p>
+<pre><code>import { usePipecatClientMediaDevices } from "@pipecat-ai/client-react";
+
+function DeviceSelector() {
+  const {
+    availableCams,
+    availableMics,
+    selectedCam,
+    selectedMic,
+    updateCam,
+    updateMic,
+  } = usePipecatClientMediaDevices();
+
+  return (
+    &lt;&gt;
+      &lt;select
+        name="cam"
+        onChange={(ev) =&gt; updateCam(ev.target.value)}
+        value={selectedCam?.deviceId}
+      &gt;
+        {availableCams.map((cam) =&gt; (
+          &lt;option key={cam.deviceId} value={cam.deviceId}&gt;
+            {cam.label}
+          &lt;/option&gt;
+        ))}
+      &lt;/select&gt;
+      &lt;select
+        name="mic"
+        onChange={(ev) =&gt; updateMic(ev.target.value)}
+        value={selectedMic?.deviceId}
+      &gt;
+        {availableMics.map((mic) =&gt; (
+          &lt;option key={mic.deviceId} value={mic.deviceId}&gt;
+            {mic.label}
+          &lt;/option&gt;
+        ))}
+      &lt;/select&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+<h2>usePipecatClientMediaTrack</h2>
+<p>Access audio and video tracks.</p>
+<pre><code>import { usePipecatClientMediaTrack } from "@pipecat-ai/client-react";
+
+function MyTracks() {
+  const localAudioTrack = usePipecatClientMediaTrack("audio", "local");
+  const botAudioTrack = usePipecatClientMediaTrack("audio", "bot");
+}</code></pre>
+<p><strong>Arguments</strong></p>
+<p>&lt;ParamField path="trackType" type="'audio' | 'video'" required /&gt;</p>
+<p>&lt;ParamField path="participantType" type="'bot' | 'local'" required /&gt;</p>
+<h2>usePipecatClientTransportState</h2>
+<p>Returns the current transport state.</p>
+<pre><code>import { usePipecatClientTransportState } from "@pipecat-ai/client-react";
+
+function ConnectionStatus() {
+  const transportState = usePipecatClientTransportState();
+}</code></pre>
+<h2>usePipecatClientCamControl</h2>
+<p>Controls the local participant's camera state.</p>
+<pre><code>import { usePipecatClientCamControl } from "@pipecat-ai/client-react";
+function CamToggle() {
+  const { enableCam, isCamEnabled } = usePipecatClientCamControl();
+
+  return (
+    &lt;button onClick={() =&gt; enableCam(!isCamEnabled)}&gt;
+      {isCamEnabled ? "Disable Camera" : "Enable Camera"}
+    &lt;/button&gt;
+  );
+}</code></pre>
+<h2>usePipecatClientMicControl</h2>
+<p>Controls the local participant's microphone state.</p>
+<pre><code>import { usePipecatClientMicControl } from "@pipecat-ai/client-react";
+function MicToggle() {
+  const { enableMic, isMicEnabled } = usePipecatClientMicControl();
+
+  return (
+    &lt;button onClick={() =&gt; enableMic(!isMicEnabled)}&gt;
+      {isMicEnabled ? "Disable Microphone" : "Enable Microphone"}
+    &lt;/button&gt;
+  );
+}</code></pre>
+<h2>usePipecatConversation</h2>
+<p>The primary hook for accessing the conversation message stream. Returns the current list of messages (ordered for display) and a function to inject messages programmatically.</p>
+<p>Each assistant message's text parts are split into <code>spoken</code> and <code>unspoken</code> segments based on real-time speech progress, so you can style them differently (e.g. dim unspoken text).</p>
+<pre><code>import { usePipecatConversation } from "@pipecat-ai/client-react";
+import type { ConversationMessage } from "@pipecat-ai/client-react";
+
+function Messages() {
+  const { messages } = usePipecatConversation({
+    onMessageCreated(message: ConversationMessage) {
+      console.log("New message:", message);
+    },
+    onMessageUpdated(message: ConversationMessage) {
+      if (message.final) {
+        console.log("Message finalized:", message);
+      }
+    },
+  });
+
+  return (
+    &lt;ul&gt;
+      {messages.map((msg, i) =&gt; (
+        &lt;li key={`${msg.createdAt}-${i}`}&gt;
+          &lt;strong&gt;{msg.role}:&lt;/strong&gt;{" "}
+          {msg.parts?.map((part, j) =&gt; {
+            if (typeof part.text === "string") {
+              return &lt;span key={j}&gt;{part.text}&lt;/span&gt;;
+            }
+            // BotOutputText: { spoken, unspoken }
+            return (
+              &lt;span key={j}&gt;
+                &lt;span&gt;{part.text.spoken}&lt;/span&gt;
+                &lt;span style={{ opacity: 0.5 }}&gt;{part.text.unspoken}&lt;/span&gt;
+              &lt;/span&gt;
+            );
+          })}
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+<p><strong>Options</strong></p>
+<p>&lt;ParamField path="onMessageCreated" type="(message: ConversationMessage) =&gt; void"&gt;   Called once when a new message first enters the conversation. The message may   or may not be complete at this point — check <code>message.final</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="onMessageUpdated" type="(message: ConversationMessage) =&gt; void"&gt;   Called whenever an existing message's content changes (e.g. streaming text   appended, function call status changed, message finalized). Check   <code>message.final</code> to detect finalization. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregationMetadata" type="Record&lt;string, AggregationMetadata&gt;"&gt;   Metadata for aggregation types to control rendering and speech progress   behavior. Used to determine which aggregations should be excluded from   position-based speech splitting. &lt;/ParamField&gt;</p>
+<p><strong>Returns</strong></p>
+<p>&lt;ParamField path="messages" type="ConversationMessage[]"&gt;   The current list of conversation messages, ordered for display. Assistant messages have their text parts split into <code>{ spoken, unspoken }</code> based on real-time speech progress. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="injectMessage" type="(message: { role: string; parts: ConversationMessagePart[] }) =&gt; void"&gt;   Programmatically inject a message into the conversation (e.g. a system prompt or user-typed input). &lt;/ParamField&gt;</p>
+<h2>useConversationContext</h2>
+<p>Lower-level hook that provides direct access to the conversation context. Use this when you only need <code>injectMessage</code> without subscribing to the message stream, or to check whether the connected bot supports BotOutput events.</p>
+<pre><code>import { useConversationContext } from "@pipecat-ai/client-react";
+
+function TextInput() {
+  const { injectMessage, botOutputSupported } = useConversationContext();
+
+  const send = (text: string) =&gt; {
+    injectMessage({
+      role: "user",
+      parts: [{ type: "text", text }],
+    });
+  };
+
+  return (
+    &lt;input
+      onKeyDown={(e) =&gt; e.key === "Enter" &amp;&amp; send(e.currentTarget.value)}
+    /&gt;
+  );
+}</code></pre>
+<p><strong>Returns</strong></p>
+<p>&lt;ParamField path="injectMessage" type="(message: { role: string; parts: ConversationMessagePart[] }) =&gt; void"&gt;   Programmatically inject a message into the conversation. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="botOutputSupported" type="boolean | null"&gt;   Whether the connected bot supports BotOutput events (RTVI 1.1.0+). <code>null</code>   means detection hasn't completed yet. &lt;/ParamField&gt;</p>
+<h2>User interface</h2>
+<p>These hooks voice-enable a UI: stream the screen to a server-side <a href="/api-reference/server/workers/ui-worker"><code>UIWorker</code></a>, send UI events, handle the bot's UI commands, and track background work. They must be used within a <a href="/api-reference/client/react/components#pipecatclientprovider"><code>PipecatClientProvider</code></a>. See <a href="/client/rtvi-standard#user-interface">the RTVI standard</a> for wire payloads and <a href="/pipecat/learn/ui-worker">Controlling the UI</a> for the patterns.</p>
+<h3>useUISnapshot</h3>
+<p>Streams accessibility snapshots of the page to the bot. Call once near the root of your app.</p>
+<pre><code>useUISnapshot({ enabled: true, debounceMs: 300, trackViewport: true });</code></pre>
+<p><strong>Arguments</strong> — <code>options?: UseUISnapshotOptions</code> with <code>enabled</code> (default <code>true</code>), <code>debounceMs</code> (default <code>300</code>), <code>trackViewport</code> (default <code>true</code>), and <code>logSnapshots</code> (default <code>false</code>).</p>
+<h3>useUIEventSender</h3>
+<p>Returns <code>(event: string, payload?) =&gt; void</code> to send app-defined UI events to the bot (routed to the worker's <code>@ui_event</code> handlers).</p>
+<pre><code>const sendUIEvent = useUIEventSender();
+sendUIEvent("note_click", { ref: "e8" });</code></pre>
+<h3>useUICommandHandler</h3>
+<p>Registers a handler for a named UI command, active while the component is mounted.</p>
+<pre><code>useUICommandHandler("add_note", (payload) =&gt; addNoteToPage(payload));</code></pre>
+<p><strong>Arguments</strong></p>
+<p>&lt;ParamField path="command" type="string" required /&gt;</p>
+<p>&lt;ParamField path="handler" type="(payload: T) =&gt; void | Promise&lt;void&gt;" required /&gt;</p>
+<h3>Default command handlers</h3>
+<p><code>useDefaultUICommandHandlers(options?)</code> installs DOM handlers for all the standard commands at once (<code>scroll_to</code>, <code>focus</code>, <code>highlight</code>, <code>select_text</code>, <code>set_input_value</code>, <code>click</code>). Each resolves the target by snapshot <code>ref</code>, then <code>target_id</code>, and refuses unsafe targets. Install them individually with <code>useDefaultScrollToHandler</code>, <code>useDefaultFocusHandler</code>, <code>useDefaultHighlightHandler</code>, <code>useDefaultSelectTextHandler</code>, <code>useDefaultSetInputValueHandler</code>, and <code>useDefaultClickHandler</code>. For the non-DOM commands, <code>useToastHandler(handler)</code> and <code>useNavigateHandler(handler)</code> are typed convenience wrappers.</p>
+<pre><code>useUISnapshot();
+useDefaultUICommandHandlers();</code></pre>
+<h3>useUIJobGroups</h3>
+<p>Reads accumulated job groups (oldest first) and controls from the nearest <code>UIJobGroupsProvider</code>. Wrap your app in the provider to collect them:</p>
+<pre><code>&lt;UIJobGroupsProvider maxGroups={20}&gt;
+  &lt;App /&gt;
+&lt;/UIJobGroupsProvider&gt;</code></pre>
+<pre><code>const { groups, cancelJobGroup, dismissJobGroup, clearCompleted } =
+  useUIJobGroups();</code></pre>
+<p><strong>Returns</strong> — <code>UIJobGroupsAPI</code>: <code>groups: JobGroup[]</code>, <code>cancelJobGroup(jobId, reason?)</code>, <code>dismissJobGroup(jobId)</code>, and <code>clearCompleted()</code>. Each <code>JobGroup</code> has <code>jobId</code>, <code>label</code>, <code>cancellable</code>, <code>status</code>, and <code>jobs</code> (per-worker <code>{ workerName, status, updates, response }</code>).</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react/hooks">https://docs.pipecat.ai/api-reference/client/react/hooks</a></p>
+</div></main></div></body></html>

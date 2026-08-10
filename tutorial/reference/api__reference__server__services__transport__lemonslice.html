@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemonSlice Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LemonSlice Transport</h1>
+<blockquote>LemonSliceTransport joins your Pipecat bot to a room with a LemonSlice avatar, layered on the Daily transport.</blockquote>
+<h2>Overview</h2>
+<p><code>LemonSliceTransport</code> enables your Pipecat bot to join the same virtual room as a LemonSlice avatar and human participants. The transport integrates with the <a href="https://lemonslice.com/">LemonSlice</a> platform to add interactive AI-powered video avatars to Daily rooms. The service handles bidirectional audio streaming, avatar animations, voice activity detection, and conversation interruptions to deliver engaging conversational AI experiences with lifelike visual presence.</p>
+<p>When used, the Pipecat bot connects to a Daily room alongside the LemonSlice avatar and user. The bot receives audio input from participants, processes it through your pipeline, and sends TTS audio to the LemonSlice avatar for synchronized video rendering.</p>
+<h2>Transport architecture</h2>
+<p><code>LemonSliceTransport</code> always uses Daily as the underlying WebRTC transport. There is no standalone WebRTC variant. The avatar joins a Daily room, either one you supply via <code>daily_room_url</code> or one LemonSlice provisions for you.</p>
+<p><strong>Embedding in a custom UI:</strong> Daily Prebuilt is not required. Use <a href="/api-reference/client/js/overview"><code>@pipecat-ai/client-js</code></a> or <a href="/api-reference/client/react/overview"><code>@pipecat-ai/client-react</code></a> to connect to the session and render the avatar participant's video track inside your own modal or component. The Pipecat bot, the LemonSlice avatar, and your custom UI all connect to the same Daily room.</p>
+<p><strong>Combining with other LLM services (e.g. Bedrock AgentCore):</strong> the avatar transport is independent of your LLM choice. Any LLM service that fits in a Pipecat pipeline can drive a <code>LemonSliceTransport</code> bot.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="LemonSliceTransport API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.lemonslice.html"&gt;     Pipecat's API methods for LemonSlice video integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-lemonslice-transport.py"&gt;     Complete example with interactive avatar   &lt;/Card&gt;</p>
+<p>  &lt;Card title="LemonSlice Platform" icon="microphone" href="https://lemonslice.com/"&gt;     Access interactive avatars and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use LemonSlice services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[lemonslice]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>LemonSlice Account Setup</h3>
+<p>Before using LemonSlice video services, you need:</p>
+<ol><li><strong>LemonSlice Account</strong>: Sign up at <a href="https://lemonslice.com/">LemonSlice Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Avatar Selection</strong>: Choose from available interactive avatars, provide an agent image URL, or upload a local image</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>LEMONSLICE_API_KEY</code>: Your LemonSlice API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>LemonSliceTransport</h3>
+<p>&lt;ParamField path="bot_name" type="str" required&gt;   The name of the Pipecat bot instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for making async HTTP requests to the LemonSlice API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   LemonSlice API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="session_request" type="LemonSliceNewSessionRequest" required&gt;   Session creation parameters. Exactly one of <code>agent_id</code>, <code>agent_image_url</code>, or   <code>agent_image</code> must be provided. See   <a href="#lemonslicenewsessionrequest">LemonSliceNewSessionRequest</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="LemonSliceParams" default="LemonSliceParams()"&gt;   Transport configuration parameters. See <a href="#lemonsliceparams">LemonSliceParams</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h3>LemonSliceNewSessionRequest</h3>
+<p>Configuration for creating a new LemonSlice session.</p>
+<p>&lt;ParamField path="agent_image_url" type="str" default="None"&gt;   URL to an agent image. Provide exactly one of <code>agent_image_url</code>, <code>agent_id</code>,   or <code>agent_image</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_id" type="str" default="None"&gt;   ID of a LemonSlice agent. Provide exactly one of <code>agent_image_url</code>,   <code>agent_id</code>, or <code>agent_image</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_image" type="PIL.Image.Image" default="None"&gt;   PIL image uploaded as the agent image. Provide exactly one of   <code>agent_image_url</code>, <code>agent_id</code>, or <code>agent_image</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_prompt" type="str" default="None"&gt;   A high-level system prompt that subtly influences the avatar's movements,   expressions, and emotional demeanor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="idle_timeout" type="int" default="None"&gt;   Idle timeout in seconds for the session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="daily_room_url" type="str" default="None"&gt;   Daily room URL to use for the session. If not provided, LemonSlice will create   a new room. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="daily_token" type="str" default="None"&gt;   Daily token for authenticating with the room. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="lemonslice_properties" type="dict" default="None"&gt;   Additional connection properties to pass to the LemonSlice session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_url" type="str" default="None"&gt;   Override the LemonSlice API URL endpoint. &lt;/ParamField&gt;</p>
+<h3>LemonSliceParams</h3>
+<p>Inherits from <code>DailyParams</code> (which inherits from <code>TransportParams</code>) with the following defaults:</p>
+<p>&lt;ParamField path="audio_in_enabled" type="bool" default="True"&gt;   Whether to enable audio input from participants. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_enabled" type="bool" default="True"&gt;   Whether to enable audio output to participants. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="microphone_out_enabled" type="bool" default="False"&gt;   Whether to enable microphone output track. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>LemonSliceTransport creates a three-way conversation between your Pipecat bot, a LemonSlice avatar, and human participants. The transport manages the LemonSlice API session and Daily room connectivity automatically.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/video-avatar/video-avatar-lemonslice-transport.py">complete example</a> for a full implementation including:</p>
+<ul><li>LemonSlice transport configuration with API key and session setup</li><li>Avatar selection and configuration</li><li>Pipeline integration with TTS</li><li>Event handling for participant management</li></ul>
+<h2>Event Handlers</h2>
+<p>LemonSliceTransport provides event handlers for participant connection lifecycle. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Participant (non-avatar) connected to the session</td></tr><tr><td><code>on_client_disconnected</code></td><td>Participant (non-avatar) disconnected from the session</td></tr><tr><td><code>on_avatar_connected</code></td><td>LemonSlice avatar connected to the session</td></tr><tr><td><code>on_avatar_disconnected</code></td><td>LemonSlice avatar disconnected from the session</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The <code>on_client_connected</code> and <code>on_client_disconnected</code> events are only   triggered for human participants. The LemonSlice avatar triggers separate   <code>on_avatar_connected</code> and <code>on_avatar_disconnected</code> events. &lt;/Note&gt;</p>
+<h3>Connection Lifecycle</h3>
+<h4>on\_client\_connected</h4>
+<p>Fired when a human participant connects to the session. The LemonSlice avatar is filtered out from this event.</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, participant):
+    print(f"Client connected: {participant}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LemonSliceTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>Mapping[str, Any]</code></td><td>The participant data</td></tr></tbody></table></div>
+<h4>on\_client\_disconnected</h4>
+<p>Fired when a human participant disconnects from the session.</p>
+<pre><code>@transport.event_handler("on_client_disconnected")
+async def on_client_disconnected(transport, participant):
+    print(f"Client disconnected: {participant}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LemonSliceTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>Mapping[str, Any]</code></td><td>The participant data</td></tr></tbody></table></div>
+<h4>on\_avatar\_connected</h4>
+<p>Fired when the LemonSlice avatar connects to the session.</p>
+<pre><code>@transport.event_handler("on_avatar_connected")
+async def on_avatar_connected(transport, participant):
+    print(f"Avatar connected: {participant}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LemonSliceTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>Mapping[str, Any]</code></td><td>The participant data</td></tr></tbody></table></div>
+<h4>on\_avatar\_disconnected</h4>
+<p>Fired when the LemonSlice avatar disconnects from the session.</p>
+<pre><code>@transport.event_handler("on_avatar_disconnected")
+async def on_avatar_disconnected(transport, participant, reason):
+    print(f"Avatar disconnected: {participant}, reason: {reason}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>LemonSliceTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>Mapping[str, Any]</code></td><td>The participant data</td></tr><tr><td><code>reason</code></td><td><code>str</code></td><td>The reason for the disconnection</td></tr></tbody></table></div>
+<h2>Notes</h2>
+<ul><li>LemonSlice uses Daily as the underlying transport layer, so all Daily features</li></ul>
+<p>  and configuration options are available through the inherited <code>DailyParams</code>.</p>
+<ul><li>The transport automatically manages interruptions and sends appropriate control</li></ul>
+<p>  messages (<code>interrupt</code>, <code>response_started</code>, <code>response_finished</code>) to the   LemonSlice session.</p>
+<ul><li>The LemonSlice avatar's microphone is automatically muted to prevent audio</li></ul>
+<p>  feedback loops.</p>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in</li></ul>
+<p>  Pipecat</p>
+<ul><li><a href="/api-reference/server/services/transport/daily">DailyTransport</a> - Underlying Daily transport</li></ul>
+<p>  documentation</p>
+<ul><li><a href="/api-reference/server/services/transport/transport-params">TransportParams</a> - Base transport</li></ul>
+<p>  parameters</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/lemonslice">https://docs.pipecat.ai/api-reference/server/services/transport/lemonslice</a></p>
+</div></main></div></body></html>

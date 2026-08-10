@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neuphonic Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Neuphonic Text-to-Speech</h1>
+<blockquote>TTS with NeuphonicTTSService (real-time WebSocket streaming with interruptions) and NeuphonicHttpTTSService for HTTP synthesis.</blockquote>
+<h2>Overview</h2>
+<p>Neuphonic provides high-quality text-to-speech synthesis with two service implementations: <code>NeuphonicTTSService</code> (WebSocket-based) with real-time streaming and interruption support, and <code>NeuphonicHttpTTSService</code> (HTTP-based) with server-sent events. <code>NeuphonicTTSService</code> is recommended for interactive applications requiring low latency.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Neuphonic TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.neuphonic.tts.html"&gt;     Pipecat's API methods for Neuphonic TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-neuphonic.py"&gt;     Complete example with WebSocket streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Neuphonic Documentation" icon="book" href="https://docs.neuphonic.com/how-to-use-agents/"&gt;     Official Neuphonic TTS API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Library" icon="microphone" href="https://docs.neuphonic.com/"&gt;     Browse available voices and features   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Neuphonic services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[neuphonic]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Neuphonic Account Setup</h3>
+<p>Before using Neuphonic TTS services, you need:</p>
+<ol><li><strong>Neuphonic Account</strong>: Sign up at <a href="https://docs.neuphonic.com/">Neuphonic</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Selection</strong>: Choose from available voice models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>NEUPHONIC_API_KEY</code>: Your Neuphonic API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>NeuphonicTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Neuphonic API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None" deprecated&gt;   ID of the voice to use for synthesis.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NeuphonicTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.neuphonic.com"&gt;   WebSocket URL for the Neuphonic API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="22050"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm_linear"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries, producing more natural   speech. <code>TOKEN</code> streams tokens directly for lower latency. Import from   <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None" deprecated&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable voice and generation settings. See   <a href="#settings">Settings</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NeuphonicTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="NeuphonicTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>NeuphonicHttpTTSService</h3>
+<p>The HTTP service uses SSE (server-sent events) for streaming audio.</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Neuphonic API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None" deprecated&gt;   ID of the voice to use for synthesis.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NeuphonicHttpTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="https://api.neuphonic.com"&gt;   Base URL for the Neuphonic HTTP API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="22050"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm_linear"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable voice and generation settings. See   <a href="#settings">Settings</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NeuphonicHttpTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="NeuphonicHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>NeuphonicTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Speech rate control.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup (WebSocket)</h3>
+<pre><code>from pipecat.services.neuphonic import NeuphonicTTSService
+
+tts = NeuphonicTTSService(
+    api_key=os.getenv("NEUPHONIC_API_KEY"),
+    settings=NeuphonicTTSService.Settings(
+        voice="your-voice-id",
+    ),
+)</code></pre>
+<h3>With Customization (WebSocket)</h3>
+<pre><code>from pipecat.services.neuphonic import NeuphonicTTSService
+from pipecat.transcriptions.language import Language
+
+tts = NeuphonicTTSService(
+    api_key=os.getenv("NEUPHONIC_API_KEY"),
+    sample_rate=22050,
+    settings=NeuphonicTTSService.Settings(
+        voice="your-voice-id",
+        language=Language.FR,
+        speed=1.2,
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>import aiohttp
+from pipecat.services.neuphonic import NeuphonicHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = NeuphonicHttpTTSService(
+        api_key=os.getenv("NEUPHONIC_API_KEY"),
+        settings=NeuphonicHttpTTSService.Settings(
+            voice="your-voice-id",
+        ),
+        aiohttp_session=session,
+    )</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>WebSocket vs HTTP</strong>: The WebSocket service (<code>NeuphonicTTSService</code>) supports interruption handling and keepalive connections, making it better for interactive conversations. The HTTP service (<code>NeuphonicHttpTTSService</code>) uses server-sent events and is simpler to integrate.</li><li><strong>Keepalive</strong>: The WebSocket service automatically sends keepalive messages every 10 seconds to maintain the connection.</li><li><strong>Default sample rate</strong>: Both services default to 22050 Hz, which differs from most other TTS services.</li></ul>
+<h2>Event Handlers</h2>
+<p>Neuphonic WebSocket TTS supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Neuphonic WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Neuphonic WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Neuphonic")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/neuphonic">https://docs.pipecat.ai/api-reference/server/services/tts/neuphonic</a></p>
+</div></main></div></body></html>

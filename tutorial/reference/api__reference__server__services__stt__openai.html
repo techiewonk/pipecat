@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenAI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>OpenAI Speech-to-Text</h1>
+<blockquote>STT with OpenAIRealtimeSTTService for live streaming and OpenAISTTService for segmented transcription of OpenAI speech models.</blockquote>
+<h2>Overview</h2>
+<p>OpenAI provides two STT service implementations:</p>
+<ul><li><strong><code>OpenAISTTService</code></strong> (HTTP) -- VAD-segmented speech recognition using OpenAI's transcription API, supporting GPT-4o transcription and Whisper models.</li><li><strong><code>OpenAIRealtimeSTTService</code></strong> (WebSocket) -- Real-time streaming speech-to-text using OpenAI's Realtime API transcription sessions, with support for local VAD and server-side VAD modes.</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="OpenAI STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.openai.stt.html"&gt;     Pipecat's API methods for OpenAI STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-openai.py"&gt;     Complete example with OpenAI ecosystem integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="OpenAI Documentation" icon="book" href="https://platform.openai.com/docs/api-reference/audio/createTranscription"&gt;     Official OpenAI transcription documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="OpenAI Platform" icon="microphone" href="https://platform.openai.com/api-keys"&gt;     Access API keys and transcription models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use OpenAI services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[openai]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>OpenAI Account Setup</h3>
+<p>Before using OpenAI STT services, you need:</p>
+<ol><li><strong>OpenAI Account</strong>: Sign up at <a href="https://platform.openai.com/">OpenAI Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to GPT-4o transcription and Whisper models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>OPENAI_API_KEY</code>: Your OpenAI API key for authentication</li></ul>
+<h2>OpenAISTTService</h2>
+<p>Uses VAD-based audio segmentation with HTTP transcription requests. Records speech segments detected by local VAD and sends them to OpenAI's transcription API.</p>
+<p>&lt;ParamField path="model" type="str" default="gpt-4o-transcribe" deprecated&gt;   Transcription model to use. Options include <code>"gpt-4o-transcribe"</code>,   <code>"gpt-4o-mini-transcribe"</code>, and <code>"whisper-1"</code>. *Deprecated in v0.0.105. Use   <code>settings=OpenAISTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   OpenAI API key. Falls back to the <code>OPENAI_API_KEY</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="None"&gt;   API base URL. Override for custom or proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="http_client" type="httpx.AsyncClient" default="None"&gt;   Custom <code>httpx.AsyncClient</code> for API requests, e.g. one with a longer request   timeout. Prefer <code>openai.DefaultAsyncHttpxClient</code>, which keeps the SDK's   connection limits and redirect handling; a bare <code>httpx.AsyncClient</code> uses   httpx's defaults instead. Defaults to <code>None</code>, which lets the SDK build its own   client. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language of the audio input. *Deprecated in v0.0.105. Use   <code>settings=OpenAISTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="prompt" type="str" default="None" deprecated&gt;   Optional text to guide the model's style or continue a previous segment.   *Deprecated in v0.0.105. Use <code>settings=OpenAISTTService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="temperature" type="float" default="None" deprecated&gt;   Sampling temperature between 0 and 1. Lower values produce more deterministic   results. *Deprecated in v0.0.105. Use   <code>settings=OpenAISTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="OpenAISTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="OPENAI_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="push_empty_transcripts" type="bool" default="False"&gt;   If true, allow empty <code>TranscriptionFrame</code> frames to be pushed downstream   instead of discarding them. This is intended for situations where VAD fires   even though the user did not speak. In these cases, it is useful to know that   nothing was transcribed so that the agent can resume speaking, instead of   waiting longer for a transcription. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>OpenAISTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"gpt-4o-transcribe"</code></td><td>Transcription model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language of the audio input. *(Inherited from base STT settings.)*</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>None</code></td><td>Optional text to guide the model's style or continue a previous segment.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>None</code></td><td>Sampling temperature between 0 and 1.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.openai.stt import OpenAISTTService
+
+stt = OpenAISTTService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    settings=OpenAISTTService.Settings(
+        model="gpt-4o-transcribe",
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Segmented transcription</strong>: Processes complete audio segments (after VAD detects silence) via HTTP. Only produces final transcriptions, not interim results.</li><li>Does not have WebSocket connection events since it uses per-request HTTP calls.</li><li><strong>Multilingual support</strong>: Whisper and GPT-4o transcription models support many languages. The default is <code>Language.EN</code> (English). Set <code>language=None</code> in settings to enable automatic language detection, which will transcribe whatever language the user speaks.</li></ul>
+<h2>OpenAIRealtimeSTTService</h2>
+<p>Real-time streaming speech-to-text using OpenAI's Realtime API WebSocket transcription sessions. Audio is streamed continuously over a WebSocket connection for lower latency compared to HTTP-based transcription.</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   OpenAI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="gpt-realtime-whisper" deprecated&gt;   Transcription model. For low-latency streaming transcription, use   <code>"gpt-realtime-whisper"</code>. Other supported models include <code>"gpt-4o-transcribe"</code>   and <code>"gpt-4o-mini-transcribe"</code>. *Deprecated in v0.0.105. Use   <code>settings=OpenAIRealtimeSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.openai.com/v1/realtime"&gt;   WebSocket base URL for the Realtime API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language of the audio input. *Deprecated in v0.0.105. Use   <code>settings=OpenAIRealtimeSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="prompt" type="str" default="None" deprecated&gt;   Optional prompt text to guide transcription style or provide keyword hints.   Not supported by <code>"gpt-realtime-whisper"</code>. *Deprecated in v0.0.105. Use   <code>settings=OpenAIRealtimeSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="OpenAIRealtimeSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the Realtime STT service. See   <a href="#settings-2">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="turn_detection" type="dict | Literal[False]" default="False"&gt;   Server-side VAD configuration. Defaults to <code>False</code> (disabled), which relies on a local VAD processor in the pipeline. Pass <code>None</code> to use server defaults (<code>server_vad</code>), or a dict with custom settings (e.g. <code>{"type": "server_vad", "threshold": 0.5}</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="noise_reduction" type="str" default="None"&gt;   Noise reduction mode. <code>"near_field"</code> for close microphones, <code>"far_field"</code> for   distant microphones, or <code>None</code> to disable.</p>
+<p>  &lt;Note&gt;     <strong>Deprecated in v0.0.106.</strong> Use     <code>settings=OpenAIRealtimeSTTService.Settings(noise_reduction=...)</code> instead.   &lt;/Note&gt; &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether to interrupt bot output when speech is detected by server-side VAD.   Only applies when turn detection is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="OPENAI_REALTIME_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>OpenAIRealtimeSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"gpt-realtime-whisper"</code></td><td>Transcription model to use. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language of the audio input. *(Inherited from base STT settings.)*</td></tr><tr><td><code>prompt</code></td><td><code>str</code></td><td><code>None</code></td><td>Optional prompt text to guide transcription style or keyword hints. Not supported by <code>"gpt-realtime-whisper"</code>.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<h4>With Local VAD</h4>
+<pre><code>from pipecat.services.openai.stt import OpenAIRealtimeSTTService
+
+# Local VAD mode (default) - use with a VAD processor in the pipeline
+stt = OpenAIRealtimeSTTService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    settings=OpenAIRealtimeSTTService.Settings(
+        model="gpt-realtime-whisper",
+        noise_reduction="near_field",
+    ),
+)</code></pre>
+<h4>With Server-Side VAD</h4>
+<pre><code>from pipecat.services.openai.stt import OpenAIRealtimeSTTService
+
+# Server-side VAD mode - do NOT use a separate VAD processor
+stt = OpenAIRealtimeSTTService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    turn_detection=None,  # Enable server-side VAD
+    settings=OpenAIRealtimeSTTService.Settings(
+        model="gpt-realtime-whisper",
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Local VAD vs Server-side VAD</strong>: Defaults to local VAD mode (<code>turn_detection=False</code>), where a local VAD processor in the pipeline controls when audio is committed for transcription. Set <code>turn_detection=None</code> for server-side VAD, but do not use a separate VAD processor in the pipeline in that mode.</li><li><strong>Automatic resampling</strong>: Automatically resamples audio to 24 kHz as required by the Realtime API, regardless of the pipeline's sample rate.</li><li><strong>Interim transcriptions</strong>: Produces interim transcriptions via delta events for real-time feedback.</li><li><strong>Model selection</strong>: The default <code>"gpt-realtime-whisper"</code> model provides low-latency streaming transcription but does not support the <code>prompt</code> parameter. If you need prompt hints for keywords or style guidance, use <code>"gpt-4o-transcribe"</code> or <code>"gpt-4o-mini-transcribe"</code> instead.</li><li><strong>Multilingual support</strong>: GPT-4o transcription models support many languages. The default is <code>Language.EN</code> (English). Set <code>language=None</code> in settings to enable automatic language detection, which will transcribe whatever language the user speaks.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to OpenAI Realtime WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from OpenAI Realtime WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to OpenAI Realtime STT")</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/openai">https://docs.pipecat.ai/api-reference/server/services/stt/openai</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowManager · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>FlowManager</h1>
+<blockquote>FlowManager orchestrates Pipecat Flows conversations: node transitions, function registration, and flow state.</blockquote>
+<h2>Overview</h2>
+<p><code>FlowManager</code> orchestrates conversation flows by managing state transitions, function registration, and message handling across different LLM providers.</p>
+<h2>Configuration</h2>
+<p>All parameters are keyword-only.</p>
+<p>&lt;ParamField path="worker" type="PipelineWorker" required&gt;   Pipeline worker instance used for queueing frames into the pipeline. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task" type="PipelineWorker" deprecated&gt;   <strong>Deprecated:</strong> Use <code>worker</code> instead. This parameter is deprecated and will be   removed in 2.0.0.</p>
+<p>  Pipeline worker instance used for queueing frames into the pipeline. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="llm" type="LLMService | LLMSwitcher" required&gt;   LLM service instance or an <code>LLMSwitcher</code> for switching between providers at   runtime. Any <code>LLMService</code> subclass is supported, including OpenAI-compatible   services (Groq, Together, Cerebras, DeepSeek, etc.), Anthropic, Google Gemini,   and AWS Bedrock. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="context_aggregator" type="Any" required&gt;   Context aggregator for managing conversation context. Typically created using   <code>LLMContextAggregatorPair</code> from   <code>pipecat.processors.aggregators.llm_response_universal</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="context_strategy" type="ContextStrategyConfig" default="ContextStrategyConfig(strategy=ContextStrategy.APPEND)"&gt;   Default context strategy for managing conversation context during node   transitions. Can be overridden per-node via   <a href="/api-reference/pipecat-flows/types#nodeconfig"><code>NodeConfig.context_strategy</code></a>.   See   <a href="/api-reference/pipecat-flows/types#contextstrategyconfig">ContextStrategyConfig</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transport" type="BaseTransport" default="None"&gt;   Transport instance for communication (e.g., <code>DailyTransport</code>). When provided,   accessible via the <code>transport</code> property in function and action handlers. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="global_functions" type="list[FlowsFunctionSchema | FlowsDirectFunction]" default="None"&gt;   Functions that will be available at every node. These are registered once   during initialization and automatically included alongside node-specific   functions. Useful for capabilities like "transfer to human" that should be   accessible from any conversation state. &lt;/ParamField&gt;</p>
+<h2>Properties</h2>
+<h3>state</h3>
+<pre><code>flow_manager.state -&gt; dict[str, Any]</code></pre>
+<p>Shared state dictionary that persists across node transitions. Use this to store and retrieve conversation data such as user preferences, collected information, or any data that needs to be accessible across different nodes.</p>
+<pre><code># Store data
+flow_manager.state["user_name"] = "Alice"
+
+# Retrieve data
+name = flow_manager.state.get("user_name", "Unknown")</code></pre>
+<h3>transport</h3>
+<pre><code>flow_manager.transport -&gt; BaseTransport | None</code></pre>
+<p>The transport instance provided during initialization, or <code>None</code> if not set. Use this to interact with the communication platform (e.g., mute participants, access room info).</p>
+<pre><code>async def my_handler(args, flow_manager):
+    transport = flow_manager.transport
+    if transport:
+        participants = transport.participants()</code></pre>
+<h3>current\_node</h3>
+<pre><code>flow_manager.current_node -&gt; str | None</code></pre>
+<p>The identifier of the currently active conversation node. Returns <code>None</code> before initialization or if no node has been set.</p>
+<pre><code>async def my_handler(args, flow_manager):
+    if flow_manager.current_node == "collecting_payment":
+        await setup_secure_session(flow_manager)</code></pre>
+<h3>worker</h3>
+<pre><code>flow_manager.worker -&gt; PipelineWorker</code></pre>
+<p>The pipeline worker instance used for frame queueing. Use this for advanced flow control such as queuing custom frames.</p>
+<pre><code>async def my_handler(args, flow_manager):
+    from pipecat.frames.frames import TTSUpdateSettingsFrame
+    await flow_manager.worker.queue_frame(
+        TTSUpdateSettingsFrame(settings={"voice": "new-voice-id"})
+    )</code></pre>
+<h3>task</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated:</strong> Use <code>worker</code> instead. This property is deprecated and will be   removed in 2.0.0. &lt;/Warning&gt;</p>
+<pre><code>flow_manager.task -&gt; PipelineWorker</code></pre>
+<p>Alias for <code>worker</code>. Maintained for backward compatibility.</p>
+<h2>Methods</h2>
+<h3>initialize</h3>
+<pre><code>await flow_manager.initialize(initial_node: NodeConfig | None = None) -&gt; None</code></pre>
+<p>Initialize the flow manager. Must be called before any node transitions can occur.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>initial_node</code></td><td><code>NodeConfig</code></td><td><code>None</code></td><td>Initial node configuration. Can also be set later via <code>set_node_from_config()</code>.</td></tr></tbody></table></div>
+<p><strong>Raises:</strong> <code>FlowInitializationError</code> if initialization fails.</p>
+<pre><code>flow_manager = FlowManager(worker=worker, llm=llm, context_aggregator=context_aggregator)
+await flow_manager.initialize(initial_node=create_initial_node())</code></pre>
+<h3>set\_node\_from\_config</h3>
+<pre><code>await flow_manager.set_node_from_config(node_config: NodeConfig) -&gt; None</code></pre>
+<p>Transition to a new conversation node. Used to manually trigger node transitions. The node name is taken from the <code>name</code> field in the config, or a UUID is generated if not provided.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>node_config</code></td><td><code>NodeConfig</code></td><td>Configuration for the new node.</td></tr></tbody></table></div>
+<p><strong>Raises:</strong> <code>FlowTransitionError</code> if the manager is not initialized. <code>FlowError</code> if node setup fails.</p>
+<p>&lt;Note&gt;   In most cases, prefer returning the next node from a consolidated function   handler instead of calling this method directly. &lt;/Note&gt;</p>
+<pre><code>await flow_manager.set_node_from_config({
+    "name": "collect_email",
+    "task_messages": [{"role": "developer", "content": "Ask the user for their email."}],
+    "functions": [collect_email_function],
+})</code></pre>
+<h3>get\_current\_context</h3>
+<pre><code>flow_manager.get_current_context() -&gt; list[dict]</code></pre>
+<p>Get the current conversation context as a list of messages, including developer messages, user messages, and assistant responses.</p>
+<p><strong>Raises:</strong> <code>FlowError</code> if the context aggregator is not available.</p>
+<pre><code>messages = flow_manager.get_current_context()</code></pre>
+<h3>register\_action</h3>
+<pre><code>flow_manager.register_action(action_type: str, handler: Callable) -&gt; None</code></pre>
+<p>Register a handler for a custom action type. The handler can be either a modern handler <code>(action, flow_manager)</code> or a legacy handler <code>(action)</code>. Legacy single-argument handlers are deprecated and will be removed in 2.0.0.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>action_type</code></td><td><code>str</code></td><td>String identifier for the action (e.g., <code>"notify_slack"</code>).</td></tr><tr><td><code>handler</code></td><td><code>Callable</code></td><td>Async function that handles the action.</td></tr></tbody></table></div>
+<pre><code>async def notify_slack(action: dict, flow_manager: FlowManager):
+    channel = action.get("channel", "#general")
+    text = action.get("text", "")
+    await slack_client.post_message(channel=channel, text=text)
+
+flow_manager.register_action("notify_slack", notify_slack)</code></pre>
+<p>Once registered, the action can be used in node <code>pre_actions</code> or <code>post_actions</code>:</p>
+<pre><code>node_config = NodeConfig(
+    task_messages=[...],
+    pre_actions=[{"type": "notify_slack", "channel": "#support", "text": "New session started"}],
+)</code></pre>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.flows import FlowManager, FlowResult, NodeConfig
+
+async def create_initial_node() -&gt; NodeConfig:
+    return NodeConfig(
+        task_messages=[
+            {"role": "developer", "content": "Greet the user and ask how you can help."}
+        ],
+        functions=[help_function],
+    )
+
+flow_manager = FlowManager(
+    worker=worker,
+    llm=llm,
+    context_aggregator=context_aggregator,
+    transport=transport,
+)
+await flow_manager.initialize(initial_node=await create_initial_node())</code></pre>
+<h3>Using Global Functions</h3>
+<pre><code>from pipecat.flows import FlowManager, NodeConfig
+
+async def transfer_to_human(flow_manager: FlowManager) -&gt; tuple[None, NodeConfig]:
+    """Transfer the conversation to a human agent."""
+    return None, create_human_agent_node()
+
+flow_manager = FlowManager(
+    worker=worker,
+    llm=llm,
+    context_aggregator=context_aggregator,
+    global_functions=[transfer_to_human],  # available at every node
+)</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-flows/flow-manager">https://docs.pipecat.ai/api-reference/pipecat-flows/flow-manager</a></p>
+</div></main></div></body></html>

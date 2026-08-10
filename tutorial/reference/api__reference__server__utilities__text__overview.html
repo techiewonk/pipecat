@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Aggregators and Filters · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Text Aggregators and Filters</h1>
+<blockquote>An overview of text aggregators and filters available in the server utilities</blockquote>
+<h2>Overview</h2>
+<p>The terms "aggregators" and "filters" are overloaded in Pipecat and can refer to different components depending on the context. This document provides a high-level overview of the low-level text utilities often used by various pipeline services, like the TTS. These utilities operate on streaming text, allowing for dynamic processing, transformation, and aggregation of text data as it flows through the system. They are essentially text in -&gt; text out (but maybe with some metadata about the text too).</p>
+<h2>Aggregators</h2>
+<p>Aggregators are components that collect and combine text data over time, often buffering input until certain conditions are met (like sentence boundaries or specific patterns). They can modify, enhance, or restructure the text before passing it along. Examples include:</p>
+<ul><li>SimpleTextAggregator: Buffers text until sentence boundaries are detected. This is the default aggregator used by most TTS services.</li><li>SkipTagsAggregator: Buffers text until sentence boundaries, while skipping over specified tags so that sentences are not prematurely detected due to characters in between those tags. This is the default aggregator used by Cartesia and Rime in order to skip over custom spell tags.</li><li><a href="./pattern-pair-aggregator">PatternPairAggregator</a>: Buffers text until either a sentence boundary is detected or a complete pattern pair (like XML tags or custom delimiters) is found. Patterns found can either be removed, left in but trigger a registered callback, or aggregated separately. Useful for voice switching, structured content processing, and extracting metadata from LLM outputs.</li></ul>
+<h3>Usage Pattern</h3>
+<p>After initial setup, aggregators are used by repeatedly calling their <code>aggregate()</code> method with incoming text chunks. The aggregator processes the text according to its logic and returns aggregated text when appropriate. If no complete aggregation is ready, it will return <code>None</code>, otherwise it will return an <code>Aggregation</code> object containing the aggregated text along with a <code>type</code> string meant to convey the nature of the aggregation (e.g., "sentence", "xml", etc.).</p>
+<pre><code>from pipecat.utils.text.simple_text_aggregator import SimpleTextAggregator
+aggregator = SimpleTextAggregator()
+while streaming_text:
+    chunk = get_next_text_chunk()
+    aggregation = aggregator.aggregate(chunk)
+    if aggregation:
+        process_aggregated_text(aggregation.text, aggregation.type)</code></pre>
+<h3>Custom Aggregators</h3>
+<p>You can create custom aggregators by subclassing the <code>BaseTextAggregator</code> class and implementing your own aggregation logic in the <code>aggregate()</code> method. This allows for tailored text processing to meet specific application needs.</p>
+<h2>Filters</h2>
+<p>Filters are components that process text data in a streaming fashion, transforming or modifying it as it passes through. Unlike aggregators, filters typically do not buffer text but instead operate on each chunk of text individually. Currently, the only built-in filter is the <a href="./markdown-text-filter"><code>MarkdownTextFilter</code></a>, which processes markdown syntax in streaming text, converting it into TTS-friendly plain text.</p>
+<h3>Usage Pattern</h3>
+<p>Filters are used by calling their <code>filter()</code> method with incoming text chunks. The filter processes the text and returns the transformed text immediately.</p>
+<pre><code>from pipecat.utils.text.markdown_text_filter import MarkdownTextFilter
+filter = MarkdownTextFilter()
+while streaming_text:
+    chunk = get_next_text_chunk()
+    filtered_text = filter.filter(chunk)
+    process_filtered_text(filtered_text)</code></pre>
+<h3>Custom Filters</h3>
+<p>You can create custom filters by subclassing the <code>BaseTextFilter</code> class and implementing your own filtering logic in the <code>filter()</code> method. This allows for specialized text transformations to suit your application's requirements.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/text/overview">https://docs.pipecat.ai/api-reference/server/utilities/text/overview</a></p>
+</div></main></div></body></html>

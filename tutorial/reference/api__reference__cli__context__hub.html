@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat context-hub · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat context-hub</h1>
+<blockquote>Query the Pipecat Context Hub from the CLI and register it as an MCP server for coding agents with pipecat context-hub install.</blockquote>
+<p>Run the <a href="/api-reference/context-hub">Pipecat Context Hub</a> through the Pipecat CLI. <code>pipecat context-hub install</code> registers the hub as an MCP server with your coding agent and builds the local index; the query commands print the same JSON the MCP tools return, for one-shot lookups from a shell.</p>
+<h2>Installation</h2>
+<p><code>pipecat context-hub</code> comes from the <code>pipecat-ai-context-hub</code> package, which you co-install with the CLI:</p>
+<pre><code>uv tool install "pipecat-ai[cli]" --with pipecat-ai-context-hub</code></pre>
+<p>Without it, <code>pipecat context-hub</code> still lists in <code>pipecat --help</code> and prints how to enable it when run. The hub also runs standalone, without the Pipecat CLI — see the <a href="/api-reference/context-hub">Context Hub reference</a> for that path, the tool list, and custom sources.</p>
+<p>&lt;Tip&gt;   Every command below also works as <code>pipecat ch</code>, e.g. <code>pipecat ch status</code>. &lt;/Tip&gt;</p>
+<h2>context-hub install</h2>
+<p>Register the MCP server with a coding agent and build the index. Configures every detected client CLI (Claude Code, Codex) unless <code>--client</code> is given, then runs the first refresh.</p>
+<p>Clients that ship their own CLI are configured through it, so they own the edit to their config file. For clients configured by hand (Cursor, VS Code, Zed) the command prints the JSON and where it goes rather than writing a file it doesn't own.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub install [OPTIONS]</code></pre>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--client" type="string"&gt;   Client to configure: <code>claude-code</code>, <code>codex</code>, <code>cursor</code>, <code>vscode</code>, or <code>zed</code>.   Repeatable. Defaults to every detected client CLI. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--no-refresh" type="flag"&gt;   Skip building the index. Run <code>pipecat context-hub refresh</code> before your first   query. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--print-config" type="flag"&gt;   Only print the MCP config and the server command; change nothing. &lt;/ParamField&gt;</p>
+<p>&lt;Tip&gt;   MCP servers load when your coding tool starts a session, so run this before   opening the session you want to use it in. &lt;/Tip&gt;</p>
+<h2>context-hub refresh</h2>
+<p>Rebuild the index, skipping unchanged sources when possible. The first run downloads local embedding models and indexes every source, so allow several minutes.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub refresh [OPTIONS]</code></pre>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--force" type="flag"&gt;   Force a full refresh, ignoring cached state. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--reset-index" type="flag"&gt;   Delete local index state before rebuilding. Use this when the persisted index   is unhealthy. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--framework-version" type="string"&gt;   Pin the framework repo to a specific git tag, e.g. <code>v0.0.96</code>. Source chunks   come from that version instead of <code>HEAD</code>, so results match an older project.   Also settable with <code>PIPECAT_HUB_FRAMEWORK_VERSION</code>. &lt;/ParamField&gt;</p>
+<h2>context-hub status</h2>
+<p>Report index health: freshness, record counts, the pipecat version the index was built from, and reranker state. Prints JSON.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub status</code></pre>
+<h2>context-hub serve</h2>
+<p>Start the MCP server over stdio. <code>pipecat context-hub start</code> is an alias. You rarely run this by hand — your coding tool starts it, using the config <code>pipecat context-hub install</code> wrote.</p>
+<p>Exits <code>2</code> if the index is empty or cannot be opened, rather than starting against an index that would answer every query with nothing.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub serve</code></pre>
+<h2>context-hub search-docs</h2>
+<p>Semantic search over the indexed Pipecat docs.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub search-docs [OPTIONS] QUERY</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="QUERY" type="string" required&gt;   What to search for. Use <code>+</code> or <code>&amp;</code> to search several concepts at once,   e.g. <code>"TTS + STT"</code> — each is searched separately and the results interleaved. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--area" type="string"&gt;   Docs path prefix, e.g. <code>guides</code> or <code>server/services</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--limit" type="integer" default="10"&gt;   Maximum hits to return (1-50). &lt;/ParamField&gt;</p>
+<h2>context-hub search-api</h2>
+<p>Search framework internals: classes, signatures, frames, inheritance.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub search-api [OPTIONS] QUERY</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="QUERY" type="string" required&gt;   What to search for. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--module" type="string"&gt;   Module path prefix, e.g. <code>pipecat.services</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--class-name" type="string"&gt;   Class name prefix, e.g. <code>DailyTransport</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--chunk-type" type="string"&gt;   One of <code>module_overview</code>, <code>class_overview</code>, <code>method</code>, <code>function</code>,   <code>type_definition</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--is-dataclass" type="flag"&gt;   Only dataclass types. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--yields" type="string"&gt;   Methods yielding a frame type. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--calls" type="string"&gt;   Methods calling a specific method. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--pipecat-version" type="string"&gt;   Score results for compatibility with this <code>pipecat-ai</code> version. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--compatible-only" type="flag"&gt;   Exclude results requiring a newer version. Needs <code>--pipecat-version</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--limit" type="integer" default="10"&gt;   Maximum hits to return (1-50). &lt;/ParamField&gt;</p>
+<h2>context-hub search-examples</h2>
+<p>Find working Pipecat examples for a capability.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub search-examples [OPTIONS] QUERY</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="QUERY" type="string" required&gt;   The capability to find examples for. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--repo" type="string"&gt;   Filter by repo slug, e.g. <code>pipecat-ai/pipecat-examples</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--language" type="string"&gt;   <code>python</code> or <code>typescript</code> — the only parsed languages. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--domain" type="string"&gt;   <code>backend</code> (Python bot/pipeline code), <code>frontend</code> (JS/TS client), <code>config</code>, or   <code>infra</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--tag" type="string"&gt;   Capability tag. Repeatable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--execution-mode" type="string"&gt;   <code>local</code> or <code>cloud</code>, inferred from capability tags. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--pipecat-version" type="string"&gt;   Score results for compatibility with this <code>pipecat-ai</code> version. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--compatible-only" type="flag"&gt;   Exclude results requiring a newer version. Needs <code>--pipecat-version</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--limit" type="integer" default="10"&gt;   Maximum hits to return (1-50). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--foundational-class" type="string"&gt;   Legacy filter, deprecated. Only pre-reorg examples carry it, so filtering on   it silently excludes new-layout examples. Prefer <code>--domain</code> and <code>--tag</code>. &lt;/ParamField&gt;</p>
+<h2>context-hub get-doc</h2>
+<p>Fetch a full docs page, or one section of it, by ID or path. Use after <code>search-docs</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub get-doc [OPTIONS]</code></pre>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--doc-id" type="string"&gt;   Chunk ID from a <code>search-docs</code> hit. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--path" type="string"&gt;   Docs path, e.g. <code>/guides/telephony/overview</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--section" type="string"&gt;   Return only this section heading. &lt;/ParamField&gt;</p>
+<h2>context-hub get-example</h2>
+<p>Fetch the full source files of an example. Use after <code>search-examples</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub get-example [OPTIONS] EXAMPLE_ID</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="EXAMPLE_ID" type="string" required&gt;   Example ID from a <code>search-examples</code> hit. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--no-readme" type="flag"&gt;   Skip the example's README content. &lt;/ParamField&gt;</p>
+<h2>context-hub get-code-snippet</h2>
+<p>Get a targeted code snippet by symbol, by intent, or by path and line range.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub get-code-snippet [OPTIONS]</code></pre>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--symbol" type="string"&gt;   Symbol name, e.g. <code>DailyTransport.send_dtmf</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--intent" type="string"&gt;   Intent description; searches example code. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--path" type="string"&gt;   File path. Combine with <code>--line-start</code> for a range lookup. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--line-start" type="integer"&gt;   First line of the range. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--line-end" type="integer"&gt;   Last line of the range. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--module" type="string"&gt;   Module path prefix filter, in symbol mode. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--class-name" type="string"&gt;   Class name prefix filter, in symbol mode. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--content-type" type="string"&gt;   <code>source</code> for framework code, <code>code</code> for examples. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--pipecat-version" type="string"&gt;   Score results for compatibility with this <code>pipecat-ai</code> version. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--max-lines" type="integer" default="100"&gt;   Maximum lines to return (1-500). &lt;/ParamField&gt;</p>
+<h2>context-hub check-deprecation</h2>
+<p>Check whether a module path, class, or method is deprecated. The fastest way to catch a symbol that moved or was replaced.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat context-hub check-deprecation [OPTIONS] SYMBOL</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="SYMBOL" type="string" required&gt;   Module path, class, or method, e.g. <code>PipelineTask</code> or   <code>pipecat.services.grok.llm</code>. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--at-version" type="string"&gt;   Evaluate the symbol's lifecycle at this version, e.g. <code>2.0.0</code>. A symbol can be   current, deprecated, or removed at different versions. Defaults to the version   the index was built from. &lt;/ParamField&gt;</p>
+<h2>Examples</h2>
+<pre><code># Set the hub up for your coding agent, then keep it current
+pipecat context-hub install
+pipecat context-hub refresh
+
+# Is this symbol still the right one?
+pipecat context-hub check-deprecation PipelineTask
+
+# Find a working example, then read it
+pipecat context-hub search-examples "twilio bot" --domain backend
+pipecat context-hub get-example &lt;example-id&gt;
+
+# Look up an exact signature
+pipecat context-hub search-api "WebsocketServerParams" --limit 3
+
+# Index health, including the pipecat version it was built from
+pipecat context-hub status</code></pre>
+<h2>Next Steps</h2>
+<p>&lt;Card title="Pipecat Context Hub" icon="database" href="/api-reference/context-hub"&gt;   What the hub indexes, the MCP tool list, custom sources, and setup without the   Pipecat CLI &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/context-hub">https://docs.pipecat.ai/api-reference/cli/context-hub</a></p>
+</div></main></div></body></html>

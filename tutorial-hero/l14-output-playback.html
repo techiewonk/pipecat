@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L14 · Output & playback — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 14 · Part II — The voice loop</div>
+      <h1>Output & playback</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span><span class="pill">Milestone</span></div>
+      <p class="lead">The output side is where a demo becomes a product: mixing background audio, tracking when the bot speaks, DTMF, and recording. Finish this and Atlas is a production-quality single agent.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="sender">Inside the MediaSender</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="TTSAudioRawFrame|resample|chunk|mix (bed)|🔊 speaker + BotSpeaking frames"
+           data-caption="Bot audio arrives from TTS|The MediaSender resamples to the device rate|and chunks it for smooth playout|optionally blends a background bed via the mixer|plays it — emitting BotStartedSpeaking / BotStoppedSpeaking for the UI">
+      </div>
+
+      <h2 id="mixer">Background audio (mixers)</h2>
+      <pre><code class="language-python">from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer
+from pipecat.frames.frames import MixerEnableFrame, MixerUpdateSettingsFrame
+
+"webrtc": lambda: TransportParams(
+    audio_out_enabled=True,
+    audio_out_mixer=SoundfileMixer(
+        sound_files={"office": "assets/office-ambience.mp3"},
+        default_sound="office", volume=0.3),
+)
+# control it live:
+await worker.queue_frame(MixerUpdateSettingsFrame({"volume": 0.15}))   # duck under speech
+await worker.queue_frame(MixerEnableFrame(False))                     # bed off</code></pre>
+
+      <h2 id="dtmf">DTMF, volume, and recording</h2>
+      <p>On phone calls, <strong>DTMF</strong> keypad tones are <code>KeypadEntry</code> values; the output transport can play them natively or synthesize the tones. Output loudness is <code>audio/volume.py</code>. To <strong>record</strong> the conversation, insert an <code>AudioBufferProcessor</code> that taps the stream to disk without changing playback (revisited in <a href="l22-transcripts-recording.html">Lesson 22</a>).</p>
+      <pre><code class="language-python">from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
+recorder = AudioBufferProcessor()
+pipeline = Pipeline([transport.input(), stt, user_agg, llm, tts, transport.output(),
+                     recorder, assistant_agg])   # taps user + bot audio</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>transports/base_output.py</code> — <code>BaseOutputTransport</code> + <code>MediaSender</code> (chunking, resample, <code>with_mixer</code>, bot-speaking, destinations, DTMF, end-silence). <code>audio/mixers/*</code> (<code>SoundfileMixer</code>). <code>audio/dtmf/*</code> (<code>KeypadEntry</code>, tone WAVs). <code>audio/volume.py</code>. <code>processors/audio/audio_buffer_processor.py</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🏁 Milestone — Atlas is production-grade</p>
+        <p>Atlas now has: clean input (noise filter), robust turns (smart-turn + muting), memory, tools, a good voice, a background bed, and recording. That's a shippable single voice agent. Part III makes it realtime and multimodal; Part V makes it many agents.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Add a hold-music bed and duck it to 0.1 while the bot speaks (listen for <code>BotStartedSpeakingFrame</code>). (2) Add an <code>AudioBufferProcessor</code> and save a WAV. (3) Run <code>audio/audio-bot-background-sound.py</code> and <code>audio/audio-recording.py</code>.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Which transport param adds a background bed, and how do you duck it?</summary><p><code>audio_out_mixer</code> (e.g. <code>SoundfileMixer</code>); duck it with a <code>MixerUpdateSettingsFrame({"volume": …})</code>.</p></details>
+      <details><summary>2. How do you record without affecting playback?</summary><p>Insert an <code>AudioBufferProcessor</code> — it taps the stream to disk and forwards frames unchanged.</p></details>
+
+      <p class="lead" style="margin-top:26px">Part II complete. Next: <a href="l15-realtime.html">Lesson 15 — Realtime speech-to-speech →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

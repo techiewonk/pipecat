@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>CLI Overview</h1>
+<blockquote>The Pipecat CLI scaffolds new projects, runs behavioral evals, and deploys agents to Pipecat Cloud from your terminal.</blockquote>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="Start a Project" icon="wand-magic-sparkles" href="/api-reference/cli/init"&gt;     Initialize a project, then build with a coding agent or scaffold a bot   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Run Behavioral Evals" icon="vial-circle-check" href="/api-reference/cli/eval"&gt;     Test your agents with scripted scenarios and an LLM judge   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Give Your Agent Context" icon="database" href="/api-reference/cli/context-hub"&gt;     Index current Pipecat docs and API source for your coding agent   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deploy to Cloud" icon="rocket" href="/api-reference/cli/cloud/auth"&gt;     Push your bots to production with one command   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Requirements</h2>
+<ul><li>Python 3.11 or later</li></ul>
+<h2>Installation</h2>
+<p>The CLI ships with <code>pipecat-ai</code> as the optional <code>cli</code> extra. Install it globally with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
+<pre><code>uv tool install "pipecat-ai[cli]"</code></pre>
+<p>Verify installation:</p>
+<pre><code>pipecat --version</code></pre>
+<p>&lt;Tip&gt;All commands can use either <code>pipecat</code> or the shorter <code>pc</code> alias.&lt;/Tip&gt;</p>
+<p>This gives you the built-in <code>pipecat init</code> and <code>pipecat eval</code> commands. The <code>cloud</code> and <code>mcp</code> commands each come from a separate package that you co-install with <code>--with</code>:</p>
+<pre><code># Add deploy commands
+uv tool install "pipecat-ai[cli]" --with pipecatcloud
+
+# Add Context Hub commands for your coding agent
+uv tool install "pipecat-ai[cli]" --with pipecat-ai-context-hub
+
+# Or both
+uv tool install "pipecat-ai[cli]" --with pipecatcloud --with pipecat-ai-context-hub</code></pre>
+<p>&lt;Warning&gt;   <code>--with</code> replaces the tool environment rather than adding to it, so every run   must name every plugin you want. Installing with only one drops the other. &lt;/Warning&gt;</p>
+<p>Commands from a plugin you haven't installed still appear in <code>pipecat --help</code>, and print how to enable themselves when run.</p>
+<h2>Commands</h2>
+<ul><li><strong><a href="/api-reference/cli/init"><code>pipecat init</code></a></strong> - Initialize and scaffold a new Pipecat project, the single entry point for new projects (built in)</li><li><strong><a href="/api-reference/cli/eval"><code>pipecat eval</code></a></strong> - Run behavioral evals against your agents</li><li><strong><a href="/api-reference/cli/context-hub"><code>pipecat context-hub</code></a></strong> - Query the Pipecat Context Hub and register it with your coding agent (requires <code>pipecat-ai-context-hub</code>)</li><li><strong><a href="/api-reference/cli/cloud/auth"><code>pipecat cloud</code></a></strong> - Deploy and manage bots on Pipecat Cloud (requires <code>pipecatcloud</code>)</li></ul>
+<h2>Getting Help</h2>
+<p>View help for any command:</p>
+<pre><code>pipecat --help
+pipecat init --help
+pipecat eval --help
+pipecat context-hub --help
+pipecat cloud --help</code></pre>
+<h2>Next Steps</h2>
+<p>&lt;Card title="Build Your First Bot" icon="rocket" href="/pipecat/get-started/build-your-next-bot"&gt;   Initialize your project and start building with pipecat init &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/overview">https://docs.pipecat.ai/api-reference/cli/overview</a></p>
+</div></main></div></body></html>

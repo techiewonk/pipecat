@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L11 · LLM inference, adapters & settings — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 11 · Part II — The voice loop</div>
+      <h1>LLM inference, adapters & settings</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">The LLM is the brain: it reads the context and streams a reply. Swapping providers is a one-line change, and the Settings pattern you learn here powers <em>every</em> runtime config change in Pipecat.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Context in, tokens out</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="LLMContextFrame|LLMService|adapter → provider format|streaming tokens|LLMTextFrame → TTS"
+           data-caption="The aggregator sends an LLMContextFrame (the conversation)|The LLM service starts a completion|An adapter converts context+tools to the provider's wire format|The provider streams tokens back|Each becomes an LLMTextFrame → TTS speaks it in real time">
+      </div>
+      <p>The LLM pushes <code>LLMFullResponseStartFrame</code>, a stream of <code>LLMTextFrame</code>s, then <code>LLMFullResponseEndFrame</code>. Streaming is what lets TTS start speaking before the whole answer is generated.</p>
+
+      <h2 id="adapters">Adapters make providers interchangeable</h2>
+      <p>Each provider expresses tools and messages differently. A <code>BaseLLMAdapter</code> translates Pipecat's <code>LLMContext</code>/tools into the provider format, so most "OpenAI-compatible" services are thin subclasses of <code>BaseOpenAILLMService</code>.</p>
+      <pre><code class="language-python">from pipecat.services.openai.llm import OpenAILLMService
+
+llm = OpenAILLMService(
+    api_key=os.environ["OPENAI_API_KEY"],
+    settings=OpenAILLMService.Settings(
+        model="gpt-4.1",
+        system_instruction="You are a helpful, brief voice assistant.",
+        temperature=0.7,
+    ),
+)
+# OpenAI-compatible provider via base_url — same class:
+# llm = OpenAILLMService(api_key=..., base_url="https://api.other.com/v1")
+# or a different family entirely:
+# from pipecat.services.anthropic.llm import AnthropicLLMService
+# llm = AnthropicLLMService(api_key=...)</code></pre>
+
+      <h2 id="settings">The Settings pattern (learn once, reuse everywhere)</h2>
+      <div class="box concept">
+        <p class="title">🧠 Store vs. delta</p>
+        <p>A service's <code>Settings</code> dataclass is used two ways: a complete <strong>store</strong> (every field set; <code>None</code> = unsupported) and a sparse <strong>delta</strong> (only changed fields; unset = the <code>NOT_GIVEN</code> sentinel) carried by an <code>*UpdateSettingsFrame</code>. This is how <em>every</em> runtime change works — STT language, TTS voice, LLM temperature.</p>
+      </div>
+      <pre><code class="language-python">from pipecat.frames.frames import LLMUpdateSettingsFrame
+# change temperature mid-conversation, no restart:
+await llm.queue_frame(LLMUpdateSettingsFrame({"temperature": 0.2}))</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/llm_service.py</code> — <code>LLMService</code> (224). <code>services/openai/base_llm.py</code> — <code>BaseOpenAILLMService</code>, the streaming engine <code>_process_context</code>. <code>adapters/services/*</code> — provider adapters. <code>services/settings.py</code> — the <code>NOT_GIVEN</code> / store-vs-delta machinery.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 2 — the first full agent</p>
+        <p>Combine everything so far: <code>transport.input()</code> → STT → user aggregator (with VAD/turns) → LLM → TTS → <code>transport.output()</code> → assistant aggregator. Atlas is now a complete cascaded voice agent you can talk to.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Swap <code>OpenAILLMService</code> for <code>AnthropicLLMService</code> — confirm the pipeline is unchanged. (2) Start terse, then push an <code>LLMUpdateSettingsFrame</code> mid-chat that makes replies verbose. (3) Read <code>base_llm.py</code>'s <code>_process_context</code> to see tokens become <code>LLMTextFrame</code>s.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What lets TTS start speaking before the LLM finishes?</summary><p>Token streaming — the LLM emits <code>LLMTextFrame</code>s as it generates, which TTS aggregates into sentences and speaks.</p></details>
+      <details><summary>2. How do you change a model setting without restarting?</summary><p>Push an <code>LLMUpdateSettingsFrame</code> (a sparse delta using the Settings pattern).</p></details>
+      <details><summary>3. Why are most LLM providers so little code?</summary><p>They subclass <code>BaseOpenAILLMService</code> and reuse its streaming engine + adapter; they mostly set defaults.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l12-function-calling.html">Lesson 12 — Function calling, async tools & MCP →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

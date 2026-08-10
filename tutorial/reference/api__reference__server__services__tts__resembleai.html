@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resemble AI Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Resemble AI Text-to-Speech</h1>
+<blockquote>ResembleAITTSService streams TTS over Resemble AI's WebSocket API with word-level timestamps and audio context management.</blockquote>
+<h2>Overview</h2>
+<p><code>ResembleAITTSService</code> provides high-quality text-to-speech synthesis using Resemble AI's streaming WebSocket API with word-level timestamps and audio context management for handling multiple simultaneous synthesis requests with proper interruption support.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Resemble AI TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.resembleai.tts.html"&gt;     Pipecat's API methods for Resemble AI TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-resemble.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Resemble AI Documentation" icon="book" href="https://docs.resemble.ai/"&gt;     Official Resemble AI API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sign up" icon="user" href="https://app.resemble.ai/"&gt;     Sign up for a Resemble AI account   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Resemble AI services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[resemble]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Resemble AI Account Setup</h3>
+<p>Before using Resemble AI TTS services, you need:</p>
+<ol><li><strong>Resemble AI Account</strong>: Sign up at <a href="https://app.resemble.ai">Resemble AI</a></li><li><strong>API Key</strong>: Generate an API key from your <a href="https://app.resemble.ai/account/api">account settings</a></li><li><strong>Voice Selection</strong>: Choose or create voice UUIDs from your <a href="https://app.resemble.ai/hub/voices">voice library</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>RESEMBLE_API_KEY</code>: Your Resemble AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>ResembleAITTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Resemble AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   Voice UUID to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=ResembleAITTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="ResembleAITTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://websocket.cluster.resemble.ai/stream"&gt;   WebSocket URL for Resemble AI TTS API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="precision" type="str" default="PCM_16"&gt;   PCM bit depth. Options: <code>PCM_32</code>, <code>PCM_24</code>, <code>PCM_16</code>, or <code>MULAW</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_format" type="str" default="wav"&gt;   Audio output format (<code>wav</code> or <code>mp3</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="22050"&gt;   Audio sample rate in Hz. Options: 8000, 16000, 22050, 32000, or 44100. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>ResembleAITTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.resembleai import ResembleAITTSService
+
+tts = ResembleAITTSService(
+    api_key=os.getenv("RESEMBLE_API_KEY"),
+    settings=ResembleAITTSService.Settings(
+        voice="your-voice-uuid",
+    ),
+)</code></pre>
+<h3>With Custom Settings</h3>
+<pre><code>from pipecat.services.resembleai import ResembleAITTSService
+
+tts = ResembleAITTSService(
+    api_key=os.getenv("RESEMBLE_API_KEY"),
+    settings=ResembleAITTSService.Settings(
+        voice="your-voice-uuid",
+    ),
+    sample_rate=16000,
+    precision="PCM_16",
+    output_format="wav",
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Word-level timestamps</strong>: Resemble AI provides word-level timing information, enabling synchronized text highlighting and precise interruption handling.</li><li><strong>Jitter buffering</strong>: The service buffers approximately 1 second of audio before starting playback to absorb network latency gaps (Resemble AI sends audio in bursts with 300-450ms gaps).</li><li><strong>Audio context management</strong>: Supports multiple simultaneous synthesis requests with proper context tracking and interruption handling.</li><li><strong>Default sample rate</strong>: Defaults to 22050 Hz. Supported rates are 8000, 16000, 22050, 32000, and 44100 Hz.</li></ul>
+<h2>Event Handlers</h2>
+<p>Resemble AI TTS supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Resemble AI WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Resemble AI WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Resemble AI")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/resembleai">https://docs.pipecat.ai/api-reference/server/services/tts/resembleai</a></p>
+</div></main></div></body></html>

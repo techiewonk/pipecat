@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat cloud auth · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat cloud auth</h1>
+<blockquote>pipecat cloud auth manages authentication with Pipecat Cloud: login, logout, and checking your current credentials.</blockquote>
+<p>The <code>auth</code> command group manages authentication with Pipecat Cloud, allowing you to login, logout, and check your current account identity.</p>
+<h2>login</h2>
+<p>Begins an authorization flow to authenticate with Pipecat Cloud.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud auth login [OPTIONS]</code></pre>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--headless / -h" type="boolean" default="false"&gt;   Skip opening a browser window for authentication and print the URL instead.   Useful for remote or containerized environments. &lt;/ParamField&gt;</p>
+<p>This command initiates the authentication process by:</p>
+<ol><li>Generating a unique authentication URL</li><li>Opening your default web browser (if available)</li><li>Waiting for you to complete the sign-in process in the browser</li><li>Retrieving and storing your access token locally</li></ol>
+<p>If the browser doesn't open automatically, or if you use the <code>--headless</code> option, you can copy and paste the displayed URL into your browser manually.</p>
+<p>On successful login, the CLI will store the access token in the local configuration file (defaults to <code>~/.config/pipecatcloud/pipecatcloud.toml</code>). This token will be used for all subsequent requests to the Pipecat Cloud API.</p>
+<p>You can override the default location by setting the <code>PIPECAT_CONFIG_PATH</code> environment variable.</p>
+<h2>logout</h2>
+<p>Signs out of the current Pipecat Cloud account by removing the access token from your local configuration file.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud auth logout</code></pre>
+<h2>use-pat</h2>
+<p>Authenticates with a <a href="/pipecat-cloud/guides/personal-access-tokens">Personal Access Token</a> instead of interactive OAuth login. Validates the token against the API and stores it in your local config file.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud auth use-pat &lt;token&gt;</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="token" type="string" required&gt;   Personal Access Token (must start with <code>pcc_pat_</code>). &lt;/ParamField&gt;</p>
+<p>&lt;Tip&gt;   You can also set the <code>PIPECAT_TOKEN</code> environment variable instead of storing   the token locally. See the <a href="/pipecat-cloud/guides/personal-access-tokens">PAT   guide</a> for details. &lt;/Tip&gt;</p>
+<h2>whoami</h2>
+<p>Displays information about the currently authenticated user, including user ID, active organization, auth method, and Daily API key.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud auth whoami</code></pre>
+<h2>Configuration</h2>
+<p>CLI configuration is stored in <code>~/.config/pipecatcloud/pipecatcloud.toml</code>. You can override this location by setting the <code>PIPECAT_CONFIG_PATH</code> environment variable.</p>
+<p>The configuration stores your access token, active organization, and default API keys.</p>
+<p><strong>View current configuration:</strong></p>
+<pre><code>pipecat cloud --show-cli-config</code></pre>
+<p>&lt;Accordion title="Example configuration file"&gt;   &lt;Warning&gt;We do not recommend manually editing the configuration file. If the file becomes malformed, run <code>pipecat cloud auth login</code> to regenerate it.&lt;/Warning&gt;</p>
+<pre><code>    token = "..."
+    org = "user-namespace"
+
+    [another-user-org]
+    default_public_key = "pk_..."
+    default_public_key_name = "Test Key"
+
+    [futher-user-org]
+    default_public_key = "pk_..."
+    default_public_key_name = "Pipecat Cloud Public Key"</code></pre>
+<p>&lt;/Accordion&gt;</p>
+<hr>
+<p>&lt;Card title="More about user accounts" icon="people-group" href="/pipecat-cloud/fundamentals/accounts-and-organizations"&gt;   Managing your account and collaborating on agents as part of a team &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/cloud/auth">https://docs.pipecat.ai/api-reference/cli/cloud/auth</a></p>
+</div></main></div></body></html>

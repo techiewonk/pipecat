@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Small WebRTC Transport</h1>
+<blockquote>SmallWebRTCTransport for the iOS SDK: peer-to-peer WebRTC between Swift clients and a Pipecat bot, no third-party provider.</blockquote>
+<p><code>SmallWebRTCTransport</code> enables peer-to-peer WebRTC connections between clients and your Pipecat application. It implements bidirectional audio and video streaming using WebRTC for real-time communication.</p>
+<p>This transport is intended for lightweight implementations. It expects your Pipecat server to include the corresponding <a href="/api-reference/server/services/transport/small-webrtc"><code>SmallWebRTCTransport</code> server-side</a> implementation.</p>
+<h2>Installation</h2>
+<p>Add the <code>SmallWebRTCTransport</code> package to your project:</p>
+<pre><code>.package(url: "https://github.com/pipecat-ai/pipecat-client-ios-small-webrtc.git", from: "0.0.1")
+
+// Add to your target dependencies
+.target(name: "YourApp", dependencies: [
+    .product(name: "PipecatClientIOSSmallWebrtc", package: "pipecat-client-ios-small-webrtc")
+])</code></pre>
+<h2>Usage</h2>
+<p>Create a client using the <code>SmallWebRTCTransport</code>:</p>
+<pre><code>import PipecatClientIOS
+import PipecatClientIOSSmallWebrtc
+
+let rtviClientOptions = RTVIClientOptions.init(
+    enableMic: currentSettings.enableMic,
+    enableCam: currentSettings.enableCam,
+    params: RTVIClientParams(
+        config: [
+            .init(
+                service: SmallWebRTCTransport.SERVICE_NAME,
+                options: [
+                    .init(name: "server_url", value: .string($PIPECAT_SERVER_URL))
+                ]
+            )
+        ]
+    )
+)
+self.rtviClientIOS = RTVIClient.init(
+    transport: SmallWebRTCTransport.init(options: rtviClientOptions),
+    options: rtviClientOptions
+)
+self.rtviClientIOS?.start() { result in
+    switch result {
+    case .failure(let error):
+        // handle error
+    case .success(_):
+        // handle success
+    }
+}</code></pre>
+<h2>API Reference</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/video-transform/client/ios"&gt;     Video transform Demo   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-ios-small-webrtc/"&gt;     Small WebRTC transport   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card title="SmallWebRTCTransport Reference" icon="book-open" href="https://docs-ios.pipecat.ai/PipecatClientIOSSmallWebrtc/documentation/pipecatclientiossmallwebrtc"&gt;   Complete API documentation for the Small WebRTC transport implementation &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/ios/transports/small-webrtc">https://docs.pipecat.ai/api-reference/client/ios/transports/small-webrtc</a></p>
+</div></main></div></body></html>

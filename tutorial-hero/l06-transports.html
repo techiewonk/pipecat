@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L6 · Transports — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 6 · Part II — The voice loop</div>
+      <h1>Transports</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">The transport is how the user reaches your bot — the first and last processor in every pipeline. Swap it without touching your logic.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="io">Input and output</h2>
+      <p>A transport exposes two processors: <code>input()</code> (produces incoming audio/video frames) and <code>output()</code> (consumes outgoing ones). Everything you build sits between them.</p>
+      <div class="pcflow" data-dur="6"
+           data-stages="🌐 world|transport.input()|…your processors…|transport.output()|🌐 world"
+           data-caption="Audio/video arrives from the browser, phone, or room|input() emits InputAudioRawFrame / InputImageRawFrame|your STT/LLM/TTS chain processes them|output() writes bot audio/video back|the user hears/sees the result">
+      </div>
+
+      <h2 id="params">TransportParams: the shared config</h2>
+      <p>Every transport is configured with <code>TransportParams</code> (or a subclass). It controls audio/video enablement and rates, plus two important hooks you'll use later:</p>
+      <pre><code class="language-python">from pipecat.transports.base_transport import TransportParams
+
+params = TransportParams(
+    audio_in_enabled=True,
+    audio_out_enabled=True,
+    audio_out_sample_rate=24000,        # match your TTS for best quality
+    video_in_enabled=False,
+    audio_in_filter=None,               # noise cancellation goes here (Lesson 7)
+    audio_out_mixer=None,               # background audio bed goes here (Lesson 14)
+)</code></pre>
+      <div class="box concept">
+        <p class="title">🧠 What is NOT here anymore</p>
+        <p>VAD, turn detection, and serializers are <strong>not</strong> on <code>TransportParams</code> in this version. VAD/turns live on the aggregator (<a href="l10-turn-taking.html">Lesson 10</a>); serializers are a per-transport param only for raw-socket transports (telephony, <a href="l30-runner-telephony.html">Lesson 30</a>).</p>
+      </div>
+
+      <h2 id="choices">The transports you can choose</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Transport</th><th>Params class</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><code>SmallWebRTCTransport</code></td><td><code>TransportParams</code></td><td>Serverless P2P WebRTC — great for local dev.</td></tr>
+          <tr><td><code>DailyTransport</code></td><td><code>DailyParams</code></td><td>Hosted WebRTC rooms, dial-in/out, recording.</td></tr>
+          <tr><td><code>FastAPIWebsocketTransport</code></td><td><code>FastAPIWebsocketParams</code></td><td>Telephony & custom WebSocket (needs a serializer).</td></tr>
+          <tr><td><code>LiveKitTransport</code></td><td><code>LiveKitParams</code></td><td>Self-hostable WebRTC/SIP at scale.</td></tr>
+          <tr><td><code>LocalAudioTransport</code></td><td><code>TransportParams</code></td><td>Your machine's mic/speaker — no browser.</td></tr>
+        </tbody>
+      </table></div>
+      <p>WebRTC is recommended for client apps (low latency, echo cancellation, resilience); WebSocket suits server-to-server and telephony. Because the choice is made at launch, one bot serves all of them:</p>
+      <pre><code class="language-bash">uv run python getting-started/06-voice-agent.py            # default (SmallWebRTC)
+uv run python getting-started/06-voice-agent.py -t daily   # Daily rooms</code></pre>
+
+      <h2 id="output">The output side does real work</h2>
+      <p>The output transport isn't a dumb sink — its internal <code>MediaSender</code> resamples audio to the device rate, chunks it, applies the mixer, tracks bot-speaking (emitting <code>BotStartedSpeakingFrame</code>/<code>BotStoppedSpeakingFrame</code>), handles interruptions, and can fan out to multiple destinations. You'll revisit it in <a href="l14-output-playback.html">Lesson 14</a>.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>transports/base_transport.py</code> — <code>BaseTransport.input()/output()</code>, <code>TransportParams</code>. <code>transports/base_input.py</code> — <code>BaseInputTransport</code> (audio task, <code>audio_in_filter</code>). <code>transports/base_output.py</code> — <code>BaseOutputTransport</code> + <code>MediaSender</code>. Concrete: <code>transports/smallwebrtc/</code>, <code>daily/</code>, <code>websocket/</code>, <code>livekit/</code>.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run the same bot with <code>-t daily</code> and note the code didn't change. (2) Set <code>video_in_enabled=True</code> and confirm the browser asks for camera. (3) Skim <code>base_output.py</code> and find where <code>BotStartedSpeakingFrame</code> is emitted.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Where in the pipeline does a transport sit, and why does that make it swappable?</summary><p>First (<code>input()</code>) and last (<code>output()</code>) — the boundary with the outside world, so the middle of the pipeline never changes when you switch transports.</p></details>
+      <details><summary>2. Which two optional hooks live on <code>TransportParams</code>?</summary><p><code>audio_in_filter</code> (noise cancellation) and <code>audio_out_mixer</code> (background audio).</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l07-audio-processing.html">Lesson 7 — Audio: filters, resamplers, VAD →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

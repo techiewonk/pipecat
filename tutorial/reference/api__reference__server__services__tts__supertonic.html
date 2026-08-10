@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supertonic Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Supertonic Text-to-Speech</h1>
+<blockquote>SupertonicTTSService wraps the official Supertonic Python SDK as a Pipecat-compatible TTSService for speech synthesis.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="architjambhule66-debug" maintainerUrl="https://github.com/architjambhule66-debug" repo="https://github.com/architjambhule66-debug/pipecat-supertonic" /&gt;</p>
+<h2>Overview</h2>
+<p><code>SupertonicTTSService</code> is a Pipecat-compatible <code>TTSService</code> wrapper for the official <a href="https://github.com/supertone-inc/supertonic">Supertonic</a> Python SDK. It runs the Supertonic model locally and outputs <code>TTSAudioRawFrame</code> audio. The package is an independent community integration and is not affiliated with Supertone or the Supertonic team.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/architjambhule66-debug/pipecat-supertonic"&gt;     Source code, examples, and issues for the Supertonic integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-supertonic/"&gt;     The <code>pipecat-supertonic</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Supertonic" icon="book" href="https://github.com/supertone-inc/supertonic"&gt;     The official Supertonic SDK and model   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-supertonic</code></pre>
+<h2>Prerequisites</h2>
+<p>Supertonic runs locally; no account or API key is required. By default the service downloads and caches the Supertonic model on first use (controlled by the <code>auto_download</code> parameter).</p>
+<p>Call <code>warmup()</code> during application startup before the service is used in a live Pipecat pipeline. The service does not lazy-load Supertonic during active TTS requests and fails fast if used before warmup, which avoids first-request cold-start delays and keeps TTS frame ordering stable.</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="model" type="str" default="supertonic-3"&gt;   Supertonic model name. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="M1"&gt;   Supertonic voice name. Supported voices: <code>F1</code>, <code>F2</code>, <code>F3</code>, <code>F4</code>, <code>F5</code>, <code>M1</code>,   <code>M2</code>, <code>M3</code>, <code>M4</code>, <code>M5</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language | str" default="Language.EN"&gt;   Language for synthesis. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="speed" type="float" default="1.05"&gt;   Speech speed multiplier. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="total_steps" type="int" default="5"&gt;   Number of synthesis steps. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_chunk_length" type="int" default="None"&gt;   Maximum characters per synthesized chunk. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="silence_duration" type="float" default="0.3"&gt;   Silence inserted between synthesized chunks. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auto_download" type="bool" default="True"&gt;   Whether to download model assets automatically. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="intra_op_num_threads" type="int" default="None"&gt;   ONNX intra-op thread count. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="inter_op_num_threads" type="int" default="None"&gt;   ONNX inter-op thread count. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output sample rate for generated audio. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SupertonicTTSService.Settings" default="None"&gt;   Runtime-configurable settings. When provided alongside direct parameters,   <code>settings</code> values take precedence. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SupertonicTTSService.Settings(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>speed</code></td><td><code>float</code></td><td>—</td><td>Speech speed multiplier.</td></tr><tr><td><code>total_steps</code></td><td><code>int</code></td><td>—</td><td>Number of synthesis steps.</td></tr><tr><td><code>max_chunk_length</code></td><td><code>int</code></td><td>—</td><td>Maximum characters per synthesized chunk.</td></tr><tr><td><code>silence_duration</code></td><td><code>float</code></td><td>—</td><td>Silence inserted between synthesized chunks.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   The <code>Settings</code> dataclass extends Pipecat's <code>TTSSettings</code>. See the <a href="https://github.com/architjambhule66-debug/pipecat-supertonic">source   repository</a> for   the authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat.pipeline.pipeline import Pipeline
+from pipecat_supertonic import SupertonicTTSService
+
+tts = SupertonicTTSService(
+    settings=SupertonicTTSService.Settings(
+        voice="M1",
+        language="en",
+        total_steps=5,
+        speed=1.05,
+    )
+)
+
+# Required before use in a live pipeline. Call during application startup.
+await tts.warmup()
+
+pipeline = Pipeline(
+    [
+        transport.input(),
+        stt,
+        llm,
+        tts,
+        transport.output(),
+    ]
+)</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with <code>pipecat-ai==1.2.0</code> and <code>supertonic==1.2.1</code>. Check the <a href="https://github.com/architjambhule66-debug/pipecat-supertonic">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/supertonic">https://docs.pipecat.ai/api-reference/server/services/tts/supertonic</a></p>
+</div></main></div></body></html>

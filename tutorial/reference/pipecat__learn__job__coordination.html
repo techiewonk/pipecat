@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Coordination · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Job Coordination</h1>
+<blockquote>Dispatch work from one Pipecat agent to others and collect results with job coordination in the multi-agent framework.</blockquote>
+<h2>What are jobs?</h2>
+<p>Jobs let one agent dispatch work to other agents. While handoff transfers the conversation, jobs are for background work -- an agent asks other agents to do something and collects their results.</p>
+<p>Use cases for jobs:</p>
+<ul><li>Researching a topic from multiple perspectives in parallel</li><li>Running a code analysis while talking to the user</li><li>Fetching data from multiple sources simultaneously</li></ul>
+<h2>Single job</h2>
+<p>The simplest form is <code>self.job()</code>, which sends a job to one agent and waits for the response:</p>
+<pre><code>async with self.job("worker", payload={"question": "What is Pipecat?"}, timeout=30) as j:
+    pass
+
+print(j.response)</code></pre>
+<p><code>self.job()</code> is a context manager that handles the full lifecycle: it waits for the agent to be ready, sends the request, and collects the response. Under the hood, this is equivalent to calling <code>request_job()</code> (fire-and-forget) and then handling <code>on_job_response()</code> and <code>on_job_completed()</code> yourself.</p>
+<h2>Job group</h2>
+<p>When you need to dispatch work to multiple agents in parallel, use <code>self.job_group()</code>:</p>
+<pre><code>async with self.job_group("worker1", "worker2", "worker3", payload={"topic": "AI safety"}, timeout=30) as jg:
+    pass
+
+for worker_name, response in jg.responses.items():
+    print(f"{worker_name}: {response}")</code></pre>
+<p><code>self.job_group()</code> works the same way but for multiple agents: it waits for all of them to be ready, sends a request to each, and collects all responses. Under the hood, this is equivalent to calling <code>request_job_group()</code> and then handling <code>on_job_response()</code> for each agent and a final <code>on_job_completed()</code> yourself.</p>
+<p>The same payload is sent to every agent. If you need different arguments per agent, you can structure the payload so each one reads its own key:</p>
+<pre><code>async with self.job_group("researcher", "fact_checker", payload={
+    "researcher": {"topic": "AI safety", "depth": "detailed"},
+    "fact_checker": {"claims": ["AI can self-improve", "AGI is near"]},
+}, timeout=30) as jg:
+    pass</code></pre>
+<h2>Handling job requests</h2>
+<p>Agents handle incoming jobs in two ways.</p>
+<h3>The @job decorator</h3>
+<p>The <code>@job</code> decorator marks a method as a job handler. The framework automatically dispatches matching requests to it. The decorator requires a <code>name</code> argument. The handler responds with <code>message.job_id</code>:</p>
+<pre><code>from pipecat.pipeline.job_decorator import job
+
+class MyWorker(BaseWorker):
+    @job(name="process")
+    async def on_process(self, message: BusJobRequestMessage):
+        result = await self._do_work(message.payload)
+        await self.send_job_response(message.job_id, result)</code></pre>
+<p>You can use different job names to route work to different handlers:</p>
+<pre><code>class MyWorker(BaseWorker):
+    @job(name="research")
+    async def on_research(self, message: BusJobRequestMessage):
+        await self.send_job_response(message.job_id, {"answer": "..."})
+
+    @job(name="summarize")
+    async def on_summarize(self, message: BusJobRequestMessage):
+        await self.send_job_response(message.job_id, {"summary": "..."})</code></pre>
+<p>The requester specifies the job name when dispatching:</p>
+<pre><code>async with self.job("worker", name="research", payload={"topic": "AI"}) as j:
+    pass</code></pre>
+<p>Each request runs in its own asyncio task, so multiple requests to the same handler are executed concurrently without blocking the bus message loop.</p>
+<h3>Overriding on\_job\_request</h3>
+<p>Alternatively, you can override <code>on_job_request()</code> directly without the <code>@job</code> decorator:</p>
+<pre><code>class MyWorker(BaseWorker):
+    async def on_job_request(self, message: BusJobRequestMessage) -&gt; None:
+        await super().on_job_request(message)
+        result = await self._do_work(message.payload)
+        await self.send_job_response(message.job_id, result)</code></pre>
+<p>This is useful when you need custom routing logic or want to integrate with an existing pipeline, as shown in the example below.</p>
+<p>&lt;Note&gt;   <code>send_job_response()</code>, <code>send_job_update()</code>, and <code>send_job_stream_*()</code> all   require an explicit <code>job_id</code>. This lets an agent handle multiple concurrent   jobs and respond to each one correctly. For simple handlers, pass   <code>message.job_id</code> from the request. For asynchronous responses (see the example   below), track the <code>job_id</code> yourself until you're ready to respond. &lt;/Note&gt;</p>
+<h2>Building a job system</h2>
+<p>Let's build a debate system where a moderator dispatches a topic to three agents, each arguing from a different perspective.</p>
+<h3>Worker agents</h3>
+<p>Each debate agent runs its own LLM pipeline. The LLM response arrives asynchronously through an event handler, so the agent tracks the current job ID until it has something to respond with:</p>
+<pre><code>from pipecat.workers.llm import LLMContextWorker
+from pipecat.bus.messages import BusJobRequestMessage
+from pipecat.frames.frames import LLMMessagesAppendFrame
+
+class DebateWorker(LLMContextWorker):
+    def __init__(self, role: str):
+        llm = OpenAILLMService(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            settings=OpenAILLMService.Settings(system_instruction=f"You argue as a {role}."),
+        )
+        super().__init__(role, llm=llm)
+        self._role = role
+        self._current_job_id: str | None = None
+
+        @self.assistant_aggregator.event_handler("on_assistant_turn_stopped")
+        async def on_assistant_turn_stopped(aggregator, message):
+            if self._current_job_id:
+                job_id = self._current_job_id
+                self._current_job_id = None
+                await self.send_job_response(job_id, {"role": self._role, "text": message.content})
+
+    async def on_job_request(self, message: BusJobRequestMessage) -&gt; None:
+        await super().on_job_request(message)
+        self._current_job_id = message.job_id
+        await self.queue_frame(
+            LLMMessagesAppendFrame(
+                messages=[{"role": "developer", "content": f"Topic: {message.payload['topic']}"}],
+                run_llm=True,
+            )
+        )</code></pre>
+<p>&lt;Note&gt;   <code>LLMContextWorker</code> extends <code>LLMWorker</code> with a built-in <code>LLMContext</code> and   aggregator pair. It builds the pipeline as <code>[user_aggregator, llm,       assistant_aggregator]</code> automatically, so you don't need to wire the context   plumbing yourself. Access the aggregators via <code>self.user_aggregator</code> and   <code>self.assistant_aggregator</code>. &lt;/Note&gt;</p>
+<p>The agent:</p>
+<ol><li>Receives a job request and stores the <code>job_id</code></li><li>Injects the topic into its LLM context and runs the LLM</li><li>When the LLM finishes its turn, the event handler sends the response with the stored <code>job_id</code></li></ol>
+<h3>Coordinator agent</h3>
+<p>The moderator triggers jobs via a tool and synthesizes the results:</p>
+<pre><code>from pipecat.workers.llm import LLMWorker, tool
+
+class ModeratorAgent(LLMWorker):
+    @tool(cancel_on_interruption=False)
+    async def debate(self, params: FunctionCallParams, topic: str):
+        """Analyze a topic from multiple perspectives.
+
+        Args:
+            topic (str): The topic to debate.
+        """
+        async with self.job_group("advocate", "critic", "analyst", payload={"topic": topic}, timeout=30) as jg:
+            pass
+
+        result = "\n\n".join(
+            f"{r['role'].upper()}: {r['text']}" for r in jg.responses.values()
+        )
+        await params.result_callback(result)</code></pre>
+<p>Create the debate agents and the moderator, then register them all with <code>runner.add_workers(ModeratorAgent("moderator", llm=...), DebateWorker("advocate"), DebateWorker("critic"), DebateWorker("analyst"))</code>.</p>
+<p>When the user says "debate whether AI should be regulated," the moderator:</p>
+<ol><li>The LLM calls the <code>debate</code> tool</li><li><code>job_group()</code> sends the topic to all three agents in parallel</li><li>Each agent runs its own LLM and responds with its perspective</li><li>The moderator collects all responses and returns them to the LLM</li><li>The LLM synthesizes a balanced summary and speaks it to the user</li></ol>
+<h2>Job lifecycle</h2>
+<p>&lt;Steps&gt;   &lt;Step title="Request"&gt;     The requester calls <code>job()</code> or <code>job_group()</code>. The framework waits for agents     to be ready, then sends a job request to each.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Process"&gt;     Agents receive the request in <code>on_job_request()</code> and do their work.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Respond"&gt;     Agents call <code>send_job_response(job_id, ...)</code> with their results.   &lt;/Step&gt;</p>
+<p>  &lt;Step title="Complete"&gt;     When all agents respond (or timeout occurs), the context manager exits and     results are available.   &lt;/Step&gt; &lt;/Steps&gt;</p>
+<p>The framework also supports fire-and-forget jobs, progress updates, and streaming.</p>
+<h2>Job cancellation</h2>
+<p>Jobs can be cancelled in several ways. The framework handles cleanup automatically and notifies agents so they can stop in-progress work.</p>
+<h3>Automatic cancellation with context managers</h3>
+<p>When using <code>job()</code> or <code>job_group()</code>, cancellation happens automatically if the context block raises an exception. This includes tool interruptions (<code>CancelledError</code>) when using <code>cancel_on_interruption=True</code>:</p>
+<pre><code># If an exception or CancelledError is raised inside the block,
+# all agents are cancelled automatically
+async with self.job_group("w1", "w2", payload=data) as jg:
+    # ... if this raises, the agents get cancelled
+    pass</code></pre>
+<h3>Worker errors</h3>
+<p>By default (<code>cancel_on_error=True</code>), if any agent responds with an error status, the remaining agents in the group are cancelled and <code>JobGroupError</code> is raised:</p>
+<pre><code>try:
+    async with self.job_group("w1", "w2", payload=data) as jg:
+        pass
+except JobGroupError as e:
+    # An agent errored -- remaining agents were cancelled
+    pass</code></pre>
+<h3>Manual cancellation</h3>
+<p>For fire-and-forget jobs (using <code>request_job()</code>), you manage cancellation yourself by tracking job IDs:</p>
+<pre><code>job_ids = []
+try:
+    job_ids.append(await self.request_job("w1", payload={"job": 1}))
+    job_ids.append(await self.request_job("w2", payload={"job": 2}))
+    # ...
+except asyncio.CancelledError:
+    for jid in job_ids:
+        await self.cancel_job_group(jid, reason="tool cancelled")</code></pre>
+<h3>Handling cancellation on the agent side</h3>
+<p>When a job is cancelled, the agent's <code>on_job_cancelled</code> hook fires. The framework automatically sends a <code>CANCELLED</code> response back to the requester, so you only need to override this hook if you have resources to clean up:</p>
+<pre><code>class MyWorker(BaseWorker):
+    async def on_job_cancelled(self, message: BusJobCancelMessage) -&gt; None:
+        # Optional: clean up resources, stop in-progress work
+        logger.info(f"Job {message.job_id} cancelled: {message.reason}")</code></pre>
+<h3>Agent shutdown</h3>
+<p>When an agent stops with jobs still in flight, it automatically sends a <code>CANCELLED</code> response for each active job so requesters aren't left waiting on a timeout.</p>
+<h2>What's next</h2>
+<p>You can now build agents, hand off between them, and dispatch jobs. So far everything has run in a single process. Next, let's scale across processes and machines.</p>
+<p>&lt;Card title="Distributed Agents" icon="arrow-right" href="/pipecat/learn/distributed-agents"&gt;   Run agents across processes and machines on a shared bus &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/job-coordination">https://docs.pipecat.ai/pipecat/learn/job-coordination</a></p>
+</div></main></div></body></html>

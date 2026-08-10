@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 5 — Tools &amp; MCP · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 5 · Part A — Core</div>
+<h1>Tools &amp; MCP: letting the agent do things</h1>
+<div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: intermediate</span><span class="pill">High value</span></div>
+<p class="lead">Function calling turns a talker into a doer: the LLM asks to run a function, Pipecat runs your Python and feeds the result back. MCP extends this to tools hosted in a separate server.</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">Function calling</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>The LLM returns "call <code>get_weather(location=…)</code>" instead of prose. Pipecat runs the function and returns the result to the model, which then speaks a natural answer. The function's <strong>name, typed args, and docstring</strong> are the schema the model reads.</p></div>
+<pre><code class="language-python">async def get_current_weather(params: FunctionCallParams, location: str, format: str):
+    """Get the current weather.
+    Args:
+        location: The city and state, e.g. "San Francisco, CA".
+        format: "celsius" or "fahrenheit".
+    """                                                    # &lt;- docstring IS the schema
+    await params.result_callback({"conditions": "nice", "temperature": "75"})
+
+@llm.event_handler("on_function_calls_started")            # speak while a slow tool runs
+async def _(service, function_calls):
+    await tts.queue_frame(TTSSpeakFrame("Let me check on that."))
+
+context = LLMContext(tools=[get_current_weather])          # register the tool</code></pre>
+<div class="box py"><p class="title">🐍 Python note — write good docstrings</p>
+<p>The model relies entirely on the name/args/docstring to decide when and how to call. Vague docstring = the tool never gets used.</p></div>
+<p>Variants across providers: <code>-async</code> (await network + interim updates), <code>-stream</code>, <code>-video</code>, <code>-direct</code> (auto schema), <code>-advanced-functionschema</code> (explicit typed schema). Docs: <a href="reference/pipecat__learn__function__calling.html" target="_blank" rel="noopener">Function Calling</a>.</p>
+
+<h2 id="mcp">MCP — tools from a separate server</h2>
+<p>The Model Context Protocol lets your bot use tools hosted elsewhere (memory, filesystem, a SaaS API) over a standard protocol. Connect with <code>MCPClient</code> via stdio (local subprocess) or streamable HTTP (remote).</p>
+<pre><code class="language-python">from mcp import StdioServerParameters
+from pipecat.services.mcp_service import MCPClient
+
+mcp = MCPClient(StdioServerParameters(command="...", args=[...]))  # launch/connect server
+tools = await mcp.register_tools(llm)                              # its tools become the LLM's
+context = LLMContext(tools=tools)</code></pre>
+<div class="box py"><p class="title">🐍 Python note — stdio vs HTTP</p>
+<p><em>stdio</em> runs the tool server as a child process (great for local tools); <em>streamable HTTP</em> points at a URL (great for shared/remote). Same client, different parameters.</p></div>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python getting-started/07-function-calling.py   # ask "weather in Paris?"
+uv run python mcp/mcp-stdio.py                          # ask it to remember, then recall</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Add a third tool <code>get_time(location)</code>. Make <code>get_current_weather</code> genuinely <code>async</code> with a real HTTP call (see <code>function-calling-*-async.py</code>). Point <code>mcp-streamable-http.py</code> at a different MCP server.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>LLM never calls the tool → vague docstring or not passed to <code>LLMContext(tools=[...])</code>. Hang after a call → missing <code>await params.result_callback(...)</code>. MCP "command not found" → the stdio server binary isn't installed.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>Where does a tool's schema come from, and how does MCP differ?</summary><p>From the function's name, typed params, and docstring. An MCP tool lives in a separate standardized server instead of your bot's file.</p></details>
+
+<h2 id="files">Example files</h2>
+<h3>Function calling</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>function-calling-advanced-functionschema.py</code></td><td>Advanced: defining a tool with an explicit ``FunctionSchema``</td></tr><tr><td><code>function-calling-anthropic.py</code></td><td>Function calling — Anthropic</td></tr><tr><td><code>function-calling-anthropic-async.py</code></td><td>Function calling — Anthropic — async tools</td></tr><tr><td><code>function-calling-anthropic-async-stream.py</code></td><td>Example: async function call with intermediate updates</td></tr><tr><td><code>function-calling-anthropic-video.py</code></td><td>Function calling — Anthropic — with video/vision</td></tr><tr><td><code>function-calling-aws.py</code></td><td>Function calling — AWS</td></tr><tr><td><code>function-calling-aws-video.py</code></td><td>Function calling — AWS — with video/vision</td></tr><tr><td><code>function-calling-azure.py</code></td><td>Function calling — Azure</td></tr><tr><td><code>function-calling-baseten.py</code></td><td>Function calling — Baseten</td></tr><tr><td><code>function-calling-cerebras.py</code></td><td>Function calling — Cerebras</td></tr><tr><td><code>function-calling-crusoe.py</code></td><td>Function calling — Crusoe</td></tr><tr><td><code>function-calling-deepseek.py</code></td><td>Function calling — DeepSeek</td></tr><tr><td><code>function-calling-direct.py</code></td><td>Function calling — OpenAI</td></tr><tr><td><code>function-calling-fireworks.py</code></td><td>Function calling — Fireworks</td></tr><tr><td><code>function-calling-google.py</code></td><td>Function calling — Google</td></tr><tr><td><code>function-calling-google-async.py</code></td><td>Function calling — Google — async tools</td></tr><tr><td><code>function-calling-google-async-stream.py</code></td><td>Example: async function call with intermediate updates</td></tr><tr><td><code>function-calling-google-vertex.py</code></td><td>Function calling — Google — via Vertex AI</td></tr><tr><td><code>function-calling-google-video.py</code></td><td>Function calling — Google — with video/vision</td></tr><tr><td><code>function-calling-grok.py</code></td><td>Function calling — xAI</td></tr><tr><td><code>function-calling-groq.py</code></td><td>Function calling — Groq</td></tr><tr><td><code>function-calling-inception.py</code></td><td>Function calling — Inception</td></tr><tr><td><code>function-calling-missing-handler.py</code></td><td>Manual demonstration of the missing-handler (developer-error) recovery path</td></tr><tr><td><code>function-calling-mistral.py</code></td><td>Function calling — Mistral</td></tr><tr><td><code>function-calling-moondream-video.py</code></td><td>Function calling — OpenAI — with video/vision</td></tr><tr><td><code>function-calling-nebius.py</code></td><td>Function calling — Nebius</td></tr><tr><td><code>function-calling-novita.py</code></td><td>Function calling — Novita</td></tr><tr><td><code>function-calling-nvidia.py</code></td><td>Function calling — NVIDIA</td></tr><tr><td><code>function-calling-ollama.py</code></td><td>Function calling — Ollama</td></tr><tr><td><code>function-calling-openai.py</code></td><td>Function calling — OpenAI</td></tr><tr><td><code>function-calling-openai-async.py</code></td><td>Function calling — OpenAI — async tools</td></tr><tr><td><code>function-calling-openai-async-stream.py</code></td><td>Example: async function call with intermediate updates</td></tr><tr><td><code>function-calling-openai-responses.py</code></td><td>Function calling — OpenAI</td></tr><tr><td><code>function-calling-openai-responses-async.py</code></td><td>Function calling — OpenAI — async tools</td></tr><tr><td><code>function-calling-openai-responses-async-stream.py</code></td><td>Example: async function call with intermediate updates</td></tr><tr><td><code>function-calling-openai-responses-http.py</code></td><td>Function calling — OpenAI — HTTP streaming</td></tr><tr><td><code>function-calling-openai-responses-video.py</code></td><td>Function calling — OpenAI — with video/vision</td></tr><tr><td><code>function-calling-openai-responses-video-http.py</code></td><td>Function calling — OpenAI — with video/vision, HTTP streaming</td></tr><tr><td><code>function-calling-openai-video.py</code></td><td>Function calling — OpenAI — with video/vision</td></tr><tr><td><code>function-calling-openrouter.py</code></td><td>Function calling — OpenRouter</td></tr><tr><td><code>function-calling-perplexity.py</code></td><td>A conversational Perplexity bot</td></tr><tr><td><code>function-calling-qwen.py</code></td><td>Function calling — Qwen</td></tr><tr><td><code>function-calling-sambanova.py</code></td><td>Function calling — SambaNova</td></tr><tr><td><code>function-calling-sarvam.py</code></td><td>Function calling — Sarvam</td></tr><tr><td><code>function-calling-together.py</code></td><td>Function calling — Together</td></tr></tbody></table></div>
+<h3>MCP</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>mcp-multiple-mcp.py</code></td><td>mcp multiple mcp</td></tr><tr><td><code>mcp-stdio.py</code></td><td>mcp stdio</td></tr><tr><td><code>mcp-streamable-http.py</code></td><td>mcp streamable http — HTTP streaming</td></tr><tr><td><code>mcp-streamable-http-gemini-live.py</code></td><td>mcp streamable http gemini live — HTTP streaming</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

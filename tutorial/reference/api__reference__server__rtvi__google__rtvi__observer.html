@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google RTVI Observer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Google RTVI Observer</h1>
+<blockquote>GoogleRTVIObserver adds support for sending Google search responses to RTVI clients in Pipecat pipelines.</blockquote>
+<h2>Overview</h2>
+<p>The <code>GoogleRTVIObserver</code> extends the <a href="./rtvi-observer">base <code>RTVIObserver</code> type</a>, to add support for the <code>bot-llm-search-response</code> message type and providing clients with the search results from the <code>GoogleLLMService</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.google.rtvi.html"&gt;     Complete API documentation and method details   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gemini Docs" icon="book" href="https://ai.google.dev/gemini-api/docs/google-search"&gt;     Official Google Gemini API documentation and features   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use <code>GoogleRTVIObserver</code>, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[google]"</code></pre>
+<p>You'll also need to follow setup instructions for the <a href="/api-reference/server/services/llm/google#installation">Google LLM Service</a> to ensure the <code>GoogleLLMService</code> is properly configured.</p>
+<h2>Frame Translation</h2>
+<p>The observer maps the <code>LLMSearchResponseFrame</code> to the <code>RTVIBotLLMSearchResponseMessage</code>. Check out the <a href="/client/rtvi-standard#bot-llm-search-response-🤖">RTVI Standard Reference</a> for details on the message format.</p>
+<h2>Usage Example</h2>
+<p>To use <code>GoogleRTVIObserver</code>, pass a <code>GoogleRTVIProcessor</code> to your <code>PipelineWorker</code>. This automatically creates and attaches the Google-specific observer:</p>
+<pre><code>from pipecat.services.google.rtvi import GoogleRTVIProcessor
+
+pipeline = Pipeline([
+    transport.input(),
+    stt,
+    # Other processors...
+])
+
+worker = PipelineWorker(
+    pipeline,
+    rtvi_processor=GoogleRTVIProcessor(),
+)</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/rtvi/google-rtvi-observer">https://docs.pipecat.ai/api-reference/server/rtvi/google-rtvi-observer</a></p>
+</div></main></div></body></html>

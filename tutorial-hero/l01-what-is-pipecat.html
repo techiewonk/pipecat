@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L1 · What Pipecat is — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 1 · Part I — Principles</div>
+      <h1>What Pipecat is</h1>
+      <div class="meta"><span class="pill">⏱ 20 min</span><span class="pill grey">Level: beginner</span></div>
+      <p class="lead">Before any code, build the right mental model. Pipecat is a <strong>real-time frame-processing engine</strong> with an AI-services layer and a multi-agent layer on top. Seven ideas hold the whole framework together — learn them and 567 source files become readable.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="def">The definition</h2>
+      <div class="box concept">
+        <p class="title">🎯 In one sentence</p>
+        <p>Pipecat orchestrates AI services (speech-to-text, LLMs, text-to-speech, vision…), network transports, and audio processing into <strong>ultra-low-latency pipelines</strong> so you can build voice and multimodal agents that feel natural — typically a 500–800&nbsp;ms round trip.</p>
+      </div>
+
+      <h2 id="ideas">The seven core ideas</h2>
+
+      <h3 id="i1">1 · Everything is a Frame</h3>
+      <p><code>frames/frames.py</code> defines <strong>125 frame classes</strong> under three bases that decide scheduling: <code>SystemFrame</code> (a high-priority lane — interruptions, input audio, errors, speaking events), and <code>DataFrame</code> / <code>ControlFrame</code> (an ordered lane — text, output audio, LLM/TTS boundaries). Media mix-ins (<code>AudioRawFrame</code>, <code>ImageRawFrame</code>, <code>TextFrame</code>) add payloads. This taxonomy is the framework's vocabulary.</p>
+
+      <h3 id="i2">2 · Everything is a FrameProcessor</h3>
+      <p>One base class — <code>process_frame(frame, direction)</code> + <code>push_frame()</code>, chained by <code>link()</code>, moving frames <code>DOWNSTREAM</code>/<code>UPSTREAM</code>. A <code>Pipeline</code> is just an ordered list wrapped by a source/sink. Every service, transport, aggregator, and filter is a FrameProcessor:</p>
+      <div class="pcflow" data-dur="6"
+           data-stages="transport.input|processor|processor|processor|transport.output"
+           data-caption="Each box is a <b>FrameProcessor</b>|It runs <b>process_frame()</b> on what it cares about|then <b>push_frame()</b> to the next|frames never get 'consumed' — they pass along|order in the list = data flow order">
+      </div>
+
+      <h3 id="i3">3 · Services are FrameProcessors with a settings/streaming discipline</h3>
+      <p><code>AIService</code> → <code>STTService</code> / <code>TTSService</code> / <code>LLMService</code> / <code>VisionService</code>. The <strong>Settings pattern</strong> (<code>services/settings.py</code>) uses a dataclass in two modes — a complete "store" and a sparse "delta" (<code>NOT_GIVEN</code>) carried by <code>*UpdateSettingsFrame</code>. That single idea is how <em>every</em> runtime setting change works. Most LLM providers are thin subclasses of <code>BaseOpenAILLMService</code>.</p>
+
+      <h3 id="i4">4 · Turn-taking lives on the aggregator, not the transport</h3>
+      <div class="box source">
+        <p class="title">🔬 The thing old tutorials get wrong</p>
+        <p>The transport now only does audio/video I/O (+ an optional <code>audio_in_filter</code> and <code>audio_out_mixer</code>). <strong>VAD, turn detection, and muting are configured on the LLM user aggregator</strong> via <code>LLMUserAggregatorParams(vad_analyzer=…, user_turn_strategies=…, user_mute_strategies=…)</code>. The default stop strategy is a smart-turn ML model (<code>LocalSmartTurnAnalyzerV3</code>) gated by VAD + transcript. We cover this in <a href="l10-turn-taking.html">Lesson 10</a>.</p>
+      </div>
+
+      <h3 id="i5">5 · Realtime collapses three services into one</h3>
+      <p>A cascaded agent is STT → LLM → TTS. A <strong>realtime speech-to-speech</strong> service (Gemini Live, Nova Sonic…) is a single <code>LLMService</code> that consumes <code>InputAudioRawFrame</code> and emits <code>TTSAudioRawFrame</code> directly — lower latency, server-driven turns, fewer swappable parts (<a href="l15-realtime.html">Lesson 15</a>).</p>
+
+      <h3 id="i6">6 · Multi-agent is the same engine over a bus</h3>
+      <p>A <code>WorkerRunner</code> owns a <code>WorkerBus</code> (in-memory / Redis / PGMQ) and supervises <code>BaseWorker</code>s. A transport-facing <code>PipelineWorker</code> tees frames onto the bus; <code>LLMWorker</code>/<code>LLMContextWorker</code>/<code>UIWorker</code> peers subscribe. Control moves by <code>activate_worker</code> (handoff); parallel work by <code>job_group()</code>. <strong>A normal bot is just the one-worker case.</strong></p>
+
+      <h3 id="i7">7 · The client speaks RTVI</h3>
+      <p>Browsers/phones talk to a bot over the <strong>RTVI</strong> protocol — typed JSON events for user/bot speaking, transcriptions, LLM/TTS text, metrics, and UI commands — emitted by an <code>RTVIObserver</code> and consumed by an <code>RTVIProcessor</code> (<a href="l29-uiworker-rtvi.html">Lesson 29</a>).</p>
+
+      <h2 id="cake">The layer cake</h2>
+      <p>Read bottom-up: each layer only depends on the ones beneath it. The whole course climbs this cake.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Layer</th><th>Package(s)</th><th>Lessons</th></tr></thead>
+        <tbody>
+          <tr><td>Frames</td><td><code>frames/</code></td><td>3</td></tr>
+          <tr><td>Processors & Pipeline</td><td><code>processors/</code>, <code>pipeline/</code></td><td>4–5</td></tr>
+          <tr><td>Services (+ adapters)</td><td><code>services/</code>, <code>adapters/</code></td><td>8–15</td></tr>
+          <tr><td>Transports / Audio / Turns</td><td><code>transports/</code>, <code>audio/</code>, <code>turns/</code></td><td>6–10</td></tr>
+          <tr><td>Aggregators & Context</td><td><code>processors/aggregators/</code></td><td>9, 21</td></tr>
+          <tr><td>Workers & Bus</td><td><code>workers/</code>, <code>bus/</code>, <code>registry/</code></td><td>24–29</td></tr>
+          <tr><td>Runner / RTVI / Serializers</td><td><code>runner/</code>, RTVI, <code>serializers/</code></td><td>29–30</td></tr>
+          <tr><td>Flows / Evals / Extensions</td><td><code>flows/</code>, <code>evals/</code>, <code>extensions/</code></td><td>19, 31, 34</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="glance">The seven ideas in one glance of code</h2>
+      <p>You'll build up to this across the course — but here is the whole mental model as code, annotated with which idea each line shows:</p>
+      <pre><code class="language-python">pipeline = Pipeline([          # idea 2: processors in order
+    transport.input(),         # idea 4: transport = I/O only (VAD/turns live on the aggregator)
+    stt,                       # idea 3: a service (STTService) with the Settings pattern
+    user_aggregator,           # builds the LLMContext (conversation memory)
+    llm,                       # idea 3: LLMService streams LLMTextFrames (idea 1: frames)
+    tts,                       # idea 3: TTSService -> TTSAudioRawFrames
+    transport.output(),
+    assistant_aggregator,
+])
+worker = PipelineWorker(pipeline)          # a single agent
+runner = WorkerRunner()                    # idea 6: owns the bus; supervises workers
+await runner.add_workers(worker)           # one worker now… many = multi-agent
+await runner.run()
+# idea 5: swap stt+llm+tts for one GeminiLiveLLMService to go realtime
+# idea 7: add an RTVIObserver and the browser sees typed events</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors for this lesson</p>
+        <p><code>frames/frames.py</code> (frame taxonomy) · <code>processors/frame_processor.py</code> (the contract) · <code>pipeline/pipeline.py</code> + <code>pipeline/worker.py</code> (assembly) · <code>services/settings.py</code> (the Settings pattern) · <code>workers/runner.py</code> + <code>bus/bus.py</code> (multi-agent). We open each in its own lesson.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Which two abstractions is <em>everything</em> built from?</summary><p>The <code>Frame</code> (typed data packet) and the <code>FrameProcessor</code> (node that handles + forwards frames). A Pipeline is just processors in order.</p></details>
+      <details><summary>2. Where do VAD and turn detection get configured now?</summary><p>On the LLM user aggregator via <code>LLMUserAggregatorParams</code> — not on the transport.</p></details>
+      <details><summary>3. What makes an app "multi-agent" rather than single-agent?</summary><p>More than one worker on the shared bus, supervised by one <code>WorkerRunner</code>. A normal bot is the one-worker case.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l02-setup-first-run.html">Lesson 2 — Setup & first run →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

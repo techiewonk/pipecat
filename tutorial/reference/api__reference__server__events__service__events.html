@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Events · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Service Events</h1>
+<blockquote>Handle connection lifecycle and service-specific events for STT, TTS, and LLM services</blockquote>
+<h2>Overview</h2>
+<p>Pipecat services emit events for connection lifecycle management and service-specific activity. These events let you monitor WebSocket connections, handle errors, and react to service behavior.</p>
+<h2>Connection Events</h2>
+<p>All WebSocket-based STT and TTS services share a common set of connection events. These are emitted by the base <code>STTService</code> and <code>TTSService</code> classes, so they work the same way regardless of which provider you use.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Available On</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>STT, TTS</td><td>WebSocket connection established</td></tr><tr><td><code>on_disconnected</code></td><td>STT, TTS</td><td>WebSocket connection closed</td></tr><tr><td><code>on_connection_error</code></td><td>STT, TTS</td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<h3>on\_connected</h3>
+<p>Fired when the service's WebSocket connection is established. This is useful for logging, monitoring connection health, or triggering actions that depend on the service being ready.</p>
+<pre><code>@stt.event_handler("on_connected")
+async def on_stt_connected(service):
+    print(f"STT connected: {service.name}")
+
+@tts.event_handler("on_connected")
+async def on_tts_connected(service):
+    print(f"TTS connected: {service.name}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>STTService</code> / <code>TTSService</code></td><td>The service instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Not all STT and TTS services use WebSocket connections. HTTP-based services   (e.g., Azure TTS, Google TTS) do not emit connection events. &lt;/Note&gt;</p>
+<h3>on\_disconnected</h3>
+<p>Fired when the service's WebSocket connection is closed, whether due to normal shutdown or an error.</p>
+<pre><code>@stt.event_handler("on_disconnected")
+async def on_stt_disconnected(service):
+    print(f"STT disconnected: {service.name}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>STTService</code> / <code>TTSService</code></td><td>The service instance</td></tr></tbody></table></div>
+<h3>on\_connection\_error</h3>
+<p>Fired when a WebSocket connection error occurs. The error is also pushed as an <code>ErrorFrame</code> through the pipeline.</p>
+<pre><code>@tts.event_handler("on_connection_error")
+async def on_tts_connection_error(service, error):
+    print(f"TTS connection error: {error}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>STTService</code> / <code>TTSService</code></td><td>The service instance</td></tr><tr><td><code>error</code></td><td><code>str</code></td><td>The error message</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   WebSocket-based services automatically reconnect with exponential backoff (3   retries, 4-10s waits) when connection errors occur. The <code>on_connection_error</code>   event fires for each failed attempt. &lt;/Note&gt;</p>
+<h2>TTS Events</h2>
+<h3>on\_tts\_request</h3>
+<p>Fired just before a TTS synthesis request is sent to the service. This is useful for logging, monitoring, or modifying behavior based on what text is being synthesized.</p>
+<pre><code>@tts.event_handler("on_tts_request")
+async def on_tts_request(service, context_id, text):
+    print(f"TTS synthesizing ({context_id}): {text}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>TTSService</code></td><td>The TTS service instance</td></tr><tr><td><code>context_id</code></td><td><code>str</code></td><td>The context ID for this TTS request</td></tr><tr><td><code>text</code></td><td><code>str</code></td><td>The prepared text about to be synthesized</td></tr></tbody></table></div>
+<h2>LLM Events</h2>
+<h3>on\_function\_calls\_started</h3>
+<p>Fired when the LLM starts making function (tool) calls. This event is emitted before the function calls are executed.</p>
+<pre><code>@llm.event_handler("on_function_calls_started")
+async def on_function_calls_started(service, function_calls):
+    for call in function_calls:
+        print(f"LLM calling function: {call.function_name}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>LLMService</code></td><td>The LLM service instance</td></tr><tr><td><code>function_calls</code></td><td><code>list</code></td><td>List of function call objects from the LLM</td></tr></tbody></table></div>
+<h3>on\_completion\_timeout</h3>
+<p>Fired when an LLM completion request times out. This can happen with slow models or large context windows. The timeout is also pushed as an error frame.</p>
+<pre><code>@llm.event_handler("on_completion_timeout")
+async def on_completion_timeout(service):
+    print("LLM completion timed out — consider increasing timeout or reducing context")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>service</code></td><td><code>LLMService</code></td><td>The LLM service instance</td></tr></tbody></table></div>
+<h2>Related</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li><li><a href="/api-reference/server/events/frame-processor-events">FrameProcessor Events</a> - Error handling and frame monitoring events</li><li><a href="/api-reference/server/utilities/turn-management/turn-events">Turn Events</a> - User and assistant turn lifecycle events</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/events/service-events">https://docs.pipecat.ai/api-reference/server/events/service-events</a></p>
+</div></main></div></body></html>

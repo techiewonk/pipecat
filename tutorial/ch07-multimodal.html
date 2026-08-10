@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 7 — Multimodal · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button><div class="backdrop"></div>
+<div class="layout"><aside id="sidebar"></aside><main><div class="content">
+<div class="eyebrow">Chapter 7 · Part B — Modalities &amp; knowledge</div>
+<h1>Multimodal: vision, video &amp; avatars</h1>
+<div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: intermediate</span></div>
+<p class="lead">Video frames flow through the pipeline exactly like audio. That single idea unlocks three features: seeing (vision), transforming video (processing), and giving the bot a face (avatars).</p>
+<div id="pagetoc" class="pagetoc"></div>
+
+<h2 id="concept">Frames carry any media</h2>
+<div class="box concept"><p class="title">🎯 Concept</p>
+<p>A vision model is just an <code>LLMService</code> that accepts image frames alongside text. Video processing is frame transformation with no LLM at all. Avatars are a video <em>service</em>/transport that renders a talking head from the bot's speech.</p></div>
+<pre class="diagram">camera ─▶ [transport.input] ─▶ ImageRawFrame ─▶ [vision LLM] ─▶ "you're holding a mug"
+video  ─▶ [transport.input] ─▶ VideoFrame   ─▶ [processor: mirror/filter] ─▶ [output]
+speech ─▶ [avatar video service] ─▶ talking-head frames ─▶ [output]</pre>
+
+<h2 id="vision">Vision</h2>
+<p>Enable a camera-capable transport and use a multimodal LLM; when the user asks about what they're showing, the current frame is attached to the context and described. Start with <code>vision/vision-openai.py</code>; <code>vision-moondream.py</code> is a small local model.</p>
+
+<h2 id="video">Video processing</h2>
+<p>Pure frame work — mirror, apply filters, swap tracks, feed GStreamer sources — no AI required. Start with <code>video-processing/video-processing-mirror.py</code>.</p>
+
+<h2 id="avatars">Avatars (talking heads)</h2>
+<p>Tavus, HeyGen, Simli, and LemonSlice render a face driven by the bot's TTS, wired either as a transport or a video service. Start with <code>video-avatar/video-avatar-tavus-transport.py</code>.</p>
+
+<div class="box start"><p class="title">▶️ Run it</p>
+<pre><code class="language-bash">uv run python vision/vision-openai.py                     # enable camera, hold something up
+uv run python video-processing/video-processing-mirror.py # track transform, no AI
+uv run python video-avatar/video-avatar-tavus-transport.py</code></pre></div>
+<div class="box modify"><p class="title">🔨 Modify it</p>
+<p>Swap <code>vision-openai.py</code> for <code>vision-moondream.py</code> and compare. Combine vision with a tool from Chapter 5 (a <code>-video</code> function-calling example) so the bot can both see and act.</p></div>
+<div class="box errors"><p class="title">⚠️ Common errors</p>
+<p>No image seen → camera not enabled in the browser, or <code>video_in_enabled=False</code>. Avatar not rendering → vendor key/room misconfigured.</p></div>
+
+<h3 id="check">✅ Checkpoint</h3>
+<details><summary>How do <code>vision/</code> and <code>video-processing/</code> differ?</summary><p>Vision sends frames to an LLM for understanding; video-processing transforms the track itself, usually with no LLM.</p></details>
+
+<h2 id="files">Example files</h2>
+<h3>Vision</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>vision-anthropic.py</code></td><td>Image understanding — Anthropic</td></tr><tr><td><code>vision-aws.py</code></td><td>Image understanding — AWS</td></tr><tr><td><code>vision-gemini-flash.py</code></td><td>Image understanding — gemini-flash</td></tr><tr><td><code>vision-moondream.py</code></td><td>Image understanding — Moondream</td></tr><tr><td><code>vision-openai.py</code></td><td>Image understanding — OpenAI</td></tr><tr><td><code>vision-openai-responses.py</code></td><td>Image understanding — OpenAI</td></tr><tr><td><code>vision-openai-responses-http.py</code></td><td>Image understanding — OpenAI — HTTP streaming</td></tr></tbody></table></div>
+<h3>Video processing</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>video-processing.py</code></td><td>video processing — with video/vision</td></tr><tr><td><code>video-processing-custom-video-track.py</code></td><td>Example demonstrating custom video tracks output with Daily transport</td></tr><tr><td><code>video-processing-gstreamer-filesrc.py</code></td><td>video processing gstreamer filesrc — with video/vision</td></tr><tr><td><code>video-processing-gstreamer-videotestsrc.py</code></td><td>video processing gstreamer videotestsrc — with video/vision</td></tr><tr><td><code>video-processing-local-mirror.py</code></td><td>video processing local mirror — with video/vision, on-device</td></tr><tr><td><code>video-processing-mirror.py</code></td><td>video processing mirror — with video/vision</td></tr></tbody></table></div>
+<h3>Video avatars</h3><div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>video-avatar-heygen-transport.py</code></td><td>Video avatar — HeyGen (as transport)</td></tr><tr><td><code>video-avatar-heygen-video-service.py</code></td><td>Video avatar — HeyGen (as video service)</td></tr><tr><td><code>video-avatar-lemonslice-transport.py</code></td><td>Video avatar — LemonSlice (as transport)</td></tr><tr><td><code>video-avatar-simli-video-service.py</code></td><td>Video avatar — Simli (as video service)</td></tr><tr><td><code>video-avatar-tavus-transport.py</code></td><td>Video avatar — Tavus (as transport)</td></tr><tr><td><code>video-avatar-tavus-video-service.py</code></td><td>Video avatar — Tavus (as video service)</td></tr></tbody></table></div>
+</div><div id="chapnav" class="chapnav"></div></main></div>
+<script src="assets/nav.js" defer></script></body></html>

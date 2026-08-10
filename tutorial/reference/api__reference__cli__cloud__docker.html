@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat cloud docker · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat cloud docker</h1>
+<blockquote>pipecat cloud docker builds, tags, and pushes agent Docker images to container registries for Pipecat Cloud deployments.</blockquote>
+<p>The <code>docker</code> command provides utilities for building, tagging, and pushing Docker images to container registries. This command automatically parses registry information from your deployment configuration and supports both Docker Hub and custom registries.</p>
+<h2>build-push</h2>
+<p>Build, tag, and push a Docker image for your agent deployment. This command reads configuration from your <code>pcc-deploy.toml</code> file to automatically determine registry settings, image names, and versions.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pipecat cloud docker build-push [ARGS] [OPTIONS]</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="agent-name" type="string"&gt;   Name of the agent to build image for. If not provided, uses the <code>agent_name</code>   from your <code>pcc-deploy.toml</code> file. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--config-file" type="string"&gt;   Path to an alternate deploy config file. Defaults to <code>pcc-deploy.toml</code>. &lt;/ParamField&gt;</p>
+<p><strong>Registry Configuration:</strong></p>
+<p>&lt;ParamField path="--registry / -r" type="string"&gt;   Registry type to push to. Supported values: <code>dockerhub</code>, <code>custom</code>. When not   specified, automatically detected from the <code>image</code> field in your   <code>pcc-deploy.toml</code> file. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--username / -u" type="string"&gt;   Registry username for authentication. When not specified, automatically parsed   from the <code>image</code> field in your <code>pcc-deploy.toml</code> file (e.g., <code>myusername</code> from   <code>myusername/app:1.0</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--registry-url" type="string"&gt;   Custom registry URL (required for custom registries). When not specified,   automatically parsed from the <code>image</code> field for custom registries (e.g.,   <code>gcr.io</code> from <code>gcr.io/project/app:1.0</code>). &lt;/ParamField&gt;</p>
+<p><strong>Build Configuration:</strong></p>
+<p>&lt;ParamField path="--version / -v" type="string"&gt;   Version tag for the image. When not specified, automatically extracted from   the <code>image</code> field in your <code>pcc-deploy.toml</code> file (e.g., <code>1.0</code> from   <code>myusername/app:1.0</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--no-push" type="boolean" default="false"&gt;   Build and tag only, do not push to registry. Useful for local testing or when   you want to push manually later. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--no-latest" type="boolean" default="false"&gt;   Do not tag the image as <code>latest</code>. By default, images are tagged with both the   specified version and <code>latest</code>. &lt;/ParamField&gt;</p>
+<h2>Configuration</h2>
+<p>The <code>docker build-push</code> command reads configuration from your <code>pcc-deploy.toml</code> file to minimize required command-line arguments. Here's how different registry setups work:</p>
+<h3>Docker Hub (Default)</h3>
+<p>For Docker Hub repositories, the minimal configuration is:</p>
+<pre><code>agent_name = "my-agent"
+image = "myusername/my-agent:1.0"</code></pre>
+<p>This automatically configures:</p>
+<ul><li>Registry: <code>dockerhub</code></li><li>Username: <code>myusername</code></li><li>Agent name: <code>my-agent</code></li><li>Version: <code>1.0</code></li></ul>
+<h3>Custom Registry</h3>
+<p>For custom registries like Google Container Registry, AWS ECR, or private registries:</p>
+<pre><code>agent_name = "my-agent"
+image = "gcr.io/my-project/my-agent:1.0"</code></pre>
+<p>This automatically configures:</p>
+<ul><li>Registry: <code>custom</code></li><li>Registry URL: <code>gcr.io</code></li><li>Username/Project: <code>my-project</code></li><li>Agent name: <code>my-agent</code></li><li>Version: <code>1.0</code></li></ul>
+<h3>Docker Configuration Section</h3>
+<p>For advanced configuration, add a <code>[docker]</code> section:</p>
+<pre><code>agent_name = "my-agent"
+image = "myusername/my-agent:1.0"
+
+[docker]
+auto_latest = false  # Don't tag as 'latest'</code></pre>
+<p>Available <code>[docker]</code> options:</p>
+<p>&lt;ParamField path="auto_latest" type="boolean" default="true"&gt;   Whether to automatically tag the image as <code>latest</code> in addition to the   specified version. &lt;/ParamField&gt;</p>
+<h2>Examples</h2>
+<h3>Basic Usage (Recommended)</h3>
+<p>With a properly configured <code>pcc-deploy.toml</code>:</p>
+<pre><code># Build and push using all configuration from pcc-deploy.toml
+pipecat cloud docker build-push</code></pre>
+<h3>Override Version</h3>
+<pre><code># Use a different version than what's in pcc-deploy.toml
+pipecat cloud docker build-push --version 2.0</code></pre>
+<h3>Build Only</h3>
+<pre><code># Build and tag locally without pushing
+pipecat cloud docker build-push --no-push</code></pre>
+<h3>Different Registry</h3>
+<pre><code># Override registry settings for one-time builds
+pipecat cloud docker build-push --registry custom --registry-url my-registry.com --username myuser</code></pre>
+<h3>Skip Latest Tag</h3>
+<pre><code># Only tag with the specific version, not 'latest'
+pipecat cloud docker build-push --no-latest</code></pre>
+<h2>Platform Support</h2>
+<p>All images are built for the <code>linux/arm64</code> platform, which is required for Pipecat Cloud deployments. This is automatically configured and cannot be changed.</p>
+<h2>Error Handling</h2>
+<p>The command provides helpful error messages for common issues:</p>
+<ul><li><strong>Authentication errors</strong>: Suggests the appropriate <code>docker login</code> command</li><li><strong>Missing Dockerfile</strong>: Indicates that a Dockerfile must be present in the current directory</li><li><strong>Registry access issues</strong>: Provides guidance on checking permissions and authentication</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/cloud/docker">https://docs.pipecat.ai/api-reference/cli/cloud/docker</a></p>
+</div></main></div></body></html>

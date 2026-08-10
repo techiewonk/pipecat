@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L20 · Interruptions, idle & switching — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 20 · Part IV — Structure, control & capture</div>
+      <h1>Interruptions, idle & switching</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Natural conversation means the user can cut in, go quiet, or need a different model mid-call. Pipecat handles all three with system-lane frames and runtime switchers.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="interrupt">Interruptions</h2>
+      <div class="pcflow" data-dur="6"
+           data-stages="bot speaking|user speaks|InterruptionFrame (system lane)|cancel in-flight TTS/LLM|listen"
+           data-caption="The bot is mid-sentence|the user starts talking (VAD/turn start)|an InterruptionFrame jumps the high-priority lane|it cancels queued TTS audio and interruptible function calls|the bot stops and listens — instantly">
+      </div>
+      <p>Because interruptions ride the <code>SystemFrame</code> lane (Lesson 3), they preempt already-buffered audio. Interruptible function calls are cancelled and <code>on_function_calls_cancelled</code> fires. You rarely code this — it's built in — but you can tune interruption behavior.</p>
+
+      <h2 id="idle">Idle users</h2>
+      <p>When the user goes quiet, a <code>UserIdleController</code> fires after your timeout so you can nudge, then end. The pattern keeps a retry count and escalates.</p>
+      <pre><code class="language-python">user_params = LLMUserAggregatorParams(
+    vad_analyzer=SileroVADAnalyzer(),
+    user_idle_timeout=8.0,      # seconds of silence before on_user_turn_idle fires
+)
+# handle escalation (nudge → firmer → goodbye) as in turn-management-detect-user-idle.py</code></pre>
+
+      <h2 id="switch">Switching services at runtime</h2>
+      <p>Swap a whole service — voice, model, even STT — mid-conversation with a switcher, without rebuilding the pipeline.</p>
+      <pre><code class="language-python">from pipecat.pipeline.service_switcher import ServiceSwitcher
+from pipecat.pipeline.llm_switcher import LLMSwitcher
+
+llm_switcher = LLMSwitcher([openai_llm, anthropic_llm])   # hot-swap LLMs
+pipeline = Pipeline([transport.input(), stt, user_agg, llm_switcher, tts, transport.output(), assistant_agg])
+# request a switch via a metadata frame; also see features-service-switcher.py</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p>Interruptions: <code>frames/frames.py</code> <code>InterruptionFrame</code> (1019), <code>FrameProcessor._start_interruption</code>. Idle: <code>turns/user_idle_controller.py</code>. Switching: <code>pipeline/service_switcher.py</code> (<code>ServiceSwitcher</code>), <code>pipeline/llm_switcher.py</code> (<code>LLMSwitcher</code>), <code>ServiceSwitcherRequestMetadataFrame</code>. Docs: interruptions, detecting-user-idle.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Talk over the bot and confirm it stops instantly. (2) Set <code>user_idle_timeout=5</code> and stay silent to trigger a nudge. (3) Run <code>features/features-service-switcher.py</code> and swap models mid-chat.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why do interruptions take effect instantly?</summary><p>They ride the high-priority <code>SystemFrame</code> lane, preempting buffered audio/text.</p></details>
+      <details><summary>2. How do you change model/voice without rebuilding the pipeline?</summary><p>Use a switcher (<code>LLMSwitcher</code>/<code>ServiceSwitcher</code>) and request a switch via a metadata frame.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l21-summarization.html">Lesson 21 — Context summarization & strategies →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

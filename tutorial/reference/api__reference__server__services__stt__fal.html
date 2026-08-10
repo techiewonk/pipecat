@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fal Wizper Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Fal Wizper Speech-to-Text</h1>
+<blockquote>FalSTTService transcribes speech segments with Fal's Wizper API, using VAD-segmented audio to cut STT cost and latency.</blockquote>
+<h2>Overview</h2>
+<p><code>FalSTTService</code> provides speech-to-text capabilities using Fal's Wizper API with Voice Activity Detection (VAD) to process only speech segments, optimizing API usage and improving response time for efficient transcription.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Fal STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.fal.stt.html"&gt;     Pipecat's API methods for Fal Wizper integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-fal.py"&gt;     Complete example with VAD integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Fal Documentation" icon="book" href="https://fal.ai/models/fal-ai/wizper"&gt;     Official Fal Wizper documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Fal Platform" icon="microphone" href="https://fal.ai/"&gt;     Access API keys and Wizper models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Fal services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[fal]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Fal Account Setup</h3>
+<p>Before using Fal STT services, you need:</p>
+<ol><li><strong>Fal Account</strong>: Sign up at <a href="https://fal.ai/">Fal Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to the Wizper transcription model</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FAL_KEY</code>: Your Fal API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>FalSTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Fal API key. If not provided, uses <code>FAL_KEY</code> environment variable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" default="None"&gt;   Optional aiohttp ClientSession for HTTP requests. If not provided, a session   will be created and managed internally. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="task" type="str" default="transcribe"&gt;   Task to perform (<code>"transcribe"</code> or <code>"translate"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="chunk_level" type="str" default="segment"&gt;   Level of chunking (<code>"segment"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="version" type="str" default="3"&gt;   Version of the Wizper model to use. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="FalSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for the Wizper API. *Deprecated in v0.0.105. Use   <code>settings=FalSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="FalSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="FAL_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>FalSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language of the audio input. *(Inherited from base STT settings.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.fal.stt import FalSTTService
+
+stt = FalSTTService(
+    api_key=os.getenv("FAL_KEY"),
+)</code></pre>
+<h3>With Custom Parameters</h3>
+<pre><code>from pipecat.services.fal.stt import FalSTTService
+from pipecat.transcriptions.language import Language
+
+stt = FalSTTService(
+    api_key=os.getenv("FAL_KEY"),
+    task="transcribe",
+    version="3",
+    settings=FalSTTService.Settings(
+        language=Language.ES,
+    ),
+)</code></pre>
+<h3>Translation Mode</h3>
+<pre><code>stt = FalSTTService(
+    api_key=os.getenv("FAL_KEY"),
+    task="translate",
+    settings=FalSTTService.Settings(
+        language=Language.FR,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Segmented processing</strong>: <code>FalSTTService</code> inherits from <code>SegmentedSTTService</code>, which buffers audio during speech (detected by VAD) and sends complete segments for transcription. This means it does not provide interim results -- only final transcriptions after each speech segment.</li><li><strong>Translation support</strong>: Set <code>task="translate"</code> to translate audio into English, regardless of the input language.</li><li><strong>Wizper versions</strong>: The <code>version</code> parameter selects the underlying Whisper model version. Version <code>"3"</code> is the default and recommended for best accuracy.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/fal">https://docs.pipecat.ai/api-reference/server/services/stt/fal</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debug Log Observer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Debug Log Observer</h1>
+<blockquote>DebugLogObserver logs every frame flowing through a Pipecat pipeline with configurable filtering by frame type.</blockquote>
+<p>The <code>DebugLogObserver</code> provides detailed logging of frame activity in your Pipecat pipeline, with full visibility into frame content and flexible filtering options.</p>
+<h2>Features</h2>
+<ul><li>Log all frame types and their content</li><li>Filter by specific frame types</li><li>Filter by source or destination components</li><li>Automatic formatting of frame fields</li><li>Special handling for complex data structures</li></ul>
+<h2>Usage</h2>
+<h3>Log All Frames</h3>
+<p>Log all frames passing through the pipeline:</p>
+<pre><code>from pipecat.observers.loggers.debug_log_observer import DebugLogObserver
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        observers=[DebugLogObserver()],
+    ),
+)</code></pre>
+<h3>Filter by Frame Types</h3>
+<p>Log only specific frame types:</p>
+<pre><code>from pipecat.frames.frames import TranscriptionFrame, InterimTranscriptionFrame
+from pipecat.observers.loggers.debug_log_observer import DebugLogObserver
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        observers=[
+            DebugLogObserver(frame_types=(
+                TranscriptionFrame,
+                InterimTranscriptionFrame
+            ))
+        ],
+    ),
+)</code></pre>
+<h3>Advanced Source/Destination Filtering</h3>
+<p>Filter frames based on their type and source/destination:</p>
+<pre><code>from pipecat.frames.frames import InterruptionFrame, UserStartedSpeakingFrame, LLMTextFrame
+from pipecat.observers.loggers.debug_log_observer import DebugLogObserver, FrameEndpoint
+from pipecat.transports.base_output_transport import BaseOutputTransport
+from pipecat.services.stt_service import STTService
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        observers=[
+            DebugLogObserver(frame_types={
+                # Only log InterruptionFrame when source is BaseOutputTransport
+                InterruptionFrame: (BaseOutputTransport, FrameEndpoint.SOURCE),
+
+                # Only log UserStartedSpeakingFrame when destination is STTService
+                UserStartedSpeakingFrame: (STTService, FrameEndpoint.DESTINATION),
+
+                # Log LLMTextFrame regardless of source or destination
+                LLMTextFrame: None
+            })
+        ],
+    ),
+)</code></pre>
+<h2>Log Output Format</h2>
+<p>The observer logs each frame with its complete details:</p>
+<pre><code>[Source] → [Destination]: [FrameType] [field1: value1, field2: value2, ...] at [timestamp]s</code></pre>
+<p>For example:</p>
+<pre><code>OpenAILLMService#0 → DailyTransport#0: LLMTextFrame text: 'Hello, how can I help you today?' at 1.24s</code></pre>
+<h2>Configuration Options</h2>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>frame_types</code></td><td><code>Tuple[Type[Frame], ...]</code> or <code>Dict[Type[Frame], Optional[Tuple[Type, FrameEndpoint]]]</code></td><td>Frame types to log, with optional source/destination filtering</td></tr><tr><td><code>exclude_fields</code></td><td><code>Set[str]</code></td><td>Field names to exclude from logging (defaults to binary fields)</td></tr></tbody></table></div>
+<h2>FrameEndpoint Enum</h2>
+<p>The <code>FrameEndpoint</code> enum is used for source/destination filtering:</p>
+<ul><li><code>FrameEndpoint.SOURCE</code>: Filter by source component</li><li><code>FrameEndpoint.DESTINATION</code>: Filter by destination component</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/observers/debug-observer">https://docs.pipecat.ai/api-reference/server/utilities/observers/debug-observer</a></p>
+</div></main></div></body></html>

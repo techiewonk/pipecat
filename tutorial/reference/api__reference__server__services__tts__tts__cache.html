@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat TTS Cache · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipecat TTS Cache</h1>
+<blockquote>TTSCacheMixin transparently wraps any Pipecat TTS service, caching repeated phrases to cut API costs and response latency.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="omChauhanDev" maintainerUrl="https://github.com/omChauhanDev" repo="https://github.com/omChauhanDev/pipecat-tts-cache" /&gt;</p>
+<h2>Overview</h2>
+<p><code>TTSCacheMixin</code> is a lightweight caching layer that transparently wraps an existing Pipecat TTS service to eliminate API costs for repeated phrases and reduce response latency for cached audio. It is a utility mixin rather than a TTS provider: it does not synthesize speech itself, but caches the audio produced by another TTS service (such as Cartesia, ElevenLabs, Deepgram, Google, or OpenAI) and replays it on subsequent requests. Audio can be cached in process with <code>MemoryCacheBackend</code> (LRU) or shared across instances with <code>RedisCacheBackend</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/omChauhanDev/pipecat-tts-cache"&gt;     Source code, examples, and issues for the TTS Cache integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-tts-cache/"&gt;     The <code>pipecat-tts-cache</code> package on PyPI   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code># Standard installation (Memory backend only)
+pip install pipecat-tts-cache
+
+# Production installation (with Redis support)
+pip install "pipecat-tts-cache[redis]"</code></pre>
+<h2>How It Works</h2>
+<p><code>TTSCacheMixin</code> is applied alongside an existing Pipecat TTS service class to produce a cached variant. It intercepts frames in the pipeline to transparently cache and replay audio:</p>
+<ol><li><strong>Deterministic key generation</strong>: Before requesting audio, a cache key is</li></ol>
+<p>   generated from the normalized text, voice ID, model, sample rate, and    settings. API keys are excluded from the key.</p>
+<ol><li><strong>Cache check (<code>run_tts</code>)</strong>: On a cache <strong>hit</strong>, the mixin immediately pushes</li></ol>
+<p>   the cached audio frames (and any word timestamps) to the pipeline. On a    <strong>miss</strong>, it calls the wrapped parent TTS service.</p>
+<ol><li><strong>Collection (<code>push_frame</code>)</strong>: As the parent service produces audio, the</li></ol>
+<p>   mixin intercepts and aggregates the frames, then stores them in the cache    backend for future use.</p>
+<ol><li><strong>Interruption handling</strong>: When an <code>InterruptionFrame</code> is received, the mixin</li></ol>
+<p>   clears pending cache write tasks and resets its batch state so no partial    audio is committed.</p>
+<p>You create a cached service by subclassing the mixin together with any <code>TTSService</code> subclass:</p>
+<pre><code>from pipecat_tts_cache import TTSCacheMixin
+from pipecat.services.google.tts import GoogleHttpTTSService
+
+class CachedGoogleTTS(TTSCacheMixin, GoogleHttpTTSService):
+    pass</code></pre>
+<h2>Configuration</h2>
+<p><code>TTSCacheMixin</code> adds the following keyword arguments to the constructor of the wrapped TTS service. All other positional and keyword arguments are passed through to the parent class.</p>
+<p>&lt;ParamField path="cache_backend" type="CacheBackend" default="None"&gt;   Cache backend instance (<code>MemoryCacheBackend</code> or <code>RedisCacheBackend</code>). If   <code>None</code>, caching is disabled and calls pass straight through to the parent   service. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cache_ttl" type="int" default="86400"&gt;   Time-to-live for cache entries, in seconds. Defaults to 24 hours. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cache_namespace" type="str" default="None"&gt;   Optional namespace prefix applied to cache keys. &lt;/ParamField&gt;</p>
+<h3>MemoryCacheBackend</h3>
+<p>In-memory LRU cache with TTL support, suitable for local development and single-process bots.</p>
+<p>&lt;ParamField path="max_size" type="int" default="1000"&gt;   Maximum number of cache entries to store before LRU eviction. &lt;/ParamField&gt;</p>
+<h3>RedisCacheBackend</h3>
+<p>Distributed Redis cache that persists across restarts and can be shared across multiple bot instances. Requires the <code>redis</code> extra.</p>
+<p>&lt;ParamField path="redis_url" type="str" default="redis://localhost:6379/0"&gt;   Redis connection URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="key_prefix" type="str" default="pipecat:tts:cache:"&gt;   Prefix applied to all cache keys. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_connections" type="int" default="10"&gt;   Maximum number of Redis connections. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="socket_timeout" type="float" default="5.0"&gt;   Socket timeout in seconds. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="redis_kwargs" type="dict"&gt;   Additional keyword arguments forwarded to the underlying Redis client. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<h3>Basic in-memory cache</h3>
+<pre><code>from pipecat_tts_cache import TTSCacheMixin, MemoryCacheBackend
+from pipecat.services.google.tts import GoogleHttpTTSService
+
+# 1. Create a cached class using the mixin
+class CachedGoogleTTS(TTSCacheMixin, GoogleHttpTTSService):
+    pass
+
+# 2. Initialize with a memory backend
+tts = CachedGoogleTTS(
+    voice_id="en-US-Chirp3-HD-Charon",
+    cache_backend=MemoryCacheBackend(max_size=1000),
+    cache_ttl=86400,  # Cache for 24 hours
+)</code></pre>
+<h3>Distributed Redis cache</h3>
+<pre><code>from pipecat_tts_cache import TTSCacheMixin, RedisCacheBackend
+from pipecat.services.google.tts import GoogleHttpTTSService
+
+class CachedGoogleTTS(TTSCacheMixin, GoogleHttpTTSService):
+    pass
+
+tts = CachedGoogleTTS(
+    voice_id="en-US-Chirp3-HD-Charon",
+    cache_backend=RedisCacheBackend(
+        redis_url="redis://localhost:6379/0",
+        key_prefix="pipecat:tts:",
+    ),
+    cache_ttl=604800,  # Cache for 1 week
+)</code></pre>
+<h3>Monitoring and maintenance</h3>
+<pre><code># Check performance
+stats = await tts.get_cache_stats()
+print(f"Hit Rate: {stats['hit_rate']:.1%}")
+print(f"Total Saved Calls: {stats['hits']}")
+
+# Clear all entries, or a specific namespace
+await tts.clear_cache()
+await tts.clear_cache(namespace="user_123")</code></pre>
+<h2>Compatibility</h2>
+<p>The caching layer works with all Pipecat TTS services, applying a different caching strategy depending on the service architecture:</p>
+<div class="tablewrap"><table><thead><tr><th>Service type</th><th>Caching strategy</th><th>Supported providers (examples)</th></tr></thead><tbody><tr><td><code>AudioContextWordTTS</code></td><td>Batch caching — splits audio at word boundaries per sentence</td><td>Cartesia, Rime</td></tr><tr><td><code>WordTTSService</code></td><td>Full caching with preserved word-level timestamps</td><td>ElevenLabs, Hume</td></tr><tr><td><code>TTSService</code></td><td>Standard caching of the full audio response (no alignment data)</td><td>Google, OpenAI, Deepgram (HTTP)</td></tr><tr><td><code>InterruptibleTTS</code></td><td>Sentence caching — single-sentence responses only</td><td>Sarvam, Deepgram (WebSocket)</td></tr></tbody></table></div>
+<p>Tested with Pipecat v0.0.91+. Check the <a href="https://github.com/omChauhanDev/pipecat-tts-cache">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/tts-cache">https://docs.pipecat.ai/api-reference/server/services/tts/tts-cache</a></p>
+</div></main></div></body></html>

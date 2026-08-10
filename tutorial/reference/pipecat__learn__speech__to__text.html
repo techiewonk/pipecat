@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speech to Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Speech to Text</h1>
+<blockquote>Learn how to configure speech recognition to convert user audio into text in your Pipecat pipeline</blockquote>
+<p><strong>Speech to Text (STT)</strong> services are responsible for converting user audio into text transcriptions. They receive audio input from users and provide real-time transcriptions that your bot can process and respond to.</p>
+<h2>Pipeline Placement</h2>
+<p>STT processors must be positioned correctly in your pipeline to receive and process audio frames:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),             # Creates InputAudioRawFrames
+    stt,                           # Processes audio → creates TranscriptionFrames
+    context_aggregator.user(),     # Uses transcriptions for context
+    llm,
+    tts,
+    transport.output(),
+])</code></pre>
+<p><strong>Placement requirements:</strong></p>
+<ul><li><strong>After <code>transport.input()</code></strong>: STT needs <code>InputAudioRawFrame</code>s from the transport</li><li><strong>Before context processing</strong>: Transcriptions must be available for context aggregation</li><li><strong>Before LLM processing</strong>: Text must be ready for language model input</li></ul>
+<h2>STT Service Types</h2>
+<p>Pipecat provides two types of STT services based on how they process audio:</p>
+<h3>1. STTService (Streaming)</h3>
+<p><strong>How it works:</strong></p>
+<ul><li>Establishes a WebSocket connection to the STT provider</li><li>Continuously streams audio for real-time transcription</li><li>Lower latency due to persistent connection</li></ul>
+<h3>2. SegmentedSTTService (HTTP-based)</h3>
+<p><strong>How it works:</strong></p>
+<ul><li>Uses local VAD (Voice Activity Detection) to chunk speech</li><li>Sends audio segments to STT service as wav files</li><li>Higher latency due to segmentation and HTTP POST requests</li></ul>
+<p>&lt;Note&gt;   STT services are modular and can be swapped out with no additional overhead.   You can easily switch between streaming and segmented services based on your   needs. &lt;/Note&gt;</p>
+<h2>Supported STT Services</h2>
+<p>Pipecat supports a wide range of STT providers to fit different needs and budgets:</p>
+<p>&lt;Card title="Supported STT Services" icon="list" href="/api-reference/server/services/supported-services#speech-to-text"&gt;   View the complete list of supported speech-to-text providers &lt;/Card&gt;</p>
+<p>Popular options include:</p>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="Deepgram" icon="microphone" href="/api-reference/server/services/stt/deepgram"&gt;     Fast, accurate streaming STT with excellent real-time performance   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Soniox" icon="language" href="/api-reference/server/services/stt/soniox"&gt;     Real-time streaming STT with strong multilingual support and language hints   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AssemblyAI" icon="brain" href="/api-reference/server/services/stt/assemblyai"&gt;     AI-powered transcription with speaker diarization and sentiment analysis   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Speechmatics" icon="waveform" href="/api-reference/server/services/stt/speechmatics"&gt;     Advanced speech recognition with strong accent and dialect handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cartesia" icon="bolt" href="/api-reference/server/services/stt/cartesia"&gt;     Low-latency real-time transcription from the Cartesia voice platform   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gradium" icon="sparkles" href="/api-reference/server/services/stt/gradium"&gt;     Real-time streaming STT with a low-latency transcription API   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>STT Configuration</h2>
+<h3>Service-Specific Configuration</h3>
+<p>Each STT service has its own customization options. Refer to specific service documentation for details:</p>
+<p>&lt;Card title="Individual STT Services" icon="screwdriver-wrench" href="/api-reference/server/services/supported-services#speech-to-text"&gt;   Explore configuration options for each supported STT provider &lt;/Card&gt;</p>
+<p>For example, let's look at configuring the <strong>DeepgramSTTService</strong> using the <code>LiveOptions</code> class:</p>
+<pre><code>from deepgram import LiveOptions
+from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.transcriptions.language import Language
+
+# Configure using LiveOptions for full control
+live_options = LiveOptions(
+    model="nova-2",
+    language=Language.EN_US,
+    interim_results=True,        # Enable interim transcripts
+    punctuate=True,              # Add punctuation
+    profanity_filter=True,       # Filter profanity
+    vad_events=False,            # Use pipeline VAD instead
+)
+
+stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    live_options=live_options,
+)</code></pre>
+<h3>STTService Base Class Configuration</h3>
+<p>All STT services inherit from the STTService base class. The base class has base configuration options which are set with smart defaults:</p>
+<pre><code>stt = YourSTTService(
+    # Service-specific options...
+    audio_passthrough=True,      # Pass audio frames downstream (recommended)
+    sample_rate=16000,           # Audio sample rate (better set in PipelineParams)
+)</code></pre>
+<p><strong>Key options:</strong></p>
+<ul><li><strong><code>audio_passthrough=True</code></strong>: Allows audio frames to continue downstream to other processors (like audio recording)</li><li><strong><code>sample_rate</code></strong>: Audio sampling rate - best practice is to <strong>set the <code>audio_in_sample_rate</code> in <code>PipelineParams</code> for consistency</strong></li></ul>
+<p>&lt;Warning&gt;   Setting <code>audio_passthrough=False</code> will stop audio frames from being passed   downstream, which may break audio recording or other audio-dependent   processors. &lt;/Warning&gt;</p>
+<h3>Pipeline-Level Audio Configuration</h3>
+<p>Instead of setting sample rates on individual services, configure them pipeline-wide:</p>
+<pre><code>worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        audio_in_sample_rate=16000,   # All input processors use this rate
+        audio_out_sample_rate=24000,  # All output processors use this rate
+    ),
+)</code></pre>
+<p>This ensures all audio processors use consistent sample rates without manual configuration.</p>
+<p>&lt;Tip&gt;   Always set audio sample rates in <code>PipelineParams</code> to avoid mismatches between   different audio processors. This simplifies configuration and ensures   consistent audio quality across your pipeline. &lt;/Tip&gt;</p>
+<h2>Multilingual Transcription</h2>
+<p>Many STT services in Pipecat default to <code>Language.EN</code> (English). If you need to transcribe speech in other languages or let the model auto-detect the spoken language, you can enable multilingual support. However, providers implement this differently:</p>
+<p><strong><code>language=None</code></strong> — Whisper-based services (Groq, OpenAI, local Whisper) and ElevenLabs support automatic language detection when no language is specified:</p>
+<pre><code>from pipecat.services.groq.stt import GroqSTTService
+
+stt = GroqSTTService(
+    api_key=os.getenv("GROQ_API_KEY"),
+    settings=GroqSTTService.Settings(
+        language=None,  # Auto-detect language
+    ),
+)</code></pre>
+<p><strong><code>language="multi"</code></strong> — Deepgram uses a special <code>"multi"</code> language code to enable multilingual transcription:</p>
+<pre><code>from pipecat.services.deepgram.stt import DeepgramSTTService
+
+stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    settings=DeepgramSTTService.Settings(
+        language="multi",  # Enable multilingual mode
+    ),
+)</code></pre>
+<p><strong>Language array</strong> — Google Cloud STT accepts a list of languages for multi-language recognition. See the <a href="/api-reference/server/services/stt/google">Google STT docs</a> for details.</p>
+<p>&lt;Note&gt;   Some services have additional multilingual features. For example, Soniox   supports language hints, AssemblyAI offers a dedicated multilingual model, and   Speechmatics supports bilingual transcription. See individual service docs for   details. &lt;/Note&gt;</p>
+<h2>Best Practices</h2>
+<h3>Enable Interim Results</h3>
+<p>When available, enable interim transcripts for better user experience:</p>
+<pre><code>stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    live_options=LiveOptions(
+      interim_results=True,
+    )
+)</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul><li>Notifies context aggregation that more text is coming</li><li>Prevents premature LLM completions</li><li>Enables interruption detection</li><li>Improves conversation flow</li></ul>
+<h3>Enable Punctuation and Formatting</h3>
+<p>Use punctuation when available for better LLM comprehension:</p>
+<pre><code>stt = DeepgramSTTService(
+    api_key=os.getenv("DEEPGRAM_API_KEY"),
+    live_options=LiveOptions(
+        punctuate=True,        # Adds punctuation
+        profanity_filter=True, # Optional content filtering
+    )
+)</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul><li>Professional-looking transcripts</li><li>Better LLM comprehension</li><li>Eliminates post-processing needs</li><li>Improved context understanding</li></ul>
+<h3>Use Local VAD</h3>
+<p>While many STT services provide Voice Activity Detection, use Pipecat's local Silero VAD for better performance:</p>
+<pre><code>from pipecat.audio.vad.silero import SileroVADAnalyzer
+
+# Configure in context aggregator
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=SileroVADAnalyzer(),
+    ),
+)</code></pre>
+<p><strong>Advantages:</strong></p>
+<ul><li><strong>150-200ms faster</strong> speech detection (no network round trip)</li><li>More responsive conversation flow</li><li>Better interruption handling</li><li>Reduced latency overall</li></ul>
+<h3>Tune STT Latency</h3>
+<p>Each STT service has a measured P99 latency for delivering final transcripts after the user stops speaking. This value is used by turn stop strategies to decide how long to wait before ending the user's turn. If you notice the bot responding too early (cutting off the user) or too late (long pauses), tuning this value can help.</p>
+<p>&lt;Card title="STT Latency Tuning" icon="gauge-high" href="/pipecat/fundamentals/stt-latency-tuning"&gt;   Learn about TTFS latency, see default values for every STT service, and how to   measure and override for your deployment &lt;/Card&gt;</p>
+<h2>Key Takeaways</h2>
+<ul><li><strong>Pipeline placement matters</strong> - STT must come after transport input, before context processing</li><li><strong>Service types differ</strong> - streaming services have lower latency than segmented</li><li><strong>Services are modular</strong> - easily swap providers without code changes</li><li><strong>Best practices improve performance</strong> - use interim results, formatting, and local VAD</li><li><strong>Configuration affects quality</strong> - proper setup significantly impacts transcription accuracy</li></ul>
+<h2>What's Next</h2>
+<p>Now that you understand speech recognition, let's explore how to manage conversation context and memory in your voice AI bot.</p>
+<p>&lt;Card title="Context Management" icon="arrow-right" href="/pipecat/learn/context-management"&gt;   Learn how to handle conversation history and context in your pipeline &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/speech-to-text">https://docs.pipecat.ai/pipecat/learn/speech-to-text</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Daily WebRTC Transport</h1>
+<blockquote>DailyTransport for the Pipecat React Native SDK: WebRTC audio and video on Daily's infrastructure in native mobile apps.</blockquote>
+<p>The DailyTransport class provides a WebRTC transport layer using <a href="https://daily.co">Daily.co's</a> infrastructure. It wraps a React-Native-Daily-JS call client to handle audio/video device management, WebRTC connections, and real-time communication between clients and bots. For complete documentation on Daily's API, see the <a href="https://docs.daily.co/reference/rn-daily-js">Daily RN API Reference</a>.</p>
+<p>This transport is designed for production use cases, leveraging Daily's global infrastructure for low-latency, high-quality audio and video streaming. It expects your Pipecat server to include the corresponding <a href="/api-reference/server/services/transport/daily"><code>DailyTransport</code> server-side</a> implementation.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import { RNDailyTransport } from "@pipecat-ai/react-native-daily-transport";
+import { PipecatClient } from "@pipecat-ai/client-js";
+
+// Create and configure the client
+let pipecatClient = new PipecatClient({
+  transport: new RNDailyTransport(),
+  enableMic: true,
+  enableCam: false,
+});
+
+// Connect to your bot
+await pipecatClient.startBotAndConnect({
+  endpoint: `${process.env.PIPECAT_API_URL || "/start"}`,
+});</code></pre>
+<h2>API Reference</h2>
+<h3>Constructor Options</h3>
+<p>&lt;ParamField path="DailyFactoryOptions"&gt;   The <code>DailyTransportConstructorOptions</code> extends the <code>DailyFactoryOptions</code> type that is accepted by the underlying Daily instance. These options are passed directly through to the Daily constructor. See the <a href="https://docs.daily.co/reference/rn-daily-js/daily-call-client/properties">Daily RN API Reference</a> for a complete list of options. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   The Pipecat React Native SDK leverages the Pipecat JavaScript SDK for seamless integration with React Native applications.   For detailed information, please reference to the <a href="/api-reference/client/js/transports/daily">Javascript SDK docs</a>.</p>
+<p>  <strong>Just ensure you use the appropriate transport layer for React Native.</strong> &lt;/Note&gt;</p>
+<h2>More Information</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/simple-chatbot"&gt;     Simple Chatbot Demo   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-react-native-transports/tree/main/transports/daily"&gt;     <code>RNDailyTransport</code>   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card horizontal title="Package" icon="browser" href="https://www.npmjs.com/package/@pipecat-ai/react-native-daily-transport"&gt;   <code>@pipecat-ai/react-native-daily-transport</code> &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react-native/transports/daily">https://docs.pipecat.ai/api-reference/client/react-native/transports/daily</a></p>
+</div></main></div></body></html>

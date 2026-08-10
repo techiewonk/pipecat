@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipecat Flows API Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pipecat Flows API Overview</h1>
+<blockquote>Reference documentation for Pipecat Flows: FlowManager, node configuration, actions, and the flows type system.</blockquote>
+<p>&lt;Tip&gt;   New to Pipecat Flows? Check out the   <a href="/pipecat-flows/introduction">introduction</a> and   <a href="/pipecat-flows/guides/quickstart">guides</a> first. &lt;/Tip&gt;</p>
+<p>Pipecat Flows is Pipecat's framework for building structured conversations. It builds on the pipeline to let you define conversation paths while handling the complexities of state management and LLM interactions.</p>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.flows.html"&gt;     Complete API documentation and method details   &lt;/Card&gt;</p>
+<p>  &lt;Card title="GitHub Repository" icon="github" href="https://github.com/pipecat-ai/pipecat"&gt;     Source code, examples, and issue tracking   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Hello World Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/flows/hello_world.py"&gt;     Working example with basic conversation flow   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>Pipecat Flows is included with Pipecat. For fresh installations, install Pipecat with dependencies for your Transport, STT, LLM, and TTS providers.</p>
+<p>For example, to use Daily, OpenAI, Deepgram, Cartesia, and Silero:</p>
+<pre><code>uv add "pipecat-ai[daily,openai,deepgram,cartesia,silero]"</code></pre>
+<h2>Reference Pages</h2>
+<p>&lt;CardGroup cols={3}&gt;   &lt;Card title="FlowManager" icon="gear" href="/api-reference/pipecat-flows/flow-manager"&gt;     Core orchestration class: constructor, properties, and methods   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Types" icon="cube" href="/api-reference/pipecat-flows/types"&gt;     NodeConfig, FlowsFunctionSchema, ActionConfig, context strategies, and type     aliases   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Exceptions" icon="triangle-exclamation" href="/api-reference/pipecat-flows/exceptions"&gt;     Error handling hierarchy for flow management   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Function Types</h2>
+<p>A node's functions either do work within the current node or transition to another node:</p>
+<ul><li><strong>Node functions</strong> do work within the current conversation state without switching nodes. They return <code>(result, None)</code>.</li><li><strong>Edge functions</strong> transition to another conversation state, optionally doing work first. They return <code>(result, next_node)</code>.</li></ul>
+<p>Define either kind as a direct function, or — for advanced usage — with a <a href="/api-reference/pipecat-flows/types#flowsfunctionschema"><code>FlowsFunctionSchema</code></a>. See the <a href="/pipecat-flows/guides/functions">Functions guide</a>.</p>
+<h2>LLM Provider Support</h2>
+<p>Pipecat Flows works with any LLM service that supports function calling. Pipecat handles provider-specific format conversion internally.</p>
+<div class="tablewrap"><table><thead><tr><th>Provider</th><th>Installation</th></tr></thead><tbody><tr><td>OpenAI</td><td><code>uv add "pipecat-ai[openai]"</code></td></tr><tr><td>OpenAI-compatible</td><td>Provider-specific (see below)</td></tr><tr><td>Anthropic</td><td><code>uv add "pipecat-ai[anthropic]"</code></td></tr><tr><td>Google Gemini</td><td><code>uv add "pipecat-ai[google]"</code></td></tr><tr><td>AWS Bedrock</td><td><code>uv add "pipecat-ai[aws]"</code></td></tr></tbody></table></div>
+<p>Any service that extends Pipecat's <code>LLMService</code> base class is supported. This includes OpenAI-compatible services like Groq, Together, Cerebras, DeepSeek, and others.</p>
+<h3>Realtime (S2S) LLMs</h3>
+<p>Realtime speech-to-speech services such as Gemini Live and OpenAI Realtime are not currently supported due to missing API functionality.</p>
+<h2>Additional Notes</h2>
+<ul><li><strong>State Management</strong>: Use <code>flow_manager.state</code> dictionary for persistent conversation data</li><li><strong>Automatic Function Call Registration and Validation</strong>: All functions are automatically registered and validated at run-time</li><li><strong>Provider Compatibility</strong>: Pipecat handles provider-specific format conversion internally</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-flows/overview">https://docs.pipecat.ai/api-reference/pipecat-flows/overview</a></p>
+</div></main></div></body></html>

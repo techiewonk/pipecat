@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Azure Text-to-Speech</h1>
+<blockquote>TTS on Azure Cognitive Services: AzureTTSService for real-time WebSocket streaming and AzureHttpTTSService for simpler HTTP synthesis.</blockquote>
+<h2>Overview</h2>
+<p>Azure Cognitive Services provides high-quality text-to-speech synthesis with two service implementations: <code>AzureTTSService</code> (WebSocket-based) for real-time streaming with low latency, and <code>AzureHttpTTSService</code> (HTTP-based) for batch synthesis. <code>AzureTTSService</code> is recommended for interactive applications requiring streaming capabilities.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Azure TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.azure.tts.html"&gt;     Pipecat's API methods for Azure TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-azure.py"&gt;     Complete example with streaming synthesis   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Azure Speech Documentation" icon="book" href="https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/"&gt;     Official Azure Speech Services documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Gallery" icon="microphone" href="https://speech.microsoft.com/portal/voicegallery"&gt;     Browse available voices and languages   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Azure services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[azure]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Azure Account Setup</h3>
+<p>Before using Azure TTS services, you need:</p>
+<ol><li><strong>Azure Account</strong>: Sign up at <a href="https://portal.azure.com/">Azure Portal</a></li><li><strong>Speech Service</strong>: Create a Speech resource in your Azure subscription</li><li><strong>API Key and Region</strong>: Get your subscription key and service region</li><li><strong>Voice Selection</strong>: Choose from available voices in the <a href="https://speech.microsoft.com/portal/voicegallery">Voice Gallery</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>AZURE_SPEECH_API_KEY</code>: Your Azure Speech service API key</li><li><code>AZURE_SPEECH_REGION</code>: Your Azure Speech service region (e.g., "eastus") *or* a custom endpoint URL when using Private Link</li></ul>
+<h2>Configuration</h2>
+<h3>AzureTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Azure Cognitive Services subscription key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str"&gt;   Azure region identifier (e.g., <code>"eastus"</code>, <code>"westus2"</code>). Required unless   <code>private_endpoint</code> is provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="private_endpoint" type="str"&gt;   Custom endpoint URL for Azure Speech Services (e.g.,   <code>"https://my-resource.cognitiveservices.azure.com/"</code>). Use this when   connecting via Private Link or a custom domain. See <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-services-private-link">Azure Private Link   documentation</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="en-US-SaraNeural" deprecated&gt;   Voice name to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=AzureTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries, producing more natural   speech. <code>TOKEN</code> streams tokens directly for lower latency. Import from   <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None" deprecated&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=AzureTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AzureTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>AzureHttpTTSService</h3>
+<p>The HTTP service accepts the same parameters as the streaming service except <code>text_aggregation_mode</code> and <code>aggregate_sentences</code>:</p>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Azure Cognitive Services subscription key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str"&gt;   Azure region identifier. Required unless <code>private_endpoint</code> is provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="private_endpoint" type="str"&gt;   Custom endpoint URL for Azure Speech Services. Use this when connecting via   Private Link or a custom domain. See <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-services-private-link">Azure Private Link   documentation</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice" type="str" default="en-US-SaraNeural" deprecated&gt;   Voice name to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=AzureHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=AzureHttpTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AzureHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AzureTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>emphasis</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Emphasis level for SSML.</td></tr><tr><td><code>force_locale</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Wraps text in SSML <code>&lt;lang&gt;</code> to force the configured <code>language</code> accent instead of auto-detection.</td></tr><tr><td><code>pitch</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Pitch adjustment.</td></tr><tr><td><code>rate</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Speaking rate.</td></tr><tr><td><code>role</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Role for SSML.</td></tr><tr><td><code>style</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Speaking style.</td></tr><tr><td><code>style_degree</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Degree of the speaking style.</td></tr><tr><td><code>volume</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Volume level.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.azure import AzureTTSService
+
+tts = AzureTTSService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region=os.getenv("AZURE_SPEECH_REGION"),
+    settings=AzureTTSService.Settings(
+        voice="en-US-SaraNeural",
+    ),
+)</code></pre>
+<h3>With Voice Customization</h3>
+<pre><code>from pipecat.transcriptions.language import Language
+
+tts = AzureTTSService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region="eastus",
+    settings=AzureTTSService.Settings(
+        voice="en-US-JennyMultilingualNeural",
+        language=Language.EN_US,
+        style="cheerful",
+        style_degree="1.5",
+        rate="1.1",
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>from pipecat.services.azure import AzureHttpTTSService
+
+tts = AzureHttpTTSService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    region=os.getenv("AZURE_SPEECH_REGION"),
+    voice="en-US-SaraNeural",
+)</code></pre>
+<h3>With Private Endpoint</h3>
+<pre><code>from pipecat.services.azure import AzureTTSService
+
+tts = AzureTTSService(
+    api_key=os.getenv("AZURE_SPEECH_API_KEY"),
+    private_endpoint="https://my-resource.cognitiveservices.azure.com/",
+    settings=AzureTTSService.Settings(
+        voice="en-US-SaraNeural",
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Streaming vs HTTP</strong>: The streaming service (<code>AzureTTSService</code>) provides word-level timestamps and lower latency, making it better for interactive conversations. The HTTP service is simpler but returns the complete audio at once.</li><li><strong>SSML support</strong>: Both services automatically construct SSML from the <code>Settings</code>. Special characters in text are automatically escaped.</li><li><strong>Word timestamps</strong>: <code>AzureTTSService</code> supports word-level timestamps for synchronized text display. CJK languages receive special handling to merge individual characters into meaningful word units.</li><li><strong>8kHz workaround</strong>: At 8kHz sample rates, Azure's reported audio duration may not match word boundary offsets. The service uses word boundary offsets for timing in this case.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/azure">https://docs.pipecat.ai/api-reference/server/services/tts/azure</a></p>
+</div></main></div></body></html>

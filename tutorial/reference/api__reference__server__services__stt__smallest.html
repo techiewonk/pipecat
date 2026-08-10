@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smallest AI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Smallest AI Speech-to-Text</h1>
+<blockquote>SmallestSTTService provides real-time streaming STT through Smallest AI's Pulse model over the Waves WebSocket API.</blockquote>
+<h2>Overview</h2>
+<p>Smallest AI provides real-time speech-to-text transcription through a WebSocket-based integration with their Waves API. The service connects to <code>wss://api.smallest.ai/waves/v1/stt/live?model=pulse</code> to stream audio continuously and receive interim and final transcription results with low latency.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Smallest AI STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.smallest.stt.html"&gt;     Complete API reference for all parameters and methods   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-smallest.py"&gt;     Complete example with WebSocket streaming   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<pre><code>uv add "pipecat-ai[smallest]"</code></pre>
+<h2>Prerequisites</h2>
+<ol><li><strong>Smallest AI Account</strong>: Sign up at <a href="https://www.smallest.ai/">Smallest AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li></ol>
+<p>Set the following environment variable:</p>
+<pre><code>export SMALLEST_API_KEY=your_api_key</code></pre>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Smallest AI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.smallest.ai"&gt;   Base WebSocket URL for the Smallest API. Override for custom or proxied   deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="linear16"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SmallestSTTService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="SMALLEST_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Used for   processing metrics. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SmallestSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/guides/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>pulse</code></td><td>Model identifier. Currently only <code>pulse</code> is supported.</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language code for transcription.</td></tr><tr><td><code>word_timestamps</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include word-level timestamps in transcription results.</td></tr><tr><td><code>full_transcript</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include cumulative transcript in results.</td></tr><tr><td><code>sentence_timestamps</code></td><td><code>bool</code></td><td><code>False</code></td><td>Include sentence-level timestamps in transcription results.</td></tr><tr><td><code>redact_pii</code></td><td><code>bool</code></td><td><code>False</code></td><td>Redact personally identifiable information from transcripts.</td></tr><tr><td><code>redact_pci</code></td><td><code>bool</code></td><td><code>False</code></td><td>Redact payment card information from transcripts.</td></tr><tr><td><code>numerals</code></td><td><code>str</code></td><td><code>auto</code></td><td>Convert spoken numerals to digits. Options: <code>auto</code>, <code>always</code>, or <code>none</code>.</td></tr><tr><td><code>diarize</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable speaker diarization to identify different speakers.</td></tr><tr><td><code>endpointing</code></td><td><code>bool</code></td><td><code>True</code></td><td>Finalize transcripts promptly on trailing silence.</td></tr><tr><td><code>keywords</code></td><td><code>str</code></td><td><code>""</code></td><td>Comma-separated <code>KEYWORD:INTENSIFIER</code> pairs to boost recognition of domain-specific words/phrases (e.g. <code>"Blackwell:2"</code>).</td></tr><tr><td><code>format</code></td><td><code>bool</code></td><td><code>True</code></td><td>Apply punctuation and capitalization to transcripts.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.smallest.stt import SmallestSTTService
+from pipecat.transcriptions.language import Language
+
+stt = SmallestSTTService(
+    api_key=os.getenv("SMALLEST_API_KEY"),
+    settings=SmallestSTTService.Settings(
+        language=Language.EN,
+    ),
+)</code></pre>
+<h3>With Advanced Features</h3>
+<pre><code>stt = SmallestSTTService(
+    api_key=os.getenv("SMALLEST_API_KEY"),
+    settings=SmallestSTTService.Settings(
+        language=Language.ES,
+        word_timestamps=True,
+        diarize=True,
+        redact_pii=True,
+    ),
+)</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>Transcription settings can be changed mid-conversation using <code>STTUpdateSettingsFrame</code>:</p>
+<pre><code>from pipecat.frames.frames import STTUpdateSettingsFrame
+from pipecat.services.smallest.stt import SmallestSTTSettings
+
+await worker.queue_frame(
+    STTUpdateSettingsFrame(
+        delta=SmallestSTTSettings(
+            language=Language.FR,
+            word_timestamps=False,
+        )
+    )
+)</code></pre>
+<p>&lt;Tip&gt;   Changing settings will trigger a WebSocket reconnection, which may cause a   brief interruption in transcription. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>WebSocket streaming</strong>: The service uses WebSocket connections for real-time streaming. The connection is automatically managed and will reconnect if interrupted.</li><li><strong>VAD integration</strong>: Uses Pipecat's VAD to detect when the user stops speaking and sends a <code>finalize</code> message to flush the final transcript while keeping the session alive for the next utterance.</li><li><strong>Keepalive</strong>: The service sends periodic keepalive messages (every 5 seconds) to prevent idle timeouts on the WebSocket connection.</li><li><strong>Response format</strong>: The service receives transcription responses containing <code>transcript</code> (the recognized text), <code>is_final</code> (whether this is a final vs. interim result), <code>is_last</code> (whether this is the last message of the session, only <code>True</code> after <code>close_stream</code> is sent at call end), <code>language</code> (detected or specified language), and <code>session_id</code> (unique identifier for the WebSocket session).</li><li><strong>Language support</strong>: Supports 31 languages including Bulgarian, Bengali, Czech, Danish, German, English, Spanish, Estonian, Finnish, French, Gujarati, Hindi, Hungarian, Italian, Kannada, Lithuanian, Latvian, Malayalam, Marathi, Maltese, Dutch, Odia, Punjabi, Polish, Portuguese, Romanian, Russian, Slovak, Swedish, Tamil, Telugu, and Ukrainian.</li></ul>
+<h2>Event Handlers</h2>
+<p>Smallest AI STT supports the standard <a href="/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Smallest AI WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Smallest WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Smallest AI STT")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/smallest">https://docs.pipecat.ai/api-reference/server/services/stt/smallest</a></p>
+</div></main></div></body></html>

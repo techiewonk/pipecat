@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesys AudioHook Serializer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Genesys AudioHook Serializer</h1>
+<blockquote>GenesysAudioHookSerializer connects Pipecat to Genesys Cloud Contact Center via the AudioHook WebSocket protocol.</blockquote>
+<h2>Overview</h2>
+<p><code>GenesysAudioHookSerializer</code> enables integration with Genesys Cloud Contact Center via the AudioHook protocol (v2), allowing your Pipecat application to handle contact center interactions with bidirectional audio streaming, DTMF event handling, barge-in support, and Architect flow variable passing.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Genesys Serializer API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.serializers.genesys.html"&gt;     Pipecat's API methods for Genesys AudioHook integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Genesys AudioHook Documentation" icon="book" href="https://developer.genesys.cloud/devapps/audiohook"&gt;     Official Genesys AudioHook protocol reference   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>The <code>GenesysAudioHookSerializer</code> does not require any additional dependencies beyond the core Pipecat library:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Genesys Cloud Setup</h3>
+<p>Before using GenesysAudioHookSerializer, you need:</p>
+<ol><li><strong>Genesys Cloud Organization</strong>: Access to a Genesys Cloud org with AudioHook enabled</li><li><strong>AudioHook Integration</strong>: Configure an AudioHook integration in Genesys Cloud admin</li><li><strong>Architect Flow</strong>: Create an Architect flow that uses the AudioHook action to connect calls to your Pipecat application</li><li><strong>WebSocket Endpoint</strong>: A publicly accessible WebSocket endpoint for Genesys to connect to</li></ol>
+<h3>Key Features</h3>
+<ul><li><strong>Bidirectional Audio</strong>: Stream audio between Genesys and Pipecat in PCMU format at 8kHz</li><li><strong>Protocol Handshake</strong>: Automatic handling of open/opened, close/closed, and ping/pong messages</li><li><strong>DTMF Handling</strong>: Process touch-tone events from callers</li><li><strong>Barge-in Support</strong>: Notify Genesys when the user interrupts bot audio</li><li><strong>Pause/Resume</strong>: Handle hold scenarios when audio streaming is temporarily suspended</li><li><strong>Architect Variables</strong>: Pass input/output variables between Architect flows and your bot</li><li><strong>Stereo Support</strong>: Process external (customer) audio, internal (agent) audio, or both channels</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="params" type="InputParams" default="None"&gt;   Configuration parameters for audio and protocol behavior. See   <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>genesys_sample_rate</code></td><td><code>int</code></td><td><code>8000</code></td><td>Sample rate used by Genesys (Hz).</td></tr><tr><td><code>sample_rate</code></td><td><code>int</code></td><td><code>None</code></td><td>Optional override for pipeline input sample rate. When <code>None</code>, uses the pipeline's configured rate.</td></tr><tr><td><code>channel</code></td><td><code>AudioHookChannel</code></td><td><code>"external"</code></td><td>Which audio channels to process: <code>"external"</code> (customer), <code>"internal"</code> (agent), or <code>"both"</code> (stereo).</td></tr><tr><td><code>media_format</code></td><td><code>AudioHookMediaFormat</code></td><td><code>"PCMU"</code></td><td>Audio format: <code>"PCMU"</code> (mu-law) or <code>"L16"</code> (16-bit linear PCM).</td></tr><tr><td><code>process_external</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to process external (customer) audio.</td></tr><tr><td><code>process_internal</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether to process internal (agent) audio.</td></tr><tr><td><code>supported_languages</code></td><td><code>list[str]</code></td><td><code>None</code></td><td>List of language codes the bot supports (e.g., <code>["en-US", "es-ES"]</code>).</td></tr><tr><td><code>selected_language</code></td><td><code>str</code></td><td><code>None</code></td><td>Default language code to use.</td></tr><tr><td><code>start_paused</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether to start the session in paused state.</td></tr><tr><td><code>ignore_rtvi_messages</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to ignore RTVI protocol messages during serialization.</td></tr><tr><td><code>resampler_clear_after_secs</code></td><td>`float \</td><td>None`</td><td><code>0.2</code></td><td>Seconds of inactivity after which the stream resampler clears its internal history to avoid audio artefacts. Set to <code>None</code> to never clear (recommended for telephony providers with irregular gaps).</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.serializers.genesys import GenesysAudioHookSerializer
+from pipecat.transports.network.fastapi_websocket import (
+    FastAPIWebsocketTransport,
+    FastAPIWebsocketParams,
+)
+
+serializer = GenesysAudioHookSerializer()
+
+transport = FastAPIWebsocketTransport(
+    websocket=websocket,
+    params=FastAPIWebsocketParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        serializer=serializer,
+        audio_out_fixed_packet_size=1600,
+    ),
+)</code></pre>
+<h3>With Language Support</h3>
+<pre><code>serializer = GenesysAudioHookSerializer(
+    params=GenesysAudioHookSerializer.InputParams(
+        supported_languages=["en-US", "es-ES", "fr-FR"],
+        selected_language="en-US",
+    )
+)</code></pre>
+<h3>Accessing Call Metadata</h3>
+<p>After the AudioHook session opens, you can access call metadata from the serializer:</p>
+<pre><code># Participant info (ani, dnis, etc.)
+participant = serializer.participant
+
+# Custom input variables from the Architect flow
+input_vars = serializer.input_variables
+
+# Conversation and session IDs
+conversation_id = serializer.conversation_id
+session_id = serializer.session_id</code></pre>
+<h3>Setting Output Variables</h3>
+<p>Output variables are passed back to the Genesys Architect flow when the session closes, allowing your bot to influence downstream call routing and logic:</p>
+<pre><code># Set variables during the conversation
+serializer.set_output_variables({
+    "intent": "billing_inquiry",
+    "customer_verified": True,
+    "summary": "Customer asked about their bill",
+    "transfer_to": "billing_queue",
+})</code></pre>
+<h3>Server-Initiated Disconnect</h3>
+<p>To disconnect the session from the server side (e.g., when the bot has finished):</p>
+<pre><code>from pipecat.frames.frames import OutputTransportMessageUrgentFrame
+
+# Send a disconnect message through the pipeline
+disconnect_msg = serializer.create_disconnect_message(
+    reason="completed",
+    action="transfer",
+    output_variables={"intent": "resolved"},
+)
+await worker.queue_frame(OutputTransportMessageUrgentFrame(message=disconnect_msg))</code></pre>
+<h3>Event Handlers</h3>
+<p>The serializer emits events that you can handle for custom logic:</p>
+<pre><code>@serializer.event_handler("on_open")
+async def on_open(serializer, message):
+    logger.info(f"Session opened: {serializer.conversation_id}")
+
+@serializer.event_handler("on_close")
+async def on_close(serializer, message):
+    logger.info("Session closing")
+
+@serializer.event_handler("on_dtmf")
+async def on_dtmf(serializer, message):
+    digit = message.get("parameters", {}).get("digit")
+    logger.info(f"DTMF digit pressed: {digit}")
+
+@serializer.event_handler("on_pause")
+async def on_pause(serializer, message):
+    logger.info("Audio paused (caller on hold)")</code></pre>
+<h2>Protocol Details</h2>
+<h3>AudioHook v2 Protocol</h3>
+<p>The Genesys AudioHook protocol uses WebSocket connections with two frame types:</p>
+<ul><li><strong>Text frames</strong>: JSON control messages for session lifecycle (open, close, ping, pause, etc.)</li><li><strong>Binary frames</strong>: Raw audio data in PCMU or L16 format</li></ul>
+<h3>Message Flow</h3>
+<p>A typical session follows this sequence:</p>
+<ol><li>Genesys connects to your WebSocket endpoint</li><li>Genesys sends an <code>open</code> message with session metadata</li><li>The serializer automatically responds with <code>opened</code></li><li>Bidirectional audio streaming begins via binary frames</li><li>Genesys sends periodic <code>ping</code> messages; the serializer responds with <code>pong</code></li><li>When the call ends, Genesys sends <code>close</code>; the serializer responds with <code>closed</code> (including any output variables)</li></ol>
+<h3>Audio Format</h3>
+<ul><li><strong>Default encoding</strong>: PCMU (mu-law) at 8kHz mono</li><li><strong>Automatic resampling</strong>: The serializer converts between the 8kHz Genesys format and your pipeline's sample rate using SOXR resampling</li><li><strong>Stereo handling</strong>: When channel is set to <code>"both"</code>, Genesys sends stereo audio with external (customer) on the left channel and internal (agent) on the right. The serializer extracts the external channel for processing.</li></ul>
+<h2>Notes</h2>
+<ul><li><strong>Fixed packet size</strong>: Set <code>audio_out_fixed_packet_size=1600</code> on your transport parameters. This batches outbound audio into consistent chunks and prevents 429 rate limiting from Genesys.</li><li><strong>No extra dependencies</strong>: The serializer uses Pipecat's built-in audio conversion utilities (<code>pcm_to_ulaw</code>, <code>ulaw_to_pcm</code>) and SOXR resampler.</li><li><strong>Barge-in</strong>: When the pipeline emits an <code>InterruptionFrame</code>, the serializer automatically sends a barge-in event to Genesys, which stops any queued audio playback on the Genesys side.</li><li><strong>Pause/resume</strong>: When Genesys sends a <code>pause</code> message (e.g., caller placed on hold), audio processing is suspended. The serializer drops incoming and outgoing audio while paused. Use the <code>on_pause</code> event handler and <code>create_resumed_response()</code> to control when streaming resumes.</li><li><strong>Output variables</strong>: Variables set via <code>set_output_variables()</code> are included in the <code>closed</code> response when Genesys terminates the session. These variables become available in the Architect flow for routing decisions.</li><li><strong>DTMF support</strong>: Phone keypad events are converted to <code>InputDTMFFrame</code> objects and can be processed in your pipeline.</li><li><strong>L16 format</strong>: While the serializer accepts <code>AudioHookMediaFormat.L16</code> as a configuration option, L16 support is not yet fully implemented. Use PCMU (the default) for production deployments.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/serializers/genesys">https://docs.pipecat.ai/api-reference/server/services/serializers/genesys</a></p>
+</div></main></div></body></html>

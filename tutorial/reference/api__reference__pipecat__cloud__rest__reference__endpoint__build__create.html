@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Build · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Create Build</h1>
+<blockquote>POST /builds creates a new Pipecat Cloud build, or returns a cached build for your uploaded context.</blockquote>
+<h2>Build Caching</h2>
+<p>Pipecat Cloud automatically caches successful builds based on three factors:</p>
+<ol><li><strong>Context hash</strong> - A hash of your uploaded context archive</li><li><strong>Region</strong> - The target deployment region</li><li><strong>Dockerfile path</strong> - The path to your Dockerfile</li></ol>
+<p>If a successful build already exists with the same combination, you'll receive the cached build with <code>cached: true</code>. This makes repeated deployments much faster.</p>
+<h2>Build Flow</h2>
+<pre><code>sequenceDiagram
+    participant Client
+    participant API
+    participant Storage
+    participant CodeBuild
+
+    Client-&gt;&gt;API: POST /builds/upload-url
+    API--&gt;&gt;Client: uploadUrl, uploadId
+    Client-&gt;&gt;Storage: Upload context.tar.gz
+    Client-&gt;&gt;API: POST /builds
+    API-&gt;&gt;Storage: Get context hash
+    API-&gt;&gt;API: Check for cached build
+    alt Cached build exists
+        API--&gt;&gt;Client: 200 OK (cached: true)
+    else No cached build
+        API-&gt;&gt;CodeBuild: Trigger build
+        API--&gt;&gt;Client: 201 Created (cached: false)
+    end</code></pre>
+<h2>Example: Complete Build Flow</h2>
+<pre><code># 1. Get upload URL
+UPLOAD_RESPONSE=$(curl -s -X POST "https://api.pipecat.daily.co/v1/builds/upload-url" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"region": "us-west"}')
+
+UPLOAD_ID=$(echo $UPLOAD_RESPONSE | jq -r '.uploadId')
+
+# 2. Upload context (see upload-url endpoint for details)
+
+# 3. Create the build
+BUILD_RESPONSE=$(curl -s -X POST "https://api.pipecat.daily.co/v1/builds" \
+  -H "Authorization: Bearer $PIPECAT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"uploadId\": \"$UPLOAD_ID\",
+    \"region\": \"us-west\",
+    \"dockerfilePath\": \"Dockerfile\"
+  }")
+
+BUILD_ID=$(echo $BUILD_RESPONSE | jq -r '.build.id')
+CACHED=$(echo $BUILD_RESPONSE | jq -r '.cached')
+
+if [ "$CACHED" = "true" ]; then
+  echo "Using cached build!"
+  IMAGE_URI=$(echo $BUILD_RESPONSE | jq -r '.build.imageUri')
+else
+  echo "Build started: $BUILD_ID"
+  echo "Poll GET /builds/$BUILD_ID for status"
+fi</code></pre>
+<h2>Build Statuses</h2>
+<div class="tablewrap"><table><thead><tr><th>Status</th><th>Description</th></tr></thead><tbody><tr><td><code>pending</code></td><td>Build created, waiting to start</td></tr><tr><td><code>building</code></td><td>Build is in progress</td></tr><tr><td><code>success</code></td><td>Build completed successfully, <code>imageUri</code> is available</td></tr><tr><td><code>failed</code></td><td>Build failed, check <code>errorMessage</code> for details</td></tr><tr><td><code>timeout</code></td><td>Build exceeded the time limit</td></tr></tbody></table></div>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /builds:
+    post:
+      summary: Create a build
+      description: &gt;-
+        Create a new build from an uploaded context. If a successful build
+        already exists with the same context hash, region, and Dockerfile path,
+        the cached build is returned instead of triggering a new build.
+      operationId: createBuild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildRequest'
+      responses:
+        '200':
+          description: Cached build found - no new build triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBuildResponse'
+        '201':
+          description: New build created and triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBuildResponse'
+        '400':
+          description: Invalid request (e.g., upload not found, cloud build not enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    CreateBuildRequest:
+      type: object
+      required:
+        - uploadId
+        - region
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+          description: The upload ID returned from the upload-url endpoint.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        region:
+          type: string
+          description: &gt;-
+            Target region for the build. Must match the region used when getting
+            the upload URL.
+          example: us-west
+        dockerfilePath:
+          type: string
+          default: Dockerfile
+          description: Path to the Dockerfile within the context archive.
+          example: Dockerfile
+    CreateBuildResponse:
+      type: object
+      properties:
+        build:
+          $ref: '#/components/schemas/Build'
+        contextHash:
+          type: string
+          description: Hash of the uploaded context. Used for build caching.
+          example: a1b2c3d4e5f6a7b8
+        cached:
+          type: boolean
+          description: &gt;-
+            Whether this response uses a cached build (true) or triggered a new
+            build (false).
+          example: false
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+    Build:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the build.
+          example: 123e4567-e89b-12d3-a456-426614174000
+        organizationId:
+          type: string
+          description: Organization that owns this build.
+          example: org_abc123
+        status:
+          type: string
+          enum:
+            - pending
+            - building
+            - success
+            - failed
+            - timeout
+          description: Current status of the build.
+          example: success
+        region:
+          type: string
+          description: Region where the build ran.
+          example: us-west
+        contextHash:
+          type: string
+          description: Hash of the build context.
+          example: a1b2c3d4e5f6a7b8
+        dockerfilePath:
+          type: string
+          description: Path to the Dockerfile used for this build.
+          example: Dockerfile
+        imageUri:
+          type: string
+          description: &gt;-
+            URI of the built image. Use this value when deploying an agent. Only
+            present when status is 'success'.
+          example: &gt;-
+            123456789.dkr.ecr.us-west-2.amazonaws.com/pipecat-cloud/org_abc123:a1b2c3d4e5f6a7b8
+        logsUrl:
+          type: string
+          format: uri
+          description: URL to view build logs in the cloud console.
+          example: https://console.aws.amazon.com/codebuild/...
+        errorMessage:
+          type: string
+          description: &gt;-
+            Detailed error message if the build failed. Includes information
+            from the build phases to help diagnose issues.
+          example: 'Docker build failed: COPY failed - file not found: requirements.txt'
+        contextSizeBytes:
+          type: integer
+          description: Size of the uploaded context in bytes.
+          example: 10485760
+        imageSizeBytes:
+          type: integer
+          description: &gt;-
+            Size of the built Docker image in bytes. Only present for successful
+            builds.
+          example: 524288000
+        buildDurationSeconds:
+          type: integer
+          description: &gt;-
+            Total build duration in seconds. Only present when build is
+            complete.
+          example: 120
+        startedAt:
+          type: string
+          format: date-time
+          description: When the build started executing.
+          example: '2026-02-20T12:00:00.000Z'
+        completedAt:
+          type: string
+          format: date-time
+          description: When the build completed (success, failed, or timeout).
+          example: '2026-02-20T12:02:00.000Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the build record was created.
+          example: '2026-02-20T12:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the build record was last updated.
+          example: '2026-02-20T12:02:00.000Z'
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Authentication using a Pipecat Cloud API token.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-create">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/build-create</a></p>
+</div></main></div></body></html>

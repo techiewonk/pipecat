@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Frames · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LLM Frames</h1>
+<blockquote>LLM frame reference for Pipecat: context frames and the function calling helper dataclasses passed through pipelines.</blockquote>
+<p>This page documents LLM-specific types that don't belong on a base-type page: <code>LLMContextFrame</code> (which inherits directly from <code>Frame</code>) and the helper dataclasses used by function calling frames. All other LLM-related frames are documented on their base-type pages. See <a href="#related-frames">Related Frames</a> below for links.</p>
+<h2>LLMContextFrame</h2>
+<p>Contains a complete LLM context. Acts as a signal to LLM services to ingest the provided context and generate a response.</p>
+<p>Inherits directly from <code>Frame</code> (not <code>DataFrame</code>, <code>ControlFrame</code>, or <code>SystemFrame</code>).</p>
+<p>&lt;ParamField path="context" type="LLMContext" required&gt;   The LLM context containing messages, tools, and configuration. &lt;/ParamField&gt;</p>
+<h2>Function Calling Helper Dataclasses</h2>
+<p>These are plain dataclasses used as fields within function calling frames, not frames themselves.</p>
+<h3>FunctionCallFromLLM</h3>
+<p>Represents a function call returned by the LLM, ready for execution.</p>
+<p>&lt;ParamField path="function_name" type="str" required&gt;   The name of the function to call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_call_id" type="str" required&gt;   A unique identifier for the function call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="arguments" type="Mapping[str, Any]" required&gt;   The arguments to pass to the function. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="context" type="Any" required&gt;   The LLM context at the time the function call was made. &lt;/ParamField&gt;</p>
+<h3>FunctionCallResultProperties</h3>
+<p>Configures how a function call result is handled after execution.</p>
+<p>&lt;ParamField path="run_llm" type="bool | None" default="None"&gt;   Whether to run the LLM after receiving this result. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="on_context_updated" type="Callable[[], Awaitable[None]] | None" default="None"&gt;   Async callback to execute when the context is updated with the result. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="is_final" type="bool" default="True"&gt;   Whether this is the final result for the function call. Set to <code>False</code> to send   an intermediate update from an async function call registered with   <code>cancel_on_interruption=False</code>. &lt;/ParamField&gt;</p>
+<h2>Related Frames</h2>
+<p>LLM-related frames organized by base type:</p>
+<ul><li><strong>Data Frames</strong>: <a href="/api-reference/server/frames/data-frames#llm-context-management">Context Management</a>, <a href="/api-reference/server/frames/data-frames#llm-thinking">Thinking</a>, <a href="/api-reference/server/frames/data-frames#llm-tool-configuration">Tool Configuration</a>, <a href="/api-reference/server/frames/data-frames#function-call-results">Function Call Results</a></li><li><strong>Control Frames</strong>: <a href="/api-reference/server/frames/control-frames#llm-response-boundaries">Response Boundaries</a>, <a href="/api-reference/server/frames/control-frames#llm-context-summarization">Context Summarization</a>, <a href="/api-reference/server/frames/control-frames#llm-thought-frames">Thought Frames</a>, <a href="/api-reference/server/frames/control-frames#function-calling">Function Calling</a>, <a href="/api-reference/server/frames/control-frames#service-settings">Service Settings</a></li><li><strong>System Frames</strong>: <a href="/api-reference/server/frames/system-frames#function-calling">Function Calling</a></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/frames/llm-frames">https://docs.pipecat.ai/api-reference/server/frames/llm-frames</a></p>
+</div></main></div></body></html>

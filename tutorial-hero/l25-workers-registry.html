@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L25 · Workers, @tool, registry — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 25 · Part V — Multi-agent</div>
+      <h1>Workers, @tool, registry</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">Meet the worker hierarchy — from a bare coordinator to a full LLM agent — the <code>@tool</code> decorator that exposes methods to an agent's LLM, and how workers discover each other.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="hierarchy">The worker hierarchy</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="BaseWorker:bus only|PipelineWorker:runs a pipeline|LLMWorker:+ own LLM+tools|LLMContextWorker:+ context|UIWorker:+ web GUI"
+           data-caption="BaseWorker connects to the bus and coordinates jobs|PipelineWorker runs a pipeline as one agent|LLMWorker adds its own LLM and auto-registered @tool methods|LLMContextWorker adds an owned LLMContext + aggregators|UIWorker bridges the bus to a web client (Lesson 29)">
+      </div>
+
+      <h2 id="tool">Exposing tools with @tool</h2>
+      <pre><code class="language-python">from pipecat.workers.llm.llm_context_worker import LLMContextWorker
+from pipecat.workers.llm.tool_decorator import tool
+
+class BillingAgent(LLMContextWorker):
+    @tool
+    async def refund(self, params, order_id: str, reason: str):
+        """Issue a refund for an order."""
+        result = await do_refund(order_id, reason)
+        await params.result_callback(result)
+
+# @tool methods are auto-registered with this worker's LLM on activation.</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Deferred frames during tool calls</p>
+        <p>An <code>LLMWorker</code> tracks in-flight tool calls and <em>defers</em> frames queued during execution, flushing them after — so a mid-tool interruption or handoff behaves correctly.</p>
+      </div>
+
+      <h2 id="registry">Registry & discovery</h2>
+      <p>Workers self-register with a <code>WorkerRegistry</code> on attach, and can signal readiness with <code>@worker_ready</code>. That's how a coordinator knows which agents exist and when they're available to activate or dispatch to. Across runners, registries are exchanged so agents on different machines can find each other.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>workers/base_worker.py</code> — <code>BaseWorker</code> (attach, run, <code>add_workers</code>, activation, jobs). <code>workers/llm/llm_worker.py</code> / <code>llm_context_worker.py</code> — the LLM workers. <code>workers/llm/tool_decorator.py</code> — <code>@tool</code>. <code>registry/registry.py</code> — <code>WorkerRegistry</code>. <code>pipeline/worker_ready_decorator.py</code> — <code>@worker_ready</code>. Docs: agent-registry-and-discovery.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 9</p>
+        <p>Wrap Atlas's LLM as an <code>LLMContextWorker</code> and move a couple of its tools onto the class with <code>@tool</code>. Atlas is now a bus citizen, ready to hand off and fan out.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Convert a Part-12 tool into a <code>@tool</code> method on an <code>LLMContextWorker</code>. (2) Add a <code>@worker_ready</code> hook that logs when the agent is up. (3) Read <code>base_worker.py</code>'s job/activation API — you'll use it next.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Which worker owns its own LLM + context?</summary><p><code>LLMContextWorker</code> (an <code>LLMWorker</code> that also owns an <code>LLMContext</code> + aggregators).</p></details>
+      <details><summary>2. How does a method become a tool for an agent's LLM?</summary><p>Decorate it with <code>@tool</code>; it's auto-registered with the worker's LLM on activation.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l26-handoff.html">Lesson 26 — Handoff →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

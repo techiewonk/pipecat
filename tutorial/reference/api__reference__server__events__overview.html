@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Events Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Events Overview</h1>
+<blockquote>Monitor Pipecat lifecycle changes with the event system: frame processor and service events, and how to subscribe.</blockquote>
+<h2>Overview</h2>
+<p>Pipecat provides an event system that lets you hook into lifecycle changes across the framework — pipeline state transitions, service connections, transport activity, conversation turns, errors, and more.</p>
+<p>Events are available on most Pipecat objects (anything that inherits from <code>BaseObject</code>). You register handlers using the <code>@event_handler</code> decorator, and Pipecat calls them automatically when things happen.</p>
+<pre><code>@worker.event_handler("on_pipeline_started")
+async def on_pipeline_started(worker, frame):
+    print("Pipeline is running!")
+
+@tts.event_handler("on_connected")
+async def on_tts_connected(service):
+    print(f"TTS service connected: {service}")</code></pre>
+<h2>Registering Event Handlers</h2>
+<p>Use the <code>@event_handler</code> decorator on the object that emits the event:</p>
+<pre><code>@object.event_handler("event_name")
+async def handler(object, ...):
+    # Handle the event
+    ...</code></pre>
+<p>The first parameter is always the object that emitted the event. Additional parameters depend on the specific event.</p>
+<p>You can also register handlers without the decorator:</p>
+<pre><code>async def my_handler(object, ...):
+    ...
+
+object.add_event_handler("event_name", my_handler)</code></pre>
+<p>Handlers can be either <code>async</code> or synchronous functions — Pipecat detects which and calls them appropriately.</p>
+<h3>Multiple Handlers</h3>
+<p>You can register multiple handlers for the same event. They execute in the order they were registered:</p>
+<pre><code>@worker.event_handler("on_pipeline_finished")
+async def log_finished(worker, frame):
+    print("Pipeline finished (handler 1)")
+
+@worker.event_handler("on_pipeline_finished")
+async def cleanup(worker, frame):
+    print("Cleaning up (handler 2)")</code></pre>
+<h2>Synchronous vs Asynchronous Events</h2>
+<p>Events are either <strong>synchronous</strong> or <strong>asynchronous</strong>, depending on how the component registered them internally:</p>
+<ul><li><strong>Synchronous events</strong> (<code>sync=True</code>) run the handler inline — the caller waits for the handler to complete before continuing. These are used for events that must complete immediately, such as frame processing hooks and error handling. Synchronous event handlers should execute fast to avoid blocking the pipeline.</li></ul>
+<ul><li><strong>Asynchronous events</strong> (default) run the handler in a background <code>asyncio.Task</code>. The caller continues immediately. These are used for events where you might do I/O, logging, or other work that shouldn't block the pipeline.</li></ul>
+<p>&lt;Note&gt;   You don't need to choose — the sync/async behavior is determined by the   component, not by your handler. Your handler can be an <code>async def</code> or a   regular <code>def</code> regardless. &lt;/Note&gt;</p>
+<h2>Events Reference</h2>
+<p>The table below lists all events available in Pipecat, grouped by component. Click through to the linked documentation for full details including handler signatures and usage examples.</p>
+<h3>Pipeline</h3>
+<p>Events on <a href="/api-reference/server/pipeline/pipeline-worker#event-handlers"><code>PipelineWorker</code></a>.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_pipeline_started</code></td><td>Pipeline has started processing</td></tr><tr><td><code>on_pipeline_finished</code></td><td>Pipeline reached a terminal state (stopped, ended, or cancelled)</td></tr><tr><td><code>on_pipeline_error</code></td><td>An error frame reached the pipeline worker</td></tr><tr><td><code>on_frame_reached_upstream</code></td><td>A filtered frame type reached the pipeline source</td></tr><tr><td><code>on_frame_reached_downstream</code></td><td>A filtered frame type reached the pipeline sink</td></tr><tr><td><code>on_idle_timeout</code></td><td>No activity detected within the idle timeout period</td></tr></tbody></table></div>
+<h3>Frame Processor</h3>
+<p>Events on every <a href="/api-reference/server/events/frame-processor-events"><code>FrameProcessor</code></a>. Since all services, transports, and processors inherit from <code>FrameProcessor</code>, these events are available on any processor in your pipeline.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_error</code></td><td>An error occurred in this processor</td></tr><tr><td><code>on_before_process_frame</code></td><td>A frame is about to be processed</td></tr><tr><td><code>on_after_process_frame</code></td><td>A frame has just been processed</td></tr><tr><td><code>on_before_push_frame</code></td><td>A frame is about to be pushed to the next processor</td></tr><tr><td><code>on_after_push_frame</code></td><td>A frame has just been pushed to the next processor</td></tr></tbody></table></div>
+<h3>Turn Management</h3>
+<p>Events on context aggregators from <a href="/api-reference/server/utilities/turn-management/turn-events"><code>LLMContextAggregatorPair</code></a>.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Emitter</th><th>Description</th></tr></thead><tbody><tr><td><code>on_user_turn_started</code></td><td><code>user_aggregator</code></td><td>User begins speaking</td></tr><tr><td><code>on_user_turn_inference_triggered</code></td><td><code>user_aggregator</code></td><td>Enough signal to start LLM inference</td></tr><tr><td><code>on_user_turn_stopped</code></td><td><code>user_aggregator</code></td><td>User finishes speaking (includes transcript)</td></tr><tr><td><code>on_user_turn_message_added</code></td><td><code>user_aggregator</code></td><td>A user message was written to the LLM context</td></tr><tr><td><code>on_user_turn_stop_timeout</code></td><td><code>user_aggregator</code></td><td>User turn ended due to timeout</td></tr><tr><td><code>on_user_turn_idle</code></td><td><code>user_aggregator</code></td><td>User has been idle for configured timeout</td></tr><tr><td><code>on_user_mute_started</code></td><td><code>user_aggregator</code></td><td>User input was muted</td></tr><tr><td><code>on_user_mute_stopped</code></td><td><code>user_aggregator</code></td><td>User input was unmuted</td></tr><tr><td><code>on_assistant_turn_started</code></td><td><code>assistant_aggregator</code></td><td>Assistant begins responding</td></tr><tr><td><code>on_assistant_turn_stopped</code></td><td><code>assistant_aggregator</code></td><td>Assistant finishes responding (includes transcript)</td></tr><tr><td><code>on_assistant_thought</code></td><td><code>assistant_aggregator</code></td><td>Assistant produced a thought (reasoning models)</td></tr></tbody></table></div>
+<h3>STT Services</h3>
+<p>Events on STT service instances. Available on all WebSocket-based STT services. See <a href="/api-reference/server/events/service-events">Service Events</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>WebSocket connection established</td></tr><tr><td><code>on_disconnected</code></td><td>WebSocket connection closed</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<p>Some STT services have additional events:</p>
+<p><strong>Deepgram STT:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_speech_started</code></td><td>Speech detected in audio stream</td></tr><tr><td><code>on_utterance_end</code></td><td>End of utterance detected</td></tr></tbody></table></div>
+<p><strong>Deepgram Flux STT:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_start_of_turn</code></td><td>Start of a new turn detected</td></tr><tr><td><code>on_turn_resumed</code></td><td>A previously paused turn has resumed</td></tr><tr><td><code>on_end_of_turn</code></td><td>End of turn detected</td></tr><tr><td><code>on_eager_end_of_turn</code></td><td>Early end-of-turn prediction</td></tr><tr><td><code>on_update</code></td><td>Transcript updated</td></tr></tbody></table></div>
+<p><strong>Speechmatics STT:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_speakers_result</code></td><td>Speaker identification result received</td></tr></tbody></table></div>
+<p><strong>Sarvam STT:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_speech_started</code></td><td>Speech detected</td></tr><tr><td><code>on_speech_stopped</code></td><td>Speech stopped</td></tr><tr><td><code>on_utterance_end</code></td><td>End of utterance detected</td></tr></tbody></table></div>
+<h3>TTS Services</h3>
+<p>Events on TTS service instances. Available on all WebSocket-based TTS services. See <a href="/api-reference/server/events/service-events">Service Events</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>WebSocket connection established</td></tr><tr><td><code>on_disconnected</code></td><td>WebSocket connection closed</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr><tr><td><code>on_tts_request</code></td><td>A TTS synthesis request is being sent</td></tr></tbody></table></div>
+<h3>LLM Services</h3>
+<p>Events on LLM service instances. See <a href="/api-reference/server/events/service-events">Service Events</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_function_calls_started</code></td><td>LLM has started making function/tool calls</td></tr><tr><td><code>on_completion_timeout</code></td><td>LLM response timed out</td></tr></tbody></table></div>
+<p><strong>OpenAI Realtime / Grok Realtime:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_item_created</code></td><td>A new conversation item was created</td></tr><tr><td><code>on_conversation_item_updated</code></td><td>A conversation item was updated</td></tr></tbody></table></div>
+<h3>Daily Transport</h3>
+<p>Events on <a href="/api-reference/server/services/transport/daily#event-handlers"><code>DailyTransport</code></a> instances.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_joined</code></td><td>Bot joined the room</td></tr><tr><td><code>on_left</code></td><td>Bot left the room</td></tr><tr><td><code>on_error</code></td><td>Transport error occurred</td></tr><tr><td><code>on_call_state_updated</code></td><td>Call state changed</td></tr><tr><td><code>on_client_connected</code></td><td>A participant connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>A participant disconnected</td></tr><tr><td><code>on_first_participant_joined</code></td><td>First participant joined the room</td></tr><tr><td><code>on_participant_joined</code></td><td>A participant joined</td></tr><tr><td><code>on_participant_left</code></td><td>A participant left</td></tr><tr><td><code>on_participant_updated</code></td><td>A participant's state was updated</td></tr><tr><td><code>on_active_speaker_changed</code></td><td>Active speaker changed</td></tr><tr><td><code>on_app_message</code></td><td>App message received</td></tr><tr><td><code>on_transcription_message</code></td><td>Transcription message received</td></tr><tr><td><code>on_recording_started</code></td><td>Recording started</td></tr><tr><td><code>on_recording_stopped</code></td><td>Recording stopped</td></tr><tr><td><code>on_recording_error</code></td><td>Recording error occurred</td></tr><tr><td><code>on_dialin_connected</code></td><td>Dial-in call connected</td></tr><tr><td><code>on_dialin_ready</code></td><td>Dial-in SIP endpoint ready</td></tr><tr><td><code>on_dialin_stopped</code></td><td>Dial-in call stopped</td></tr><tr><td><code>on_dialin_error</code></td><td>Dial-in error occurred</td></tr><tr><td><code>on_dialin_warning</code></td><td>Dial-in warning</td></tr><tr><td><code>on_dialout_answered</code></td><td>Dial-out call answered</td></tr><tr><td><code>on_dialout_connected</code></td><td>Dial-out call connected</td></tr><tr><td><code>on_dialout_stopped</code></td><td>Dial-out call stopped</td></tr><tr><td><code>on_dialout_error</code></td><td>Dial-out error occurred</td></tr><tr><td><code>on_dialout_warning</code></td><td>Dial-out warning</td></tr><tr><td><code>on_before_leave</code></td><td>About to leave the room (sync)</td></tr></tbody></table></div>
+<h3>LiveKit Transport</h3>
+<p>Events on <a href="/api-reference/server/services/transport/livekit#event-handlers"><code>LiveKitTransport</code></a> instances.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to the room</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from the room</td></tr><tr><td><code>on_participant_connected</code></td><td>A participant connected</td></tr><tr><td><code>on_participant_disconnected</code></td><td>A participant disconnected</td></tr><tr><td><code>on_first_participant_joined</code></td><td>First participant joined</td></tr><tr><td><code>on_audio_track_subscribed</code></td><td>Audio track subscribed</td></tr><tr><td><code>on_audio_track_unsubscribed</code></td><td>Audio track unsubscribed</td></tr><tr><td><code>on_video_track_subscribed</code></td><td>Video track subscribed</td></tr><tr><td><code>on_video_track_unsubscribed</code></td><td>Video track unsubscribed</td></tr><tr><td><code>on_data_received</code></td><td>Data message received</td></tr><tr><td><code>on_call_state_updated</code></td><td>Call state changed</td></tr><tr><td><code>on_before_disconnect</code></td><td>About to disconnect (sync)</td></tr></tbody></table></div>
+<h3>WebSocket Transports</h3>
+<p>Events on WebSocket transport instances.</p>
+<p><strong>WebSocketServerTransport:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client disconnected</td></tr><tr><td><code>on_session_timeout</code></td><td>Session timed out</td></tr><tr><td><code>on_websocket_ready</code></td><td>WebSocket server is ready</td></tr></tbody></table></div>
+<p><strong>FastAPIWebsocketTransport:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client disconnected</td></tr><tr><td><code>on_session_timeout</code></td><td>Session timed out</td></tr></tbody></table></div>
+<p><strong>WebSocketClientTransport:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to server</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from server</td></tr></tbody></table></div>
+<h3>Other Transports</h3>
+<p><strong>SmallWebRTCTransport:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client disconnected</td></tr><tr><td><code>on_app_message</code></td><td>App message received</td></tr></tbody></table></div>
+<p><strong>HeyGenTransport / TavusTransport:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client disconnected</td></tr></tbody></table></div>
+<h3>Utilities</h3>
+<p><strong>ContextSummarizer:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_summary_applied</code></td><td>A summary has been successfully applied to the context.</td></tr></tbody></table></div>
+<p><strong>ServiceSwitcher:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_service_switched</code></td><td>Active service was switched</td></tr></tbody></table></div>
+<p><strong>TranscriptProcessor:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_transcript_update</code></td><td>Transcript was updated</td></tr></tbody></table></div>
+<p><strong>AudioBufferProcessor:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_audio_data</code></td><td>Audio data available</td></tr><tr><td><code>on_track_audio_data</code></td><td>Per-track audio data available</td></tr><tr><td><code>on_user_turn_audio_data</code></td><td>User turn audio data available</td></tr><tr><td><code>on_bot_turn_audio_data</code></td><td>Bot turn audio data available</td></tr><tr><td><code>on_recording_started</code></td><td>Recording started (state transitioned to active)</td></tr><tr><td><code>on_recording_stopped</code></td><td>Recording stopped (after final buffered audio is emitted)</td></tr></tbody></table></div>
+<p><strong>RTVIProcessor:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_bot_started</code></td><td>Bot started</td></tr><tr><td><code>on_client_ready</code></td><td>Client is ready</td></tr><tr><td><code>on_client_message</code></td><td>Client message received</td></tr></tbody></table></div>
+<h3>Observers</h3>
+<p><strong>TurnTrackingObserver:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_turn_started</code></td><td>A conversation turn started</td></tr><tr><td><code>on_turn_ended</code></td><td>A conversation turn ended</td></tr></tbody></table></div>
+<p><strong>UserBotLatencyObserver:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_latency_measured</code></td><td>Latency measurement available</td></tr></tbody></table></div>
+<h3>Extensions</h3>
+<p><strong>VoicemailDetector:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_detected</code></td><td>Live conversation detected (not voicemail)</td></tr><tr><td><code>on_voicemail_detected</code></td><td>Voicemail detected</td></tr></tbody></table></div>
+<p><strong>IVRNavigator:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_conversation_detected</code></td><td>Live conversation detected</td></tr><tr><td><code>on_ivr_status_changed</code></td><td>IVR navigation status changed</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/events/overview">https://docs.pipecat.ai/api-reference/server/events/overview</a></p>
+</div></main></div></body></html>

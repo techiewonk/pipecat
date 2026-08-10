@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L21 · Context summarization & strategies — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 21 · Part IV — Structure, control & capture</div>
+      <h1>Context summarization & strategies</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">Long conversations blow past token limits and cost money. Summarization compresses old turns into a compact summary so the bot keeps the gist without carrying every word.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Compress the old, keep the recent</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="growing context|threshold hit|summarize old turns|1 summary message + recent|smaller context"
+           data-caption="Each turn appends to the LLMContext|when it grows past a token threshold|older turns are summarized by an LLM|replaced with a single summary message plus the recent turns|the context stays small — lower cost and latency">
+      </div>
+
+      <h2 id="strategies">Context strategies</h2>
+      <p>How much history carries forward is a <code>ContextStrategy</code>, used both in summarization and in <a href="l19-flows.html">Flows</a> node transitions:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Strategy</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>APPEND</code></td><td>Keep everything (default) — grows unbounded.</td></tr>
+          <tr><td><code>RESET</code></td><td>Start fresh (e.g. entering a new flow node).</td></tr>
+          <tr><td><code>RESET_WITH_SUMMARY</code></td><td>Start fresh but seed with a summary of what came before.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="code">Wiring summarization</h2>
+      <pre><code class="language-python">from pipecat.processors.aggregators.llm_context_summarizer import LLMContextSummarizer
+# summarize when the context exceeds a token budget:
+summarizer = LLMContextSummarizer(llm=llm, token_threshold=4000)
+pipeline = Pipeline([transport.input(), stt, user_agg, summarizer, llm, tts,
+                     transport.output(), assistant_agg])
+# gated context (hold frames until a condition) lives alongside in gated_llm_context.py</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>processors/aggregators/llm_context_summarizer.py</code> — the summarizer. <code>processors/aggregators/gated_llm_context.py</code> — gated context. <code>ContextStrategy</code> in <code>flows/types.py</code>. Examples: <code>examples/context-summarization/</code> (openai, google, dedicated-llm, manual). Docs: context-summarization.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 7</p>
+        <p>Add summarization to Atlas with a low threshold so it triggers after a few turns, and log the produced summary to see what it keeps.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Lower <code>token_threshold</code> and watch summarization fire early. (2) Compare the four strategies in the <code>context-summarization/</code> examples. (3) In a Flow, set a node to <code>RESET_WITH_SUMMARY</code> and observe what carries over.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What problem does summarization solve?</summary><p>Long conversations exceed token limits and cost more; summarization compresses old turns while keeping the gist.</p></details>
+      <details><summary>2. What does <code>RESET_WITH_SUMMARY</code> do?</summary><p>Starts a fresh context seeded with a summary of the prior conversation.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l22-transcripts-recording.html">Lesson 22 — Transcripts & recording →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

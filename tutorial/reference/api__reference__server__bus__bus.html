@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worker Bus · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Worker Bus</h1>
+<blockquote>WorkerBus is the abstract base for inter-agent and runner-agent pub/sub messaging in Pipecat's multi-agent framework.</blockquote>
+<h2>WorkerBus</h2>
+<p>Abstract base for inter-agent and runner-agent communication. Provides pub/sub messaging where each subscriber receives messages independently through its own priority queue. System messages (e.g. cancel) are delivered ahead of normal data messages.</p>
+<pre><code>from pipecat.bus import WorkerBus</code></pre>
+<h3>Methods</h3>
+<h4>start</h4>
+<pre><code>async def start(self) -&gt; None</code></pre>
+<p>Start dispatch tasks for all registered subscribers.</p>
+<h4>stop</h4>
+<pre><code>async def stop(self) -&gt; None</code></pre>
+<p>Stop all dispatch tasks.</p>
+<h4>subscribe</h4>
+<pre><code>async def subscribe(self, subscriber: BusSubscriber) -&gt; None</code></pre>
+<p>Register a subscriber to receive messages from the bus.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>subscriber</code></td><td><code>BusSubscriber</code></td><td>The subscriber to register</td></tr></tbody></table></div>
+<h4>unsubscribe</h4>
+<pre><code>async def unsubscribe(self, subscriber: BusSubscriber) -&gt; None</code></pre>
+<p>Remove a subscriber and cancel its dispatch tasks.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>subscriber</code></td><td><code>BusSubscriber</code></td><td>The subscriber to remove</td></tr></tbody></table></div>
+<h4>send</h4>
+<pre><code>async def send(self, message: BusMessage) -&gt; None</code></pre>
+<p>Send a message through the bus. Local-only messages are delivered directly to subscribers. All other messages are passed to <code>publish()</code> for transport.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><a href="/api-reference/server/bus/messages"><code>BusMessage</code></a></td><td>The bus message to send</td></tr></tbody></table></div>
+<h4>publish</h4>
+<pre><code>@abstractmethod
+async def publish(self, message: BusMessage) -&gt; None</code></pre>
+<p>Publish a message to the transport. Subclasses implement this for the specific transport (e.g. in-process queue, Redis pub/sub).</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><a href="/api-reference/server/bus/messages"><code>BusMessage</code></a></td><td>The bus message to publish</td></tr></tbody></table></div>
+<h4>on\_message\_received</h4>
+<pre><code>def on_message_received(self, message: BusMessage) -&gt; None</code></pre>
+<p>Deliver a message to all local subscribers via their priority queues. Called by bus implementations when a message arrives (either from a local <code>send()</code> or from a network transport).</p>
+<h2>AsyncQueueBus</h2>
+<p>In-process bus that delivers messages via priority queues. This is the default bus used by <a href="/api-reference/server/workers/runner"><code>WorkerRunner</code></a> when no bus is provided.</p>
+<pre><code>from pipecat.bus import AsyncQueueBus
+
+bus = AsyncQueueBus()
+runner = WorkerRunner(bus=bus)</code></pre>
+<p>Suitable for single-process setups where all agents run in the same Python process.</p>
+<h2>RedisBus</h2>
+<p>Distributed agent bus backed by Redis pub/sub for cross-process communication.</p>
+<p>&lt;Note&gt;Requires the redis extra: <code>uv add "pipecat-ai[redis]"</code>&lt;/Note&gt;</p>
+<pre><code>from redis.asyncio import Redis
+from pipecat.bus.network.redis import RedisBus
+
+redis = Redis.from_url("redis://localhost:6379")
+bus = RedisBus(redis=redis, channel="my-session")
+runner = WorkerRunner(bus=bus)</code></pre>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="redis" type="Redis" required&gt;   A <code>redis.asyncio.Redis</code> client instance. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="MessageSerializer | None" default="None"&gt;   The   <a href="/api-reference/server/bus/serializers#messageserializer"><code>MessageSerializer</code></a>   for encoding/decoding messages. Defaults to   <a href="/api-reference/server/bus/serializers#jsonmessageserializer"><code>JSONMessageSerializer</code></a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channel" type="str" default="pipecat:bus"&gt;   The Redis pub/sub channel name. &lt;/ParamField&gt;</p>
+<h2>PgmqBus</h2>
+<p>Distributed agent bus backed by PGMQ (PostgreSQL Message Queue). Implements pub/sub fan-out on top of PGMQ's point-to-point queue semantics by giving each bus instance its own queue and broadcasting on publish.</p>
+<p>&lt;Note&gt;Requires the pgmq extra: <code>uv add "pipecat-ai[pgmq]"</code>&lt;/Note&gt;</p>
+<p>PgmqBus supports two backend modes:</p>
+<ul><li><strong>DirectPgmqBackend</strong>: Calls <code>pgmq.*</code> directly with prefix-based peer discovery. Suitable when bus peers trust each other (single-tenant deployments, internal services).</li><li><strong>IsolatedPgmqBackend</strong>: Uses SECURITY DEFINER Postgres wrappers for isolation. Suitable when bus peers should be isolated and the channel name is the bus capability.</li></ul>
+<h3>DirectPgmqBackend example</h3>
+<pre><code>from pgmq.async_queue import PGMQueue
+from pipecat.bus.network.pgmq import PgmqBus
+
+pgmq = PGMQueue(
+    host="localhost",
+    port="5432",
+    database="postgres",
+    username="postgres",
+    password="...",
+    pool_size=4,
+)
+await pgmq.init()
+bus = PgmqBus(pgmq=pgmq, channel="pipecat_acme")</code></pre>
+<h3>IsolatedPgmqBackend example</h3>
+<pre><code>import asyncpg
+from pipecat.bus.network.pgmq import PgmqBus
+from pipecat.bus.network.pgmq_backends import IsolatedPgmqBackend
+
+pool = await asyncpg.create_pool(
+    host="localhost",
+    port=5432,
+    database="postgres",
+    user="postgres",
+    password="...",
+    min_size=2,
+    max_size=4,
+)
+backend = IsolatedPgmqBackend(pool=pool)
+bus = PgmqBus(backend=backend, channel="pipecat_acme")</code></pre>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="pgmq" type="PGMQueue | None" default="None"&gt;   An initialized <code>PGMQueue</code> client (call <code>await pgmq.init()</code> before passing).   Selects DirectPgmqBackend. Mutually exclusive with <code>backend</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="backend" type="PgmqBackend | None" default="None"&gt;   A backend instance (e.g. <code>IsolatedPgmqBackend</code> or custom). Mutually exclusive   with <code>pgmq</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="serializer" type="MessageSerializer | None" default="None"&gt;   The   <a href="/api-reference/server/bus/serializers#messageserializer"><code>MessageSerializer</code></a>   for encoding/decoding messages. Defaults to   <a href="/api-reference/server/bus/serializers#jsonmessageserializer"><code>JSONMessageSerializer</code></a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channel" type="str" default="pipecat_bus"&gt;   Channel name. With DirectPgmqBackend this is sanitized into a queue-name   prefix. With IsolatedPgmqBackend it is the bus capability passed to every   wrapper call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="visibility_timeout" type="int" default="30"&gt;   Seconds a read message stays invisible before redelivery. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="batch_size" type="int" default="10"&gt;   Maximum messages to fetch per read. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="poll_interval_ms" type="int" default="100"&gt;   Long-poll check interval in milliseconds. Backend may ignore if it doesn't   expose this knob. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_poll_seconds" type="int" default="5"&gt;   Maximum seconds the reader blocks per poll cycle. &lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   Prefer a session-mode pooler when available. Transaction-mode pooling works for direct <code>pgmq.*</code> calls but is fragile around the long-poll inside the SECURITY DEFINER <code>bus_subscribe</code> wrapper used by IsolatedPgmqBackend.</p>
+<p>  The underlying connection pool must allow at least two concurrent connections (one for the reader's long-poll, one for publishes). &lt;/Note&gt;</p>
+<h2>BusBridgeProcessor</h2>
+<p>Bidirectional mid-pipeline bridge between a Pipecat pipeline and the bus. Placed in a transport or session agent's pipeline to exchange frames with other agents via the <code>WorkerBus</code>.</p>
+<pre><code>from pipecat.bus import BusBridgeProcessor
+
+bridge = BusBridgeProcessor(
+    bus=runner.bus,
+    worker_name="session",
+    bridge="voice",
+)
+
+pipeline = Pipeline([transport.input(), bridge, transport.output()])</code></pre>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="bus" type="WorkerBus" required&gt;   The <code>WorkerBus</code> to exchange frames with. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="worker_name" type="str" required&gt;   Name of the owning agent, used as message source. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="target_task" type="str | None" default="None"&gt;   When set, only exchange frames with this agent. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bridge" type="str | None" default="None"&gt;   Optional bridge name for routing. When set, outgoing frames are tagged with   this name and only incoming frames with the same bridge name are accepted. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="exclude_frames" type="tuple[type[Frame], ...] | None" default="None"&gt;   Extra frame types that should never cross the bus (on top of lifecycle frames   which are always excluded). &lt;/ParamField&gt;</p>
+<h2>BusSubscriber</h2>
+<p>Mixin for objects that receive messages from a <code>WorkerBus</code>. Implementors override <code>on_bus_message()</code> to handle incoming messages. Concrete subscribers must provide a <code>name</code> property (typically inherited from <code>BaseObject</code>) that uniquely identifies the subscriber on the bus.</p>
+<pre><code>from pipecat.bus.subscriber import BusSubscriber
+
+class MySubscriber(BusSubscriber):
+    @property
+    def name(self) -&gt; str:
+        return "my_subscriber"
+
+    async def on_bus_message(self, message: BusMessage) -&gt; None:
+        ...</code></pre>
+<h3>Properties</h3>
+<p>&lt;ParamField path="name" type="str" required&gt;   Unique name identifying this subscriber on the bus. Built-in subscribers   inherit this from <code>BaseObject</code>; custom implementations that extend   <code>BusSubscriber</code> directly must provide one. &lt;/ParamField&gt;</p>
+<h3>Methods</h3>
+<p>&lt;ParamField path="on_bus_message" type="async (message: BusMessage) -&gt; None"&gt;   Override to handle an incoming bus message. &lt;/ParamField&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/bus/bus">https://docs.pipecat.ai/api-reference/server/bus/bus</a></p>
+</div></main></div></body></html>

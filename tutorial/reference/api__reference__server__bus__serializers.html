@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bus Serializers · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Bus Serializers</h1>
+<blockquote>MessageSerializer is the abstract base for Pipecat bus message serialization used by network bus implementations.</blockquote>
+<h2>MessageSerializer</h2>
+<p>Abstract base class for bus message serialization. Network bus implementations use a <code>MessageSerializer</code> to convert messages to bytes for transmission and reconstruct them on the receiving end.</p>
+<pre><code>from pipecat.bus.serializers.base import MessageSerializer</code></pre>
+<h3>Methods</h3>
+<h4>serialize</h4>
+<pre><code>@abstractmethod
+def serialize(self, message: BusMessage) -&gt; bytes</code></pre>
+<p>Convert a bus message to bytes.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><a href="/api-reference/server/bus/messages"><code>BusMessage</code></a></td><td>The bus message to serialize</td></tr></tbody></table></div>
+<p><strong>Returns:</strong> The serialized bytes.</p>
+<h4>deserialize</h4>
+<pre><code>@abstractmethod
+def deserialize(self, data: bytes) -&gt; BusMessage | None</code></pre>
+<p>Reconstruct a bus message from bytes.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>data</code></td><td><code>bytes</code></td><td>The serialized bytes produced by <code>serialize()</code></td></tr></tbody></table></div>
+<p><strong>Returns:</strong> The reconstructed <code>BusMessage</code>, or <code>None</code> if deserialization fails.</p>
+<h2>JSONMessageSerializer</h2>
+<p>Serialize bus messages as JSON with pluggable type adapters. Handles JSON-native types, enums, bytes, dataclasses, and any type with a registered <code>TypeAdapter</code>.</p>
+<p>Adapters for common Pipecat types (<code>LLMContext</code>, <code>ToolsSchema</code>) are registered by default.</p>
+<pre><code>from pipecat.bus.serializers import JSONMessageSerializer
+
+serializer = JSONMessageSerializer()
+
+data = serializer.serialize(message)
+restored = serializer.deserialize(data)</code></pre>
+<p>This is the default serializer used by <a href="/api-reference/server/bus/bus#redisbus"><code>RedisBus</code></a> and the <a href="/api-reference/server/bus/proxy">proxy agents</a>.</p>
+<h3>Methods</h3>
+<h4>register\_adapter</h4>
+<pre><code>def register_adapter(self, type_: type, adapter: TypeAdapter) -&gt; None</code></pre>
+<p>Register a custom type adapter for types not supported by default.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>type_</code></td><td><code>type</code></td><td>The type to handle</td></tr><tr><td><code>adapter</code></td><td><code>TypeAdapter</code></td><td>The adapter that serializes/deserializes instances</td></tr></tbody></table></div>
+<h2>TypeAdapter</h2>
+<p>Abstract base class for type-specific serialization adapters. Each adapter handles one or more types, converting them to/from a JSON-compatible dict.</p>
+<pre><code>from pipecat.bus.adapters.base import TypeAdapter</code></pre>
+<h3>Methods</h3>
+<h4>serialize</h4>
+<pre><code>@abstractmethod
+def serialize(self, obj: Any, serialize_value: SerializeFunc) -&gt; dict[str, Any]</code></pre>
+<p>Convert an object to a JSON-compatible dict.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>obj</code></td><td><code>Any</code></td><td>The object to serialize</td></tr><tr><td><code>serialize_value</code></td><td><code>Callable[[Any], Any]</code></td><td>Callback to recursively serialize nested values</td></tr></tbody></table></div>
+<h4>deserialize</h4>
+<pre><code>@abstractmethod
+def deserialize(
+    self,
+    data: dict[str, Any],
+    deserialize_value: DeserializeFunc,
+    target_type: type | None = None,
+) -&gt; Any</code></pre>
+<p>Reconstruct an object from a dict.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>data</code></td><td><code>dict[str, Any]</code></td><td></td><td>The dict representation produced by <code>serialize()</code></td></tr><tr><td><code>deserialize_value</code></td><td><code>Callable[[Any], Any]</code></td><td></td><td>Callback to recursively deserialize nested values</td></tr><tr><td><code>target_type</code></td><td>`type \</td><td>None`</td><td><code>None</code></td><td>The resolved target class</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/bus/serializers">https://docs.pipecat.ai/api-reference/server/bus/serializers</a></p>
+</div></main></div></body></html>

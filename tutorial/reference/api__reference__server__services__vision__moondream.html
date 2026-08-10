@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moondream Vision · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Moondream Vision</h1>
+<blockquote>MoondreamService runs local image analysis and visual question answering with the Moondream vision model.</blockquote>
+<h2>Overview</h2>
+<p><code>MoondreamService</code> provides local image analysis and question-answering capabilities using the Moondream model. It runs entirely on your local machine, supporting various hardware acceleration options including CUDA, Intel XPU, and Apple MPS for privacy-focused computer vision applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Moondream Vision API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.moondream.vision.html"&gt;     Pipecat's API methods for Moondream vision integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/vision/vision-openai.py"&gt;     Browse examples using Moondream vision   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Moondream Documentation" icon="book" href="https://docs.moondream.ai/"&gt;     Official Moondream model documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Hugging Face Model" icon="microphone" href="https://huggingface.co/vikhyatk/moondream2"&gt;     Access Moondream model on Hugging Face   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Moondream services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[moondream]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Local Model Setup</h3>
+<p>Before using Moondream vision services, you need:</p>
+<ol><li><strong>Model Download</strong>: First run will automatically download the Moondream model from Hugging Face</li><li><strong>Hardware Configuration</strong>: Set up CUDA, Intel XPU, or Apple MPS for optimal performance</li><li><strong>Storage Space</strong>: Ensure sufficient disk space for model files</li><li><strong>Memory Requirements</strong>: Adequate RAM/VRAM for model inference</li></ol>
+<h3>Hardware Acceleration</h3>
+<p>The service automatically detects and uses the best available hardware:</p>
+<ul><li><strong>Intel XPU</strong>: Requires intel\_extension\_for\_pytorch</li><li><strong>NVIDIA CUDA</strong>: For GPU acceleration</li><li><strong>Apple Metal (MPS)</strong>: For Apple Silicon optimization</li><li><strong>CPU</strong>: Fallback option for any system</li></ul>
+<h3>Configuration Options</h3>
+<ul><li><strong>Model Selection</strong>: Choose Moondream model version and revision</li><li><strong>Hardware Override</strong>: Force CPU usage if needed</li><li><strong>Local Processing</strong>: Complete privacy with no external API calls</li></ul>
+<p>&lt;Tip&gt;   No API keys required - Moondream runs entirely locally for complete privacy   and control. &lt;/Tip&gt;</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="model" type="str" default="vikhyatk/moondream2" deprecated&gt;   Hugging Face model identifier for the Moondream model. *Deprecated in   v0.0.105. Use <code>settings=MoondreamService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="revision" type="str" default="2025-01-09"&gt;   Specific model revision to use. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_cpu" type="bool" default="False"&gt;   Whether to force CPU usage instead of hardware acceleration. When <code>False</code>, the   service automatically detects and uses the best available device (Intel XPU,   CUDA, MPS, or CPU). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="MoondreamService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>MoondreamService.Settings(...)</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Moondream model identifier. *(Inherited from base settings.)*</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>NOT_GIVEN</code> values are omitted, letting the service use its own defaults   (<code>"vikhyatk/moondream2"</code> for model). Only parameters that are explicitly set   are included. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.moondream import MoondreamService
+
+vision = MoondreamService()</code></pre>
+<h3>With Settings and CPU Override</h3>
+<pre><code>vision = MoondreamService(
+    revision="2025-01-09",
+    use_cpu=True,
+    settings=MoondreamService.Settings(
+        model="vikhyatk/moondream2",
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The deprecated <code>model</code> constructor parameter is replaced by <code>Settings</code> as of   v0.0.105. Use <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>First-run download</strong>: The model is automatically downloaded from Hugging Face on first use. Ensure sufficient disk space and network access.</li><li><strong>Hardware auto-detection</strong>: When <code>use_cpu=False</code> (the default), the service detects available hardware in this priority order: Intel XPU, NVIDIA CUDA, Apple Metal (MPS), then CPU.</li><li><strong>Data types</strong>: CUDA and MPS use <code>float16</code> for faster inference, while XPU and CPU use <code>float32</code>.</li><li><strong>Blocking inference</strong>: Image analysis runs in a separate thread via <code>asyncio.to_thread</code> to avoid blocking the event loop.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/vision/moondream">https://docs.pipecat.ai/api-reference/server/services/vision/moondream</a></p>
+</div></main></div></body></html>

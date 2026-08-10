@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L3 · The frame model — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 3 · Part I — Principles</div>
+      <h1>The frame model</h1>
+      <div class="meta"><span class="pill">⏱ 35 min</span><span class="pill grey">Level: beginner</span></div>
+      <p class="lead">Frames are the atoms of Pipecat. Learn the three scheduling lanes and how to read the 125-type taxonomy, and the rest of the framework stops being mysterious.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="what">What a frame is</h2>
+      <p>A <strong>frame</strong> is a small, typed data packet. Everything that moves through a pipeline is one: a chunk of microphone audio, a transcription, an LLM token, a "user started speaking" signal, a "shut down now" command. Every frame is a dataclass in <code>frames/frames.py</code> and gets a unique id/name (like <code>TranscriptionFrame#1</code>) for debugging.</p>
+
+      <h2 id="lanes">Three lanes decide scheduling</h2>
+      <div class="box concept">
+        <p class="title">🧠 The one idea that matters</p>
+        <p>Every frame inherits from one of three bases that control <em>how it is queued</em>: <code>SystemFrame</code> (a <strong>high-priority</strong> lane), <code>DataFrame</code>, and <code>ControlFrame</code> (both in an <strong>ordered</strong> lane). System frames can jump ahead — that's how an interruption stops the bot instantly even while audio is queued.</p>
+      </div>
+      <div class="pcflow" data-dur="7"
+           data-stages="🔴 SystemFrame:high-priority|— jumps ahead —|🟢 DataFrame:ordered|🔵 ControlFrame:ordered|processor"
+           data-caption="System frames (interruptions, input audio, errors) use a high-priority queue|so they can preempt whatever is buffered|Data frames (audio out, text, images) are processed strictly in order|Control frames (EndFrame, TTS/LLM boundaries) share that ordered lane|A processor sees each frame in its lane's guaranteed order">
+      </div>
+
+      <h2 id="families">The families you'll meet most</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Base / family</th><th>Examples</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>SystemFrame</code></td><td><code>StartFrame</code>, <code>CancelFrame</code>, <code>ErrorFrame</code>, <code>InterruptionFrame</code>, <code>InputAudioRawFrame</code>, <code>UserStartedSpeakingFrame</code></td><td>Lifecycle, control, input audio, speaking events — high priority.</td></tr>
+          <tr><td><code>DataFrame</code></td><td><code>OutputAudioRawFrame</code>, <code>TextFrame</code>, <code>TranscriptionFrame</code>, <code>LLMTextFrame</code>, <code>TTSAudioRawFrame</code></td><td>The payloads that flow in order.</td></tr>
+          <tr><td><code>ControlFrame</code></td><td><code>EndFrame</code>, <code>TTSStartedFrame</code>, <code>LLMFullResponseStartFrame</code></td><td>Ordered boundary/lifecycle markers.</td></tr>
+          <tr><td>Media mix-ins</td><td><code>AudioRawFrame</code>, <code>ImageRawFrame</code>, <code>TextFrame</code></td><td>Carry the actual audio/image/text bytes; combined with a lane base.</td></tr>
+          <tr><td>Marker classes</td><td><code>UninterruptibleFrame</code> (e.g. on <code>FunctionCallResultFrame</code>)</td><td>Opt out of being discarded on interruption.</td></tr>
+        </tbody>
+      </table></div>
+      <p>The full catalog (all 125) is <a href="ax-frame-catalog.html">Appendix A</a> — you don't memorize it; you recognize the families and look up specifics.</p>
+
+      <h2 id="see">See frames for yourself</h2>
+      <p>The fastest way to build intuition is to print every frame passing a point in the pipeline. A one-method processor does it:</p>
+      <pre><code class="language-python">from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
+
+class FrameSpy(FrameProcessor):
+    async def process_frame(self, frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)     # always call super first
+        print(f"{direction.name:10} {type(frame).__name__}")
+        await self.push_frame(frame, direction)           # always forward
+
+# drop it anywhere in a pipeline, e.g. right after transport.input()
+pipeline = Pipeline([transport.input(), FrameSpy(), stt, ...])</code></pre>
+      <p>Run any voice example with <code>FrameSpy</code> inserted and you'll watch <code>InputAudioRawFrame</code>, <code>UserStartedSpeakingFrame</code>, <code>TranscriptionFrame</code>, <code>LLMTextFrame</code>, <code>TTSAudioRawFrame</code> stream by — the whole conversation as data.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>frames/frames.py</code> — line 61 <code>class Frame</code>, then <code>SystemFrame</code> (101), <code>DataFrame</code> (112), <code>ControlFrame</code> (124), <code>UninterruptibleFrame</code> (143), and the media bases <code>AudioRawFrame</code> (157) / <code>ImageRawFrame</code> (177) / <code>TextFrame</code> (299). 125 classes in total.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>Insert <code>FrameSpy</code> before <em>and</em> after the LLM in <code>getting-started/06-voice-agent.py</code>. Which frame types appear only after the LLM? (Hint: <code>LLMFullResponseStartFrame</code>, <code>LLMTextFrame</code>, <code>LLMFullResponseEndFrame</code>.)</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why do system frames need their own high-priority lane?</summary><p>So control signals — especially interruptions — can preempt already-buffered data (audio/text) and take effect immediately.</p></details>
+      <details><summary>2. Which base would a "user started speaking" event use, and which would output audio use?</summary><p>The speaking event is a <code>SystemFrame</code> (<code>UserStartedSpeakingFrame</code>); output audio is a <code>DataFrame</code> (<code>OutputAudioRawFrame</code>/<code>TTSAudioRawFrame</code>).</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l04-frameprocessor.html">Lesson 4 — FrameProcessor & custom processors →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

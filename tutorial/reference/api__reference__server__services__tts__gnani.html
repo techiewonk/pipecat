@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gnani Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Gnani Text-to-Speech</h1>
+<blockquote>TTS for 10+ Indian languages with GnaniTTSService (WebSocket), GnaniSSETTSService (SSE), and GnaniHttpTTSService (REST).</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="Gnani-AI-Mintlify" maintainerUrl="https://github.com/Gnani-AI-Mintlify" repo="https://github.com/Gnani-AI-Mintlify/pipecat-gnani" /&gt;</p>
+<h2>Overview</h2>
+<p><code>GnaniHttpTTSService</code>, <code>GnaniSSETTSService</code>, and <code>GnaniTTSService</code> synthesize speech using <a href="https://gnani.ai/">Gnani</a>, a production speech AI platform for 10+ Indian languages with real-time streaming and low-latency synthesis.</p>
+<p>Use the REST service for simple request/response synthesis, the SSE service for streaming with lower latency than REST, or the WebSocket <code>GnaniTTSService</code> for lowest latency with interruption support via <code>InterruptibleTTSService</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/Gnani-AI-Mintlify/pipecat-gnani"&gt;     Source code, examples, and issues for the Gnani integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-gnani/"&gt;     The <code>pipecat-gnani</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gnani Website" icon="globe" href="https://gnani.ai"&gt;     Learn about Gnani's speech AI platform   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Gnani API Docs" icon="book" href="https://docs.gnani.ai/"&gt;     TTS REST, SSE, and WebSocket API reference   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Demo Video" icon="play" href="https://go.screenpal.com/watch/cOi2nynUax5"&gt;     Gnani × Pipecat integration — STT/TTS pipeline and interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="gnani-vachana SDK" icon="cube" href="https://pypi.org/project/gnani-vachana/"&gt;     Core Gnani Python SDK (&gt;= 0.7.9) installed as a dependency   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>Install the community package directly:</p>
+<pre><code>uv add pipecat-gnani</code></pre>
+<p>This also installs the <a href="https://pypi.org/project/gnani-vachana/"><code>gnani-vachana</code></a> (&gt;= 0.7.9) core SDK. The Python import package name remains <code>gnani</code>.</p>
+<h2>Prerequisites</h2>
+<h3>Gnani Account Setup</h3>
+<p>Before using the Gnani TTS services, you need:</p>
+<ol><li><strong>Gnani API key</strong>: Get one from <a href="https://app.gnani.ai/voice">Gnani APIs</a>.</li><li><strong>Set credentials</strong>: Export <code>GNANI_API_KEY</code> as an environment variable.</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>GNANI_API_KEY</code>: Your Gnani API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>All three services share the same audio-format settings via their <code>Settings</code> dataclasses. The key difference is transport: REST for single-request synthesis, SSE for chunked streaming, and WebSocket for interruptible real-time synthesis.</p>
+<h3>Shared constructor parameters</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Gnani API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="Pranav"&gt;   Voice name for synthesis. For <code>timbre-v2.0</code>: <code>Pranav</code>, <code>Kaveri</code>, <code>Shubhra</code>,   <code>Deepak</code>. For <code>timbre-v2.5</code>: 42 voices across 11 language groups — see   <a href="#available-voices">Available voices</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="timbre-v2.0"&gt;   TTS model identifier. One of <code>timbre-v2.0</code> or <code>timbre-v2.5</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output sample rate in Hz. One of <code>8000</code>, <code>16000</code>, <code>22050</code>, <code>24000</code>, <code>44100</code>,   or <code>48000</code>. When omitted, negotiated from <code>StartFrame</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="Settings" default="None"&gt;   Runtime-updatable TTS settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3><code>GnaniHttpTTSService</code> and <code>GnaniSSETTSService</code> (HTTP)</h3>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   Shared aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>GnaniHttpTTSService.Settings(...)</code>, <code>GnaniSSETTSService.Settings(...)</code>, or <code>GnaniTTSService.Settings(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>voice</code></td><td><code>str</code></td><td><code>"Pranav"</code></td><td>Voice identifier. See <a href="#available-voices">Available voices</a>.</td></tr><tr><td><code>model</code></td><td><code>str</code></td><td><code>"timbre-v2.0"</code></td><td>TTS model (<code>timbre-v2.0</code> or <code>timbre-v2.5</code>).</td></tr><tr><td><code>language</code></td><td><code>Language</code></td><td><code>None</code></td><td>Synthesis language (<code>timbre-v2.5</code> only). BCP-47 code, e.g. <code>Language.HI_IN</code>.</td></tr><tr><td><code>encoding</code></td><td><code>str</code></td><td><code>"linear_pcm"</code></td><td>Audio encoding (<code>linear_pcm</code>, <code>oggopus</code>, <code>pcm_mulaw</code>, <code>pcm_alaw</code>).</td></tr><tr><td><code>container</code></td><td><code>str</code></td><td><code>"wav"</code></td><td>Audio container (<code>raw</code>, <code>mp3</code>, <code>wav</code>, <code>ogg</code>, <code>mulaw</code>, <code>alaw</code>).</td></tr><tr><td><code>sample_width</code></td><td><code>int</code></td><td><code>2</code></td><td>Sample width in bytes (1–4).</td></tr><tr><td><code>bitrate</code></td><td><code>str</code></td><td><code>None</code></td><td>MP3 bitrate (<code>32k</code>, <code>64k</code>, <code>96k</code>, <code>128k</code>, <code>192k</code>). Only used when <code>container=mp3</code>.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   For <code>timbre-v2.0</code>, voice selection determines synthesis language — no   <code>language</code> parameter is sent. For <code>timbre-v2.5</code>, set <code>language</code> explicitly to   control the synthesis language (e.g. <code>Language.HI_IN</code> for Hindi).</p>
+<p>  When using <code>encoding="oggopus"</code>, set <code>container="raw"</code> (the API rejects   <code>oggopus</code> with <code>container="ogg"</code>). For telephony A-law output, use   <code>container="alaw"</code> with <code>sample_rate=8000</code>. &lt;/Note&gt;</p>
+<p>&lt;Note&gt;   Voice, model, and audio-format settings take effect on the next synthesis   request. See the <a href="https://github.com/Gnani-AI-Mintlify/pipecat-gnani">source   repository</a> and <a href="https://docs.gnani.ai/api/TTS/tts-inference">Gnani TTS   docs</a> for the authoritative,   up-to-date voice and language lists. &lt;/Note&gt;</p>
+<h2>Available voices</h2>
+<h3><code>timbre-v2.0</code> (4 voices)</h3>
+<p><code>Pranav</code>, <code>Kaveri</code>, <code>Shubhra</code>, <code>Deepak</code></p>
+<h3><code>timbre-v2.5</code> (42 voices)</h3>
+<div class="tablewrap"><table><thead><tr><th>Language</th><th>Voices</th></tr></thead><tbody><tr><td>Hindi</td><td>Nalini, Bhavna, Yashvi, Urmila, Jwala, Chitra, Ambuja, Deepak, Roopesh, Vikrant, Hemraj, Jalaj, Omkar</td></tr><tr><td>English</td><td>Kaveri, Trupti, Devika, Pranav, Shlok, Girish</td></tr><tr><td>Tamil</td><td>Asmita, Trisha, Brinda, Vedika, Noopur</td></tr><tr><td>Telugu</td><td>Suhana, Lehara, Lavanya, Yukti, Varuni</td></tr><tr><td>Kannada</td><td>Saanvi, Kavin</td></tr><tr><td>Malayalam</td><td>Reshma, Riyaan</td></tr><tr><td>Marathi</td><td>Zahira, Ishaan</td></tr><tr><td>Bengali</td><td>Kirra, Dhruva</td></tr><tr><td>Gujarati</td><td>Falak, Veera</td></tr><tr><td>Punjabi</td><td>Mehuli, Zayan</td></tr><tr><td>Hinglish</td><td>Poorvi</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   <code>timbre-v2.5</code> requires a <code>language</code> parameter (BCP-47 code, e.g. <code>hi-IN</code>) when   using multilingual voices. Some voices (like Pranav, Kaveri, Deepak) appear in   both models — select the model to pick the voice variant. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Streaming with interruption (WebSocket)</h3>
+<pre><code>import os
+
+from pipecat_gnani import GnaniTTSService
+
+tts = GnaniTTSService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    sample_rate=16000,
+    settings=GnaniTTSService.Settings(
+        voice="Pranav",
+    ),
+)
+
+# ... add tts to your pipeline</code></pre>
+<h3>Using timbre-v2.5 with language</h3>
+<pre><code>import os
+
+from pipecat_gnani import GnaniTTSService
+
+tts = GnaniTTSService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    sample_rate=16000,
+    settings=GnaniTTSService.Settings(
+        model="timbre-v2.5",
+        voice="Nalini",
+        language=Language.HI_IN,
+    ),
+)
+
+# ... add tts to your pipeline</code></pre>
+<h3>SSE streaming</h3>
+<pre><code>import os
+
+from pipecat_gnani import GnaniSSETTSService
+
+tts = GnaniSSETTSService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    aiohttp_session=session,
+    settings=GnaniSSETTSService.Settings(
+        voice="Pranav",
+    ),
+)
+
+# ... add tts to your pipeline</code></pre>
+<h3>REST (non-streaming)</h3>
+<pre><code>import os
+
+from pipecat_gnani import GnaniHttpTTSService
+
+tts = GnaniHttpTTSService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    aiohttp_session=session,
+    settings=GnaniHttpTTSService.Settings(
+        voice="Pranav",
+    ),
+)
+
+# ... add tts to your pipeline</code></pre>
+<h3>Minimal pipeline example</h3>
+<pre><code>import os
+
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.transcriptions.language import Language
+from pipecat_gnani import GnaniSTTService, GnaniTTSService
+
+stt = GnaniSTTService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    settings=GnaniSTTService.Settings(language=Language.HI_IN),
+)
+
+tts = GnaniTTSService(
+    api_key=os.getenv("GNANI_API_KEY"),
+    settings=GnaniTTSService.Settings(voice="Pranav"),
+)
+
+pipeline = Pipeline(
+    [
+        transport.input(),
+        stt,
+        # ... LLM and aggregators
+        tts,
+        transport.output(),
+    ]
+)</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with the latest <strong>Pipecat</strong> main branch (<strong>v1.5.0+</strong>) using both <code>pipecat-gnani</code>. Requires <strong><code>gnani-vachana</code> &gt;= 0.7.9</strong>. Check the <a href="https://github.com/Gnani-AI-Mintlify/pipecat-gnani">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/gnani">https://docs.pipecat.ai/api-reference/server/services/tts/gnani</a></p>
+</div></main></div></body></html>

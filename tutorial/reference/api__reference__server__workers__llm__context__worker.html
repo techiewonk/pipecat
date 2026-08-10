@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLMContextWorker · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LLMContextWorker</h1>
+<blockquote>LLMContextWorker extends LLMWorker with a built-in conversation context and aggregators for stateful agents.</blockquote>
+<p><code>LLMContextWorker</code> extends <a href="/api-reference/server/workers/llm-worker"><code>LLMWorker</code></a> with a built-in <code>LLMContext</code> and a context aggregator pair, so it can track its own conversation history without manually wiring an <code>LLMContextAggregatorPair</code>. The pipeline is built as <code>[user_aggregator, llm, assistant_aggregator]</code> automatically.</p>
+<p>Each <code>LLMContextWorker</code> gets its own context by default; pass the same <code>context=</code> to several workers to give them a shared conversation.</p>
+<pre><code>from pipecat.workers.llm import LLMContextWorker
+
+agent = LLMContextWorker("my_agent", llm=OpenAILLMService(api_key="..."))</code></pre>
+<h2>Configuration</h2>
+<p>Inherits <code>name</code>, <code>llm</code>, <code>active</code>, <code>bridged</code>, and <code>defer_tool_frames</code> from <a href="/api-reference/server/workers/llm-worker#configuration"><code>LLMWorker</code></a>, plus:</p>
+<p>&lt;ParamField path="context" type="LLMContext | None" default="None"&gt;   Optional pre-built <code>LLMContext</code>. When omitted, a fresh empty context is   created. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="user_params" type="LLMUserAggregatorParams | None" default="None"&gt;   Optional parameters for the user aggregator. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="assistant_params" type="LLMAssistantAggregatorParams | None" default="None"&gt;   Optional parameters for the assistant aggregator. &lt;/ParamField&gt;</p>
+<h2>Properties</h2>
+<div class="tablewrap"><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>context</code></td><td><code>LLMContext</code></td><td>The <code>LLMContext</code> owned by this agent</td></tr><tr><td><code>user_aggregator</code></td><td><code>LLMUserAggregator</code></td><td>The user-side context aggregator</td></tr><tr><td><code>assistant_aggregator</code></td><td><code>LLMAssistantAggregator</code></td><td>The assistant-side context aggregator</td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/workers/llm-context-worker">https://docs.pipecat.ai/api-reference/server/workers/llm-context-worker</a></p>
+</div></main></div></body></html>

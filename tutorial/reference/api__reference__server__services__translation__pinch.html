@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pinch Translation · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pinch Translation</h1>
+<blockquote>PinchTranslatorService provides real-time speech-to-speech translation in Pipecat pipelines, powered by Pinch.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="pinch-eng" maintainerUrl="https://github.com/pinch-eng" repo="https://github.com/pinch-eng/pipecat-plugins-pinch" /&gt;</p>
+<h2>Overview</h2>
+<p><code>PinchTranslatorService</code> provides real-time speech-to-speech translation powered by <a href="https://www.startpinch.com/">Pinch</a>. It is a drop-in <code>FrameProcessor</code> that sits between your transport's input and output: it receives <code>InputAudioRawFrame</code> from the user and emits <code>OutputAudioRawFrame</code> (translated speech) and <code>TranscriptionFrame</code> (transcripts) downstream.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/pinch-eng/pipecat-plugins-pinch"&gt;     Source code, examples, and issues for the Pinch integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-plugins-pinch/"&gt;     The <code>pipecat-plugins-pinch</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Pinch" icon="book" href="https://www.startpinch.com/"&gt;     Learn more about Pinch real-time translation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://portal.startpinch.com/dashboard/developers"&gt;     Create and manage your Pinch API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-plugins-pinch</code></pre>
+<p>Requires Python &gt;= 3.10.</p>
+<h2>Prerequisites</h2>
+<h3>Pinch Account Setup</h3>
+<p>Before using the Pinch translation service, you need:</p>
+<ol><li><strong>Pinch Account</strong>: Sign up at <a href="https://www.startpinch.com/">Pinch</a></li><li><strong>API Key</strong>: Get one from the <a href="https://portal.startpinch.com/dashboard/developers">developers portal</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>PINCH_API_KEY</code>: Your Pinch API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="options" type="TranslatorOptions" required&gt;   Language and voice configuration for the translation session. See   <a href="#translatoroptions">TranslatorOptions</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Pinch API key. Falls back to the <code>PINCH_API_KEY</code> environment variable if not   provided. &lt;/ParamField&gt;</p>
+<h3>TranslatorOptions</h3>
+<p>Configuration passed via the <code>options</code> constructor argument using <code>TranslatorOptions(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>source_language</code></td><td><code>str</code></td><td>required</td><td>BCP-47 code for the speaker's language (e.g. <code>"en-US"</code>).</td></tr><tr><td><code>target_language</code></td><td><code>str</code></td><td>required</td><td>BCP-47 code for the output language (e.g. <code>"es-ES"</code>).</td></tr><tr><td><code>voice_type</code></td><td><code>str</code></td><td><code>"clone"</code></td><td>Voice used for translated output: <code>"clone"</code>, <code>"female"</code>, or <code>"male"</code>.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   For the full list of supported language codes, see <a href="https://www.startpinch.com/docs/supported-languages">supported   languages</a>. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.runner import PipelineRunner
+from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat.plugins.pinch import PinchTranslatorService, TranslatorOptions
+
+async def main():
+    # Replace with your preferred Pipecat transport (Daily, LiveKit, WebSocket, etc.)
+    # transport = DailyTransport(...)
+
+    translator = PinchTranslatorService(
+        options=TranslatorOptions(
+            source_language="en-US",
+            target_language="es-ES",
+            voice_type="clone",  # preserves the speaker's voice
+        ),
+        # api_key="pk_..."  # or set PINCH_API_KEY env var
+    )
+
+    pipeline = Pipeline([
+        transport.input(),
+        translator,
+        transport.output(),
+    ])
+
+    task = PipelineTask(pipeline, params=PipelineParams(allow_interruptions=True))
+    await PipelineRunner().run(task)</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with <code>pipecat-ai &gt;= 0.0.50</code>. Check the <a href="https://github.com/pinch-eng/pipecat-plugins-pinch">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/translation/pinch">https://docs.pipecat.ai/api-reference/server/services/translation/pinch</a></p>
+</div></main></div></body></html>

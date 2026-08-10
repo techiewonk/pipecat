@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FunASR Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>FunASR Speech-to-Text</h1>
+<blockquote>Offline STT with FunASRSTTService running SenseVoice models locally on CPU or GPU: multilingual, with strong Chinese support.</blockquote>
+<h2>Overview</h2>
+<p><code>FunASRSTTService</code> provides offline speech recognition using FunASR's SenseVoice models running locally on CPU or GPU. SenseVoice is a multilingual model with strong Chinese accuracy, supporting Chinese, Cantonese, English, Japanese, Korean, and other languages. The non-autoregressive architecture enables fast inference, making it a strong fully-local STT option for voice agents. No API key needed - models download once on first use and are cached locally for privacy-focused transcription.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="FunASR STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.funasr.stt.html"&gt;     Pipecat's API methods for FunASR STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="FunASR Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-funasr.py"&gt;     Complete example with FunASR STT   &lt;/Card&gt;</p>
+<p>  &lt;Card title="FunASR Documentation" icon="book" href="https://github.com/modelscope/FunASR"&gt;     FunASR model details and research   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SenseVoice Model" icon="microphone" href="https://github.com/FunAudioLLM/SenseVoice"&gt;     SenseVoice multilingual ASR model   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<pre><code>uv add "pipecat-ai[funasr]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Local Model Setup</h3>
+<p>Before using FunASR STT service, you need:</p>
+<ol><li><strong>Model Selection</strong>: Choose an appropriate FunASR model (default: <code>iic/SenseVoiceSmall</code>)</li><li><strong>Storage Space</strong>: Ensure sufficient disk space for model downloads (models are cached after first use)</li><li><strong>CPU or GPU Resources</strong>: FunASR can run on CPU or GPU (CUDA)</li></ol>
+<h3>Configuration Options</h3>
+<ul><li><strong>Model Selection</strong>: Default is <code>iic/SenseVoiceSmall</code>, but other FunASR models are supported</li><li><strong>Language Support</strong>: SenseVoice natively supports Chinese (<code>zh</code>), Cantonese (<code>yue</code>), English (<code>en</code>), Japanese (<code>ja</code>), and Korean (<code>ko</code>) with automatic language detection for other languages</li><li><strong>Device Selection</strong>: Choose <code>"cpu"</code> or <code>"cuda"</code> based on your hardware</li><li><strong>No API Key</strong>: Runs entirely locally for complete privacy</li></ul>
+<p>&lt;Tip&gt;   No API keys required - FunASR runs entirely locally for complete privacy. Can   run on CPU or GPU. &lt;/Tip&gt;</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="device" type="str" default="&amp;#x22;cpu&amp;#x22;"&gt;   Inference device. Use <code>"cpu"</code> or <code>"cuda"</code> for GPU acceleration. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="FunASRSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See   <a href="#funasrsttsettings">FunASRSTTSettings</a> below. &lt;/ParamField&gt;</p>
+<h2>FunASRSTTSettings</h2>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>FunASRSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"iic/SenseVoiceSmall"</code></td><td>FunASR model identifier. Default is SenseVoiceSmall. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language for transcription. Natively supports Chinese (<code>zh</code>), Cantonese (<code>yue</code>), English (<code>en</code>), Japanese (<code>ja</code>), and Korean (<code>ko</code>). Falls back to auto-detection for other languages. *(Inherited from base STT settings.)*</td></tr><tr><td><code>use_itn</code></td><td><code>bool</code></td><td><code>True</code></td><td>Apply inverse text normalization (e.g., converts spoken numbers like "nine" to numerals "9").</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.funasr.stt import FunASRSTTService
+
+stt = FunASRSTTService()</code></pre>
+<h3>With GPU Acceleration</h3>
+<pre><code>from pipecat.services.funasr.stt import FunASRSTTService
+
+stt = FunASRSTTService(device="cuda")</code></pre>
+<h3>With Custom Language</h3>
+<pre><code>from pipecat.services.funasr.stt import FunASRSTTService
+from pipecat.transcriptions.language import Language
+
+stt = FunASRSTTService(
+    settings=FunASRSTTService.Settings(
+        language=Language.ZH,  # Chinese
+    ),
+)</code></pre>
+<h3>With Inverse Text Normalization Disabled</h3>
+<pre><code>from pipecat.services.funasr.stt import FunASRSTTService
+
+stt = FunASRSTTService(
+    settings=FunASRSTTService.Settings(
+        use_itn=False,
+    ),
+)</code></pre>
+<h3>With Custom Model</h3>
+<pre><code>from pipecat.services.funasr.stt import FunASRSTTService
+
+stt = FunASRSTTService(
+    settings=FunASRSTTService.Settings(
+        model="iic/SenseVoiceSmall",  # or another FunASR model identifier
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>First run downloads</strong>: The selected model downloads from the ModelScope hub on first use and is cached locally. Later runs load it from the cache.</li><li><strong>Segmented transcription</strong>: <code>FunASRSTTService</code> extends <code>SegmentedSTTService</code>, meaning it processes complete audio segments after VAD detects the user has stopped speaking.</li><li><strong>CPU and GPU support</strong>: FunASR can run on CPU or GPU (CUDA). Use the <code>device</code> parameter to choose.</li><li><strong>Audio format</strong>: Expects 16-bit mono PCM audio at 16 kHz sample rate.</li><li><strong>Multilingual support</strong>: SenseVoice natively supports Chinese, Cantonese, English, Japanese, and Korean. For other languages, it falls back to automatic language detection.</li><li><strong>No external dependencies</strong>: Unlike API-based STT services, FunASR requires no API keys or network connectivity after the initial model download.</li><li><strong>Inverse text normalization</strong>: By default, <code>use_itn=True</code> converts spoken numbers to numerals (e.g., "nine" → "9"). Disable this with <code>use_itn=False</code> if you need the raw transcription.</li><li><strong>Non-autoregressive inference</strong>: SenseVoice uses non-autoregressive architecture for fast inference, making it suitable for real-time voice agents.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/funasr">https://docs.pipecat.ai/api-reference/server/services/stt/funasr</a></p>
+</div></main></div></body></html>

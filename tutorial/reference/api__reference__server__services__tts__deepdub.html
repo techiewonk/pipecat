@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deepdub Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Deepdub Text-to-Speech</h1>
+<blockquote>DeepdubTTSService streams real-time TTS over Deepdub AI's WebSocket API, extending InterruptibleTTSService for interruption handling.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="deepdub-ai" maintainerUrl="https://github.com/deepdub-ai" repo="https://github.com/deepdub-ai/pipecat" /&gt;</p>
+<h2>Overview</h2>
+<p><code>DeepdubTTSService</code> generates speech from text using <a href="https://deepdub.ai/">Deepdub AI</a>'s real-time streaming WebSocket API. It extends Pipecat's <code>InterruptibleTTSService</code> and pushes <code>TTSAudioRawFrame</code> audio into the pipeline, with support for multiple models (<code>dd-etts-2.5</code>, <code>dd-etts-3.0</code>), voice customization, and accent control.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/deepdub-ai/pipecat"&gt;     Source code, examples, and issues for the Deepdub TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="PyPI Package" icon="cube" href="https://pypi.org/project/pipecat-deepdub-tts/"&gt;     The <code>pipecat-deepdub-tts</code> package on PyPI   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Deepdub AI" icon="book" href="https://deepdub.ai/"&gt;     Learn more about Deepdub AI and sign up for an API key   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>:</p>
+<pre><code>uv add pipecat-deepdub-tts</code></pre>
+<h2>Prerequisites</h2>
+<h3>Deepdub Account Setup</h3>
+<p>Before using the Deepdub TTS service, you need:</p>
+<ol><li><strong>Deepdub Account</strong>: Sign up at <a href="https://deepdub.ai/">Deepdub AI</a></li><li><strong>API Key</strong>: Obtain your API key from your Deepdub account</li><li><strong>Voice Prompt ID</strong>: A voice prompt ID to use for synthesis</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>DEEPDUB_API_KEY</code>: Your Deepdub API key for authentication</li><li><code>DEEPDUB_VOICE_ID</code>: The voice prompt ID used for synthesis</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Deepdub API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required&gt;   Voice prompt ID to use for synthesis. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="dd-etts-2.5"&gt;   TTS model name (e.g. <code>"dd-etts-2.5"</code>, <code>"dd-etts-3.0"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="16000"&gt;   Audio sample rate in Hz. Valid values: <code>8000</code>, <code>16000</code>, <code>22050</code>, <code>24000</code>,   <code>44100</code>, <code>48000</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="DeepdubTTSService.InputParams" default="None"&gt;   Optional voice customization parameters. See <a href="#inputparams">InputParams</a>   below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<p>Optional voice customization passed via the <code>params</code> constructor argument using <code>DeepdubTTSService.InputParams(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>locale</code></td><td><code>str</code></td><td><code>"en-US"</code></td><td>Language locale for synthesis.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>None</code></td><td>Controls output variability.</td></tr><tr><td><code>variance</code></td><td><code>float</code></td><td><code>None</code></td><td>Controls variance in generated speech.</td></tr><tr><td><code>tempo</code></td><td><code>float</code></td><td><code>None</code></td><td>Speech tempo multiplier.</td></tr><tr><td><code>prompt_boost</code></td><td><code>bool</code></td><td><code>None</code></td><td>Enable prompt boosting for improved quality.</td></tr><tr><td><code>accent_base_locale</code></td><td><code>str</code></td><td><code>None</code></td><td>Base locale for accent control. All three accent params required together.</td></tr><tr><td><code>accent_locale</code></td><td><code>str</code></td><td><code>None</code></td><td>Target accent locale.</td></tr><tr><td><code>accent_ratio</code></td><td><code>float</code></td><td><code>None</code></td><td>Accent blending ratio (0.0 to 1.0).</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Available parameters and defaults are defined by the integration. See the   <a href="https://github.com/deepdub-ai/pipecat">source repository</a> for the   authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+from pipecat_deepdub_tts import DeepdubTTSService
+
+tts = DeepdubTTSService(
+    api_key=os.getenv("DEEPDUB_API_KEY"),
+    voice_id=os.getenv("DEEPDUB_VOICE_ID"),
+    model="dd-etts-2.5",
+    sample_rate=24000,
+    params=DeepdubTTSService.InputParams(
+        locale="en-US",
+        temperature=0.7,
+        tempo=1.1,
+        prompt_boost=True,
+    ),
+)
+
+# ... add tts to your pipeline, e.g. Pipeline([llm, tts, ...])</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.97. Check the <a href="https://github.com/deepdub-ai/pipecat">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/deepdub">https://docs.pipecat.ai/api-reference/server/services/tts/deepdub</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Frames · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>System Frames</h1>
+<blockquote>Reference for SystemFrame types: pipeline lifecycle, interruptions, speaking state, input, and diagnostics</blockquote>
+<p>SystemFrames have higher priority than DataFrames and ControlFrames and are never cancelled during user interruptions. They are queued and processed in order with other SystemFrames. They carry signals that must always be delivered: pipeline startup and teardown, error notifications, user input, and speaking state changes. See the <a href="/api-reference/server/frames/overview">frames overview</a> for base class details, mixin fields, and frame properties common to all frames.</p>
+<h2>Pipeline Lifecycle</h2>
+<h3>StartFrame</h3>
+<p>The first frame pushed into a pipeline, initializing all processors. Every processor receives this before any DataFrames or ControlFrames arrive.</p>
+<p>&lt;ParamField path="audio_in_sample_rate" type="int" default="16000"&gt;   Input audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_sample_rate" type="int" default="24000"&gt;   Output audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_metrics" type="bool" default="False"&gt;   Enable performance metrics collection from processors. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_tracing" type="bool" default="False"&gt;   Enable tracing for pipeline execution. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_usage_metrics" type="bool" default="False"&gt;   Enable usage metrics (token counts, API calls) from services. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="report_only_initial_ttfb" type="bool" default="False"&gt;   When <code>True</code>, only report time-to-first-byte for the initial response rather   than every response. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tracing_context" type="TracingContext | None" default="None"&gt;   Optional tracing context for distributed tracing integration. &lt;/ParamField&gt;</p>
+<h3>CancelFrame</h3>
+<p>Stops the pipeline immediately, skipping any queued non-SystemFrames. Use this when you need to abort without waiting for pending work to drain. For example, when the user has left the session.</p>
+<p>&lt;ParamField path="reason" type="Any | None" default="None"&gt;   Optional reason for the cancellation. &lt;/ParamField&gt;</p>
+<h2>Errors</h2>
+<h3>ErrorFrame</h3>
+<p>Carries an error notification, typically pushed upstream so earlier processors can react.</p>
+<p>&lt;ParamField path="error" type="str" required&gt;   Human-readable error message. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="fatal" type="bool" default="False"&gt;   Whether this error is fatal and requires the bot to shut down. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="processor" type="FrameProcessor | None" default="None"&gt;   The processor that raised the error. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="exception" type="Exception | None" default="None"&gt;   The underlying exception, if one was caught. &lt;/ParamField&gt;</p>
+<h3>FatalErrorFrame</h3>
+<p>An unrecoverable error requiring the bot to shut down. The <code>fatal</code> field is always <code>True</code>.</p>
+<p>Inherits from <code>ErrorFrame</code>.</p>
+<h2>Processor Pause/Resume (Urgent)</h2>
+<p>These are the <code>SystemFrame</code> variants of <code>FrameProcessorPauseFrame</code> and <code>FrameProcessorResumeFrame</code>. As SystemFrames, they flow through the high-priority input queue rather than the process queue, so they are not blocked by paused state or buffered frames. This makes <code>FrameProcessorResumeUrgentFrame</code> the correct way to resume a processor externally — the <code>ControlFrame</code> variant (<code>FrameProcessorResumeFrame</code>) would get stuck behind any DataFrames that queued up during the pause. See <a href="/api-reference/server/frames/control-frames#processor-pause/resume">Control Frames</a> for the full explanation.</p>
+<h3>FrameProcessorPauseUrgentFrame</h3>
+<p>Pauses a processor immediately, without waiting for queued frames to drain first.</p>
+<p>&lt;ParamField path="processor" type="FrameProcessor"&gt;   The processor to pause. &lt;/ParamField&gt;</p>
+<h3>FrameProcessorResumeUrgentFrame</h3>
+<p>Resumes a paused processor immediately, releasing buffered frames. Use this instead of <code>FrameProcessorResumeFrame</code> when the processor may have frames queued up.</p>
+<p>&lt;ParamField path="processor" type="FrameProcessor"&gt;   The processor to resume. &lt;/ParamField&gt;</p>
+<h2>Interruptions</h2>
+<h3>InterruptionFrame</h3>
+<p>Interrupts the pipeline, discarding pending DataFrames and ControlFrames. Typically triggered when the user starts speaking during a bot response.</p>
+<h2>User Speaking State</h2>
+<h3>UserStartedSpeakingFrame</h3>
+<p>Indicates that a user turn has begun. By this point, transcriptions are usually already flowing through the pipeline.</p>
+<h3>UserStoppedSpeakingFrame</h3>
+<p>Marks the end of a user turn. The bot's response is triggered separately by the turn detection system.</p>
+<h3>UserSpeakingFrame</h3>
+<p>Emitted by the VAD processor while the user is actively speaking. Useful for UI feedback or suppressing idle timeouts.</p>
+<h3>UserTurnInferenceCompletedFrame</h3>
+<p>Indicates that the user turn is semantically complete. Emitted by any component that can judge conversational turn completeness — for example an LLM with turn-completion markers, an STT service with built-in turn detection, or a dedicated end-of-turn classifier. Stop strategies that gate the user-turn-stop event on an external completeness signal (e.g. <a href="/api-reference/server/utilities/turn-management/user-turn-strategies#llmturncompletionuserturnstopstrategy"><code>LLMTurnCompletionUserTurnStopStrategy</code></a>) consume this frame to finalize the turn. An absence of this frame means the turn is not yet considered complete.</p>
+<h3>UserMuteStartedFrame</h3>
+<p>Broadcast when one or more <a href="/api-reference/server/utilities/turn-management/user-mute-strategies">user mute strategies</a> activate. User mute temporarily suppresses user input while the bot is speaking to prevent interruptions. While muted, the <code>LLMUserAggregator</code> drops incoming user frames (<code>InputAudioRawFrame</code>, <code>TranscriptionFrame</code>, <code>InterimTranscriptionFrame</code>, <code>UserStartedSpeakingFrame</code>, <code>UserStoppedSpeakingFrame</code>, VAD signals, and <code>InterruptionFrame</code>). Lifecycle frames (<code>StartFrame</code>, <code>EndFrame</code>, <code>CancelFrame</code>) are never muted.</p>
+<h3>UserMuteStoppedFrame</h3>
+<p>Broadcast when all active <a href="/api-reference/server/utilities/turn-management/user-mute-strategies">user mute strategies</a> deactivate, allowing user input to be processed again.</p>
+<h2>VAD Events</h2>
+<p>These frames are emitted directly by the Voice Activity Detection (VAD) processor and carry timing metadata. Higher-level speaking-state frames (<code>UserStartedSpeakingFrame</code>, <code>UserStoppedSpeakingFrame</code>) are derived from these.</p>
+<h3>VADUserStartedSpeakingFrame</h3>
+<p>VAD confirmed that speech has started.</p>
+<p>&lt;ParamField path="start_secs" type="float" default="0.0"&gt;   Timestamp in seconds when speech onset was detected. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="float" default="time.time()"&gt;   Wall-clock time when the frame was created. &lt;/ParamField&gt;</p>
+<h3>VADUserStoppedSpeakingFrame</h3>
+<p>VAD confirmed that speech has ended.</p>
+<p>&lt;ParamField path="stop_secs" type="float" default="0.0"&gt;   Timestamp in seconds when speech ended. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timestamp" type="float" default="time.time()"&gt;   Wall-clock time when the frame was created. &lt;/ParamField&gt;</p>
+<h3>SpeechControlParamsFrame</h3>
+<p>Notifies processors that VAD or turn detection parameters have changed at runtime.</p>
+<p>&lt;ParamField path="vad_params" type="VADParams | None" default="None"&gt;   Updated VAD parameters. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="turn_params" type="BaseTurnParams | None" default="None"&gt;   Updated turn detection parameters. &lt;/ParamField&gt;</p>
+<h2>Bot Speaking State</h2>
+<h3>BotStartedSpeakingFrame</h3>
+<p>Emitted by the output transport when the bot begins speaking. Broadcast in both directions so processors on either side of the transport can react.</p>
+<h3>BotStoppedSpeakingFrame</h3>
+<p>Emitted by the output transport when the bot finishes speaking. Also broadcast in both directions.</p>
+<h3>BotSpeakingFrame</h3>
+<p>Emitted continuously while the bot is speaking. Processors can use this to suppress idle timeouts or drive visual indicators.</p>
+<h2>Connection Status</h2>
+<h3>BotConnectedFrame</h3>
+<p>The bot has joined the transport room. Only relevant for SFU-based transports: Daily, LiveKit, HeyGen, and Tavus.</p>
+<h3>ClientConnectedFrame</h3>
+<p>A client or participant has connected to the transport.</p>
+<h2>Input Frames</h2>
+<p>Input frames carry raw data from transport sources into the pipeline. As <code>SystemFrame</code>s, they are never discarded during interruptions. Incoming user data must always be processed.</p>
+<h3>InputAudioRawFrame</h3>
+<p>Raw audio received from the transport. Inherits the <code>audio</code>, <code>sample_rate</code>, <code>num_channels</code>, and <code>num_frames</code> fields from the <a href="/api-reference/server/frames/overview#audiorawframe"><code>AudioRawFrame</code></a> mixin.</p>
+<p>Inherits from <code>AudioRawFrame</code>.</p>
+<h3>UserAudioRawFrame</h3>
+<p>Audio from a specific user in a multi-participant session.</p>
+<p>Inherits from <code>InputAudioRawFrame</code>.</p>
+<p>&lt;ParamField path="user_id" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Identifier for the user who produced this audio. &lt;/ParamField&gt;</p>
+<h3>InputImageRawFrame</h3>
+<p>Raw image received from the transport. Inherits <code>image</code>, <code>size</code>, and <code>format</code> from the <a href="/api-reference/server/frames/overview#imagerawframe"><code>ImageRawFrame</code></a> mixin.</p>
+<p>Inherits from <code>ImageRawFrame</code>.</p>
+<h3>UserImageRawFrame</h3>
+<p>An image from a specific user, optionally tied to a pending image request.</p>
+<p>Inherits from <code>InputImageRawFrame</code>.</p>
+<p>&lt;ParamField path="user_id" type="str" default="&amp;#x22;&amp;#x22;"&gt;   Identifier for the user who produced this image. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text" type="str | None" default="None"&gt;   Optional text associated with the image. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="append_to_context" type="bool | None" default="None"&gt;   Whether to append this image to the LLM context. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="request" type="UserImageRequestFrame | None" default="None"&gt;   The original request frame that triggered this image capture. &lt;/ParamField&gt;</p>
+<h3>InputTextRawFrame</h3>
+<p>Text received from the transport, such as a user typing in a chat interface. Inherits the <code>text</code> field from <code>TextFrame</code>.</p>
+<p>Inherits from <code>TextFrame</code>.</p>
+<h2>DTMF Input</h2>
+<h3>InputDTMFFrame</h3>
+<p>A DTMF keypress received from the transport. Inherits the <code>button</code> field from the <code>DTMFFrame</code> mixin.</p>
+<p>Inherits from <code>DTMFFrame</code>.</p>
+<h3>OutputDTMFUrgentFrame</h3>
+<p>A DTMF keypress for immediate output, bypassing the normal frame queue.</p>
+<p>Inherits from <code>DTMFFrame</code>.</p>
+<h2>Transport Messages</h2>
+<h3>InputTransportMessageFrame</h3>
+<p>A message received from an external transport. The message format is transport-specific.</p>
+<p>&lt;ParamField path="message" type="Any" required&gt;   The transport message payload. &lt;/ParamField&gt;</p>
+<h3>OutputTransportMessageUrgentFrame</h3>
+<p>An outbound transport message that bypasses the normal queue for immediate delivery.</p>
+<p>&lt;ParamField path="message" type="Any" required&gt;   The transport message payload. &lt;/ParamField&gt;</p>
+<h2>Function Calling</h2>
+<h3>FunctionCallsStartedFrame</h3>
+<p>Signals that one or more function calls are about to begin executing.</p>
+<p>&lt;ParamField path="function_calls" type="Sequence[FunctionCallFromLLM]" required&gt;   Sequence of function calls that will be executed. &lt;/ParamField&gt;</p>
+<h3>FunctionCallCancelFrame</h3>
+<p>Signals that a function call was cancelled, typically due to user interruption when the function's <code>cancel_on_interruption</code> flag is set.</p>
+<p>&lt;ParamField path="function_name" type="str" required&gt;   Name of the function that was cancelled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_call_id" type="str" required&gt;   Unique identifier for the cancelled function call. &lt;/ParamField&gt;</p>
+<h2>User Interaction</h2>
+<h3>UserImageRequestFrame</h3>
+<p>Requests an image from a specific user, typically to capture a camera frame for vision processing.</p>
+<p>&lt;ParamField path="user_id" type="str" required&gt;   Identifier for the user to capture from. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text" type="str | None" default="None"&gt;   Optional text prompt associated with the image request. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="append_to_context" type="bool | None" default="None"&gt;   Whether to append the resulting image to the LLM context. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_source" type="str | None" default="None"&gt;   Specific video source to capture from. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="function_name" type="str | None" default="None"&gt;   Function name if this request originated from a tool call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="tool_call_id" type="str | None" default="None"&gt;   Tool call identifier if this request originated from a tool call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="result_callback" type="Any | None" default="None"&gt;   Callback to invoke with the captured image result. &lt;/ParamField&gt;</p>
+<h3>STTMuteFrame</h3>
+<p>Mutes or unmutes the STT service. While muted, incoming audio is not sent to the STT provider.</p>
+<p>&lt;ParamField path="mute" type="bool" required&gt;   <code>True</code> to mute, <code>False</code> to unmute. &lt;/ParamField&gt;</p>
+<h3>UserIdleTimeoutUpdateFrame</h3>
+<p>Updates the user idle timeout at runtime. Setting the timeout to <code>0</code> disables idle detection, and setting a positive value enables it. Updates apply immediately: a running idle timer restarts with the new duration, and if the bot is waiting for the user to speak, the timer is armed right away.</p>
+<p>&lt;ParamField path="timeout" type="float" required&gt;   New idle timeout in seconds. <code>0</code> disables detection. &lt;/ParamField&gt;</p>
+<h2>Diagnostics</h2>
+<h3>MetricsFrame</h3>
+<p>Performance metrics collected from processors. Emitted when metrics reporting is enabled via <code>StartFrame</code>.</p>
+<p>&lt;ParamField path="data" type="List[MetricsData]" required&gt;   List of metrics data entries. &lt;/ParamField&gt;</p>
+<h2>Service Metadata</h2>
+<h3>ServiceMetadataFrame</h3>
+<p>Base metadata frame broadcast by services at startup, providing information about service capabilities and configuration.</p>
+<p>&lt;ParamField path="service_name" type="str" required&gt;   Name of the service that emitted this metadata. &lt;/ParamField&gt;</p>
+<h3>STTMetadataFrame</h3>
+<p>Metadata from an STT service, including latency characteristics used for turn detection tuning.</p>
+<p>Inherits from <code>ServiceMetadataFrame</code>.</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" required&gt;   P99 latency in seconds for time-to-final-segment. Used by turn detectors to   calibrate wait times. &lt;/ParamField&gt;</p>
+<h3>RealtimeServiceMetadataFrame</h3>
+<p>Broadcast at pipeline start by realtime (speech-to-speech) LLM services (OpenAI Realtime, Azure Realtime, Inworld, Grok/xAI Realtime, Gemini Live, AWS Nova Sonic, Ultravox). Its presence lets downstream processors — notably <code>LLMContextAggregatorPair</code> — detect that a realtime service is in the pipeline and configure themselves accordingly. See <a href="/api-reference/server/utilities/turn-management/external-turn-management#realtime-speech-to-speech-services">Realtime (Speech-to-Speech) Services</a>.</p>
+<p>Inherits from <code>ServiceMetadataFrame</code>.</p>
+<p>&lt;ParamField path="emits_user_turn_frames" type="bool" default="True"&gt;   Whether the service is currently configured to emit <code>UserStartedSpeakingFrame</code>   / <code>UserStoppedSpeakingFrame</code> from server-side turn signals. <code>False</code> for   services with no server-side turn signals (e.g. Gemini Live, AWS Nova Sonic,   Ultravox), and also <code>False</code> when a service's server-side turn detection has   been disabled by configuration (e.g. OpenAI Realtime with   <code>turn_detection=False</code>). &lt;/ParamField&gt;</p>
+<h2>RTVI</h2>
+<p>Frames for the <a href="/api-reference/server/rtvi/introduction">Real-Time Voice Interface (RTVI)</a> protocol, which bridges clients and the pipeline. These frames handle custom messaging between the client and server.</p>
+<h3>RTVIServerMessageFrame</h3>
+<p>Sends a server message to the connected client.</p>
+<p>&lt;ParamField path="data" type="Any" required&gt;   The message data to send to the client. &lt;/ParamField&gt;</p>
+<h3>RTVIClientMessageFrame</h3>
+<p>A message received from the client, expecting a server response via <code>RTVIServerResponseFrame</code>.</p>
+<p>&lt;ParamField path="msg_id" type="str" required&gt;   Unique identifier for the client message. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="type" type="str" required&gt;   The message type. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="data" type="Any | None" default="None"&gt;   Optional message data from the client. &lt;/ParamField&gt;</p>
+<h3>RTVIServerResponseFrame</h3>
+<p>Responds to an <code>RTVIClientMessageFrame</code>. Include the original client message frame to ensure the response is properly correlated. Set the <code>error</code> field to respond with an error instead of a normal response.</p>
+<p>&lt;ParamField path="client_msg" type="RTVIClientMessageFrame" required&gt;   The original client message this response is for. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="data" type="Any | None" default="None"&gt;   Response data to send to the client. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="error" type="str | None" default="None"&gt;   Error message. When set, the client receives an <code>error-response</code> instead of a   <code>server-response</code>. &lt;/ParamField&gt;</p>
+<h2>Pipeline Worker Frames</h2>
+<p>Pipeline worker frames provide a system-priority mechanism for requesting pipeline actions from outside the normal frame flow. They are converted into their corresponding standard frames when processed.</p>
+<h3>WorkerSystemFrame</h3>
+<p>Base class for system-priority worker frames.</p>
+<h3>CancelWorkerFrame</h3>
+<p>Requests immediate pipeline cancellation. Converted to a <code>CancelFrame</code> when processed by the pipeline.</p>
+<p>Inherits from <code>WorkerSystemFrame</code>.</p>
+<p>&lt;ParamField path="reason" type="Any | None" default="None"&gt;   Optional reason for the cancellation request. &lt;/ParamField&gt;</p>
+<h3>InterruptionWorkerFrame</h3>
+<p>Requests a pipeline interruption. Converted to an <code>InterruptionFrame</code> when processed.</p>
+<p>Inherits from <code>WorkerSystemFrame</code>.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/frames/system-frames">https://docs.pipecat.ai/api-reference/server/frames/system-frames</a></p>
+</div></main></div></body></html>

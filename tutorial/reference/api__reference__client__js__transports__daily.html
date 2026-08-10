@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Daily WebRTC Transport</h1>
+<blockquote>DailyTransport for the Pipecat JavaScript SDK: WebRTC audio and video on Daily's infrastructure, wrapping a Daily-JS call client.</blockquote>
+<p>The DailyTransport class provides a WebRTC transport layer using <a href="https://daily.co">Daily.co's</a> infrastructure. It wraps a Daily-JS call client to handle audio/video device management, WebRTC connections, and real-time communication between clients and bots. For complete documentation on Daily's API, see the <a href="https://docs.daily.co/reference/daily-js">Daily API Reference</a>.</p>
+<p>This transport is designed for production use cases, leveraging Daily's global infrastructure for low-latency, high-quality audio and video streaming. It expects your Pipecat server to include the corresponding <a href="/api-reference/server/services/transport/daily"><code>DailyTransport</code> server-side</a> implementation.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+const pcClient = new PipecatClient({
+  transport: new DailyTransport({
+    // DailyTransport constructor options
+    bufferLocalAudioUntilBotReady: true, // Optional, defaults to false
+    inputSettings: { video: { processor: { type: "background-blur" } } },
+  }),
+  enableCam: false, // Default camera off
+  enableMic: true, // Default microphone on
+  callbacks: {
+    // Event handlers
+  },
+  // ...
+});
+
+await pcClient.connect({
+  url: "https://your-domain.daily.co/room",
+  token: "your-daily-token", // Optional, if your room requires authentication
+});</code></pre>
+<h2>API Reference</h2>
+<h3>Constructor Options</h3>
+<pre><code>interface DailyTransportConstructorOptions extends DailyFactoryOptions {
+  bufferLocalAudioUntilBotReady?: boolean;
+}</code></pre>
+<p>&lt;ParamField path="bufferLocalAudioUntilBotReady" type="boolean" default="false"&gt;   If set to <code>true</code>, the transport will buffer local audio until the bot is ready. This is useful for ensuring that bot gets any audio from the user that started before the bot is ready to process it. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="DailyFactoryOptions"&gt;   The <code>DailyTransportConstructorOptions</code> extends the <code>DailyFactoryOptions</code> type that is accepted by the underlying Daily instance. These options are passed directly through to the Daily constructor. See the <a href="https://docs.daily.co/reference/daily-js/daily-call-client/properties">Daily API Reference</a> for a complete list of options.</p>
+<p>  &lt;Note&gt;     While you can provide the room url and optional token as part of your     constructor options, the typical pattern is to provide them via a connection     endpoint with <code>startBot()</code> or directly as part of <code>connect()</code>. See below.   &lt;/Note&gt; &lt;/ParamField&gt;</p>
+<h3>TransportConnectionParams</h3>
+<p>On <code>connect()</code>, the <code>DailyTransport</code> optionally takes a set of <a href="https://docs.daily.co/reference/daily-js/daily-call-client/properties"><code>DailyCallOptions</code></a> to connect to a Daily room. This can be provided directly to the <code>PipecatClient</code>'s <code>connect()</code> method or via a starting endpoint passed to the <code>PipecatClient</code>'s <code>startBotAndConnect()</code> method. If using an endpoint, your endpoint should return a JSON object matching the <code>DailyCallOptions</code> type. See the <a href="/api-reference/client/js/client-methods#connect">client connect()</a> documentation for more information.</p>
+<p>&lt;CodeGroup&gt;   ``<code>typescript client theme={null}   pcClient.connect({     url: 'https://your.daily.co/room'   });   // OR...   pcClient.startBotAndConnect({     endpoint: '/api/start', // Your server endpoint to start the bot   });   </code>``</p>
+<pre><code>  @app.post("/api/start")
+  async def start(request: Request) -&gt; Dict[Any, Any]:
+      print("Creating room and token for RTVI connection")
+      room_url, token = await create_room_and_token()
+
+      # Start the bot process
+      print("Starting bot subprocess")
+      try:
+          subprocess.Popen(
+              [f"python3 -m bot.py -u {room_url} -t {token}"],
+              shell=True,
+              bufsize=1,
+              cwd=os.path.dirname(os.path.abspath(__file__)),
+          )
+      except Exception as e:
+          raise HTTPException(status_code=500, detail=f"Failed to start subprocess: {e}")
+
+      # Return the Daily call options in format expected by DailyTransport/Daily Call Object
+      return {"url": room_url, "token": token}</code></pre>
+<p>&lt;/CodeGroup&gt;</p>
+<h3>Methods</h3>
+<p>For most operations, you will not interact with the transport directly. Most methods have an equivalent in the <code>PipecatClient</code> and should be called from the <code>PipecatClient</code>. However, there are a few transport-specific methods that you may need to call directly. When doing so, be sure to access your transport via the <code>transport</code> property of the <code>PipecatClient</code> instance.</p>
+<ul><li><code>preAuth()</code></li></ul>
+<p>  This is the one method meant to be called directly, which is used to allow you to gather information about the Daily room prior to connecting. As a Daily-specific action, it is not exposed through the <code>PipecatClient</code>. This method must be called prior to <code>connect()</code> and use the same <code>room_url</code> and <code>token</code> (optional) as what will be used on <code>connect()</code>.</p>
+<pre><code>  pcClient.transport.preAuth({
+    url: "https://your.daily.co/room",
+    token: "your_token",
+  });
+  const roomInfo = pcClient.transport.dailyCallClient.room();</code></pre>
+<h2>Events</h2>
+<p>The transport implements the various <a href="/api-reference/client/js/callbacks"><code>PipecatClient</code> event handlers</a>. For Daily-specific events, you can attach listeners to the underlying Daily call client. For a list of available events, see the <a href="https://docs.daily.co/reference/daily-js/events">Daily API Reference</a>.</p>
+<pre><code>pcClient.transport.dailyCallClient.on('recording-started', (ev) =&gt; {...});</code></pre>
+<h2>Advanced</h2>
+<h3>Accessing the Daily Call</h3>
+<p>For advanced use cases, where you may need to work with the Daily call client directly, you can access it via the <code>dailyCallClient</code> property.</p>
+<pre><code>const dailyCall = pcClient.transport.dailyCallClient;</code></pre>
+<p>&lt;Note&gt;   The Daily call client returned is safe-guarded to not allow you to call   functions which affect the call's lifecycle and will redirect you to use   either a Transport method or the <code>PipecatClient</code> to perform the equivalent   action. &lt;/Note&gt;</p>
+<h2>More Information</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Demo" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/simple-chatbot"&gt;     Simple Chatbot Demo   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Source" icon="github" href="https://github.com/pipecat-ai/pipecat-client-web-transports/tree/main/transports/daily"&gt;     <code>DailyTransport</code>   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>&lt;Card horizontal title="Package" icon="browser" href="https://www.npmjs.com/package/@pipecat-ai/daily-transport"&gt;   <code>@pipecat-ai/daily-transport</code> &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/transports/daily">https://docs.pipecat.ai/api-reference/client/js/transports/daily</a></p>
+</div></main></div></body></html>

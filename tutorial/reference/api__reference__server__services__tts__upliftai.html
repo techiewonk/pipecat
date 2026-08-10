@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uplift AI Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Uplift AI Text-to-Speech</h1>
+<blockquote>UpliftHttpTTSService converts text to speech with Uplift AI's HTTP TTS API for high-quality, low-latency synthesis.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="havkerboi123" maintainerUrl="https://github.com/havkerboi123" repo="https://github.com/havkerboi123/pipecat-upliftai-tts" /&gt;</p>
+<h2>Overview</h2>
+<p><code>UpliftHttpTTSService</code> converts text into speech using <a href="https://upliftai.org">Uplift AI's</a> HTTP text-to-speech API. It provides high-quality, low-latency synthesis optimized for conversational AI in local languages such as Urdu, with multiple voice options and audio formats.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/havkerboi123/pipecat-upliftai-tts"&gt;     Source code, examples, and issues for the Uplift AI integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Uplift AI" icon="book" href="https://upliftai.org"&gt;     Learn more about Uplift AI's text-to-speech service   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://platform.upliftai.org/studio/api-keys"&gt;     Create and manage your Uplift AI API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>. It is not yet published to PyPI, so install it directly from GitHub:</p>
+<pre><code>uv pip install git+https://github.com/havkerboi123/pipecat-upliftai-tts.git</code></pre>
+<h2>Prerequisites</h2>
+<h3>Uplift AI Account Setup</h3>
+<p>Before using the Uplift AI text-to-speech service, you need:</p>
+<ol><li><strong>Uplift AI Account</strong>: Sign up at <a href="https://upliftai.org">Uplift AI</a></li><li><strong>API Key</strong>: Generate an API key from the</li></ol>
+<p>   <a href="https://platform.upliftai.org/studio/api-keys">API Keys page</a> (format:    <code>sk_api_...</code>)</p>
+<h3>Required Environment Variables</h3>
+<ul><li><code>UPLIFT_API_KEY</code>: Your Uplift AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Uplift AI API key for authentication (format: <code>sk_api_...</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.upliftai.org/v1/synthesis/text-to-speech"&gt;   Base URL for the Uplift TTS API endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="v_8eelc901"&gt;   Uplift voice identifier. Available voices: <code>v_8eelc901</code> (Info/Edu),   <code>v_kwmp7zxt</code> (Gen Z), <code>v_yypgzenx</code> (Dada Jee), <code>v_30s70t3a</code> (Nostalgic News). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_format" type="str" default="WAV_22050_16"&gt;   Audio output format. Available formats: <code>WAV_22050_16</code>, <code>WAV_22050_32</code>,   <code>MP3_22050_32</code>, <code>MP3_22050_64</code>, <code>MP3_22050_128</code>, <code>OGG_22050_16</code>,   <code>ULAW_8000_8</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="22050"&gt;   Audio sample rate in Hz. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" default="None"&gt;   Optional shared aiohttp session used for API requests. If not provided, the   service creates and manages its own session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="UpliftHttpTTSService.InputParams" default="None"&gt;   Optional input parameters for voice and output-format overrides. See   <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<p>Optional configuration passed via the <code>params</code> constructor argument using <code>UpliftHttpTTSService.InputParams(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>voice_id</code></td><td><code>Optional[str]</code></td><td><code>None</code></td><td>Optional default voice ID override.</td></tr><tr><td><code>output_format</code></td><td><code>Optional[str]</code></td><td><code>"WAV_22050_16"</code></td><td>Audio output format.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   Available voices, formats, and defaults are defined by the integration. See   the <a href="https://github.com/havkerboi123/pipecat-upliftai-tts">source repository</a>   for the authoritative, up-to-date list. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+import aiohttp
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat_upliftai import UpliftHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    llm = ...  # Your LLM service
+    stt = ...  # Your STT service
+
+    tts = UpliftHttpTTSService(
+        aiohttp_session=session,
+        api_key=os.getenv("UPLIFT_API_KEY"),
+        voice_id="v_8eelc901",  # Info/Edu voice
+        output_format="WAV_22050_16",
+    )
+
+    pipeline = Pipeline([
+        transport.input(),               # audio/user input
+        stt,                             # speech to text
+        context_aggregator.user(),       # add user text to context
+        llm,                             # LLM generates response
+        tts,                             # Uplift TTS synthesis
+        transport.output(),              # stream audio back to user
+        context_aggregator.assistant(),  # store assistant response
+    ])</code></pre>
+<p>You can also switch voice or output format at runtime:</p>
+<pre><code>await tts.set_voice_id("v_kwmp7zxt")        # Switch to Gen Z voice
+await tts.set_output_format("MP3_22050_128")</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.86 and later. Check the <a href="https://github.com/havkerboi123/pipecat-upliftai-tts">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/upliftai">https://docs.pipecat.ai/api-reference/server/services/tts/upliftai</a></p>
+</div></main></div></body></html>

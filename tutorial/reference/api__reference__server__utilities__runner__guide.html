@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Development Runner · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Development Runner</h1>
+<blockquote>Unified runner for building voice AI bots with Daily, WebRTC, and telephony transports</blockquote>
+<h2>Overview</h2>
+<p>The Pipecat development runner provides a unified way to run voice AI bots across multiple transport types. It handles infrastructure setup - creating Daily rooms, managing WebRTC connections, and routing telephony calls.</p>
+<h2>Installation</h2>
+<pre><code>uv add "pipecat-ai[runner]"</code></pre>
+<h2>What is a Runner?</h2>
+<p>A runner in Pipecat refers to a "bot runner", an HTTP service that provides a gateway for spawning bots on-demand. It's the component that enables your bot to run by providing it with server infrastructure and connection details like rooms and tokens.</p>
+<p>A bot runner typically creates transport sessions (like Daily WebRTC rooms), generates authentication tokens for both bots and users, spawns new bot processes when users request sessions, and manages bot lifecycle and cleanup. Think of it as the bridge between incoming user connections and your bot logic.</p>
+<h2>How the Development Runner Works</h2>
+<p>The development runner operates as a FastAPI web server that automatically discovers and executes your bot code. By default it starts a <strong>single server that supports all transports simultaneously</strong> — WebRTC, Daily, telephony (Twilio, Telnyx, Plivo, Exotel), and plain WebSocket. Clients choose which transport they want per-request by sending a <code>"transport"</code> field in the <code>POST /start</code> body; you no longer restart the server to switch transports.</p>
+<ul><li><strong>WebRTC connections</strong>: It serves a built-in web interface where users can connect directly as well as an endpoint to create new WebRTC sessions</li><li><strong>Daily integration</strong>: It provides endpoints that create new rooms and tokens and redirect users to join them</li><li><strong>Telephony providers</strong>: For Twilio, Telnyx, and Plivo, it sets up webhook endpoints that handle incoming calls and establish WebSocket connections for audio streaming</li><li><strong>Plain WebSocket</strong>: It exposes a <code>/ws-client</code> endpoint for non-telephony WebSocket clients (e.g. browser apps using protobuf framing)</li></ul>
+<p>The runner registers the infrastructure for every transport and dispatches each connection to the right handler. It then discovers your bot function and spawns new instances whenever users connect. This means you can focus on writing your bot logic while the runner handles all the server infrastructure, connection management, and transport-specific details.</p>
+<p>&lt;Tip&gt;   Passing <code>-t/--transport</code> is optional. Omit it to support all transports at   once (the default). Pass it (e.g. <code>-t daily</code>) to <strong>restrict</strong> the server to a   single transport and make it the default for <code>/start</code>. &lt;/Tip&gt;</p>
+<p>Your bot code receives runner arguments that contain everything it needs, including Daily room URLs and tokens, WebRTC connections, or WebSocket streams for telephony. The runner abstracts away the complexity of managing these different connection types, providing a unified interface for building bots that work across multiple platforms.</p>
+<h2>Pipecat Cloud Ready</h2>
+<p>The bot runner is designed to be cloud-ready, meaning that you can run the same bot code locally and deployed to Pipecat Cloud without any modifications. It automatically handles the differences in transport setup, providing you with the flexibility to test locally using an open source transport, like SmallWebRTCTransport, but run in production using Daily or telephony transports.</p>
+<h2>Building with the Runner</h2>
+<p>Now let's build a practical example to see how this works. The key insight is that your bot code is structured into two parts: the core bot logic that works with any transport, and the entry point that creates the appropriate transport based on the runner arguments.</p>
+<p>Here's the basic structure:</p>
+<pre><code># Your imports
+from pipecat.runner.types import RunnerArguments
+from pipecat.transports.base_transport import BaseTransport, TransportParams
+from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
+
+async def run_bot(transport: BaseTransport):
+    """Your core bot logic here:
+    - Define services (STT, TTS, LLM)
+    - Initialize messages and context
+    - Create the pipeline
+    - Add event handlers
+    - Run the pipeline
+    """
+
+    # Your bot logic goes here
+    # Define STT, LLM, TTS...
+    # ...
+    # Run your pipeline
+    await runner.run(worker)
+
+async def bot(runner_args: RunnerArguments):
+    """Main bot entry point compatible for local dev and Pipecat Cloud."""
+    transport = SmallWebRTCTransport(
+        params=TransportParams(
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+        ),
+        webrtc_connection=runner_args.webrtc_connection,
+    )
+
+    await run_bot(transport)
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+    main()</code></pre>
+<p>The <code>run_bot()</code> function contains your actual bot logic and is transport-agnostic. The <code>bot()</code> function is the entry point that the runner calls - it creates the appropriate transport and passes it to your bot logic. This separation allows the same bot code to work across different transports.</p>
+<p>When you run this with <code>python bot.py</code>, the development runner starts a web server and opens a browser interface at <code>http://localhost:7860/client</code>. Each time someone connects, the runner calls your <code>bot()</code> function with WebRTC runner arguments.</p>
+<p>&lt;Warning&gt;   <code>webrtc_connection</code> only exists on <code>SmallWebRTCRunnerArguments</code>, not on the   base <code>RunnerArguments</code> class. The example above works because it runs with the   WebRTC transport. If you run with any other transport, accessing   <code>runner_args.webrtc_connection</code> raises <code>AttributeError: 'RunnerArguments'       object has no attribute 'webrtc_connection'</code>. To support more than one   transport, branch on the argument type with the <code>isinstance</code> pattern shown in   <a href="#supporting-multiple-transports">Supporting Multiple Transports</a> below. &lt;/Warning&gt;</p>
+<h2>Supporting Multiple Transports</h2>
+<p>To make your bot work across different platforms, you can detect the transport type from the runner arguments and create the appropriate transport. Here's how to support both Daily and WebRTC:</p>
+<pre><code>from pipecat.runner.types import DailyRunnerArguments, RunnerArguments, SmallWebRTCRunnerArguments
+
+async def bot(runner_args: RunnerArguments):
+    """Main bot entry point compatible with Pipecat Cloud."""
+
+    transport = None
+
+    if isinstance(runner_args, DailyRunnerArguments):
+        from pipecat.transports.daily.transport import DailyParams, DailyTransport
+
+        transport = DailyTransport(
+            runner_args.room_url,
+            runner_args.token,
+            "Pipecat Bot",
+            params=DailyParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+            ),
+        )
+
+    elif isinstance(runner_args, SmallWebRTCRunnerArguments):
+        from pipecat.transports.base_transport import TransportParams
+        from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
+
+        transport = SmallWebRTCTransport(
+            params=TransportParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+            ),
+            webrtc_connection=runner_args.webrtc_connection,
+        )
+
+    else:
+        logger.error(f"Unsupported runner arguments type: {type(runner_args)}")
+        return
+
+    if transport is None:
+        logger.error("Failed to create transport")
+        return
+
+    await run_bot(transport)
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+    main()</code></pre>
+<p>Now you can run your bot. A single server supports every transport at once, and the client picks which one to use when it starts a session:</p>
+<pre><code>python bot.py            # All transports; client selects via the /start request</code></pre>
+<p>If you want to limit the server to one transport (and make it the default for <code>/start</code>), pass <code>-t/--transport</code>:</p>
+<pre><code>python bot.py -t webrtc  # Restrict to WebRTC → SmallWebRTCRunnerArguments
+python bot.py -t daily   # Restrict to Daily → DailyRunnerArguments</code></pre>
+<h3>Understanding Runner Arguments</h3>
+<p>Runner arguments are how the runner communicates transport-specific information to your bot. The runner determines which transport to use based on the command-line arguments, then creates the appropriate runner arguments:</p>
+<ul><li><strong><code>DailyRunnerArguments</code></strong>: Contains <code>room_url</code>, <code>token</code> (Optional), <code>body</code> (Optional) for joining Daily rooms</li><li><strong><code>SmallWebRTCRunnerArguments</code></strong>: Contains <code>webrtc_connection</code> for local WebRTC sessions, <code>body</code> (Optional) for WhatsApp call metadata</li><li><strong><code>WebSocketRunnerArguments</code></strong>: Contains <code>websocket</code> for both telephony and plain WebSocket connections. The <code>transport_type</code> field distinguishes them — <code>"websocket"</code> for plain (non-telephony) clients connecting via <code>/ws-client</code>, or a telephony provider value for connections via <code>/ws</code>.</li></ul>
+<p>All runner arguments also include:</p>
+<ul><li><strong><code>handle_sigint</code></strong>: Whether the bot should handle SIGINT (Ctrl+C) signals (managed automatically)</li><li><strong><code>handle_sigterm</code></strong>: Whether the bot should handle SIGTERM signals (managed automatically)</li></ul>
+<p>&lt;Note&gt;   For WhatsApp connections, <code>SmallWebRTCRunnerArguments.body</code> contains a   <code>WhatsAppConnectCall</code> object with caller metadata (phone number, call ID,   direction, timestamp). This allows your bot to access caller information   without additional API calls. &lt;/Note&gt;</p>
+<p>&lt;Warning&gt;   <code>handle_sigint</code> and <code>handle_sigterm</code> are development only features and cannot   be used when deploying to Pipecat Cloud. &lt;/Warning&gt;</p>
+<p>The runner handles all the complex setup - creating Daily rooms, generating tokens, establishing WebSocket connections - and provides your bot with everything it needs through these runner arguments.</p>
+<p>Notice how we use lazy imports (<code>from pipecat.transports.daily.transport import ...</code>) inside the conditional blocks. This ensures that transport-specific dependencies are only required when that transport is actually used, making your bot more portable.</p>
+<p>&lt;Info&gt;   <code>RunnerArguments</code> is the base class for all runner arguments. It provides a   common interface for the runner to pass transport-specific information to your   bot. &lt;/Info&gt;</p>
+<h2>Environment Detection</h2>
+<p>When building bots that work both locally and in production, you often need to detect the execution environment to enable different features. The development runner sets the <code>ENV</code> environment variable to help with this:</p>
+<pre><code>import os
+
+async def bot(runner_args: RunnerArguments):
+    # Check if running in local development environment
+    is_local = os.environ.get("ENV") == "local"
+
+    # Enable production features only when deployed
+    if not is_local:
+        from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
+        krisp_filter = KrispVivaFilter()
+    else:
+        krisp_filter = None
+
+    transport = DailyTransport(
+        runner_args.room_url,
+        runner_args.token,
+        "Pipecat Bot",
+        params=DailyParams(
+            audio_in_filter=krisp_filter,  # Krisp VIVA filter only in production
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+        ),
+    )</code></pre>
+<h3>Environment Values</h3>
+<p>The development runner automatically sets environment variables based on how your bot is running:</p>
+<ul><li><strong>Local development</strong>: <code>ENV=local</code> (set by the development runner)</li><li><strong>Production/Cloud deployment</strong>: <code>ENV</code> is not set or has a different value</li></ul>
+<p>This allows you to easily customize behavior between development and production environments:</p>
+<h2>All Supported Transports</h2>
+<p>The development runner supports seven transport types, each designed for different use cases. By default all are available from one server; the client selects one per session via the <code>"transport"</code> field in the <code>/start</code> request. The <code>-t &lt;transport&gt;</code> form below is the optional way to <strong>restrict</strong> the server to a single transport.</p>
+<h3>WebRTC (<code>"transport": "webrtc"</code>)</h3>
+<p>Local WebRTC connections with a built-in browser interface. Perfect for development and testing. This is the default transport when a <code>/start</code> request omits the <code>"transport"</code> field.</p>
+<pre><code>python bot.py
+# Prebuilt UI at http://localhost:7860/client
+
+# Restrict to WebRTC only
+python bot.py -t webrtc
+
+# ESP32 compatibility mode
+python bot.py --esp32 --host 192.168.1.100</code></pre>
+<p><strong>Runner Arguments</strong>: <code>SmallWebRTCRunnerArguments</code></p>
+<ul><li><code>webrtc_connection</code>: Pre-configured WebRTC peer connection</li></ul>
+<h3>Daily (<code>"transport": "daily"</code>)</h3>
+<p>Integration with Daily for production video conferencing with rooms, participant management, and Pipecat client compatibility.</p>
+<pre><code>python bot.py
+# POST /start with {"transport": "daily", "createDailyRoom": true}
+# GET /daily redirects the browser into a freshly created room
+
+# Restrict to Daily only
+python bot.py -t daily
+
+# Direct connection for testing (bypasses web server)
+python bot.py -d
+
+# Enable PSTN dial-in webhook handling
+python bot.py --dialin</code></pre>
+<p><strong>Runner Arguments</strong>: <code>DailyRunnerArguments</code></p>
+<ul><li><code>room_url</code>: Daily room URL to join</li><li><code>token</code>: Authentication token for the room</li><li><code>body</code>: Request data from /start endpoint (dict) or dial-in webhook data</li></ul>
+<p><strong>Available Endpoints</strong>:</p>
+<ul><li><code>GET /daily</code>: Browser redirect that creates a room and joins it</li><li><code>POST /start</code>: RTVI-compatible endpoint for programmatic access (send <code>"transport": "daily"</code>)</li><li><code>POST /daily-dialin-webhook</code>: PSTN dial-in webhook handler (requires <code>--dialin</code> flag)</li></ul>
+<p>&lt;Note&gt;   <code>GET /</code> redirects to the prebuilt client UI at <code>/client/</code> for all transports.   The Daily browser redirect moved to <code>GET /daily</code> in Pipecat 1.3.0. &lt;/Note&gt;</p>
+<h3>Telephony (<code>"transport": "twilio" | "telnyx" | "plivo" | "exotel"</code>)</h3>
+<p>Phone call integration through telephony providers. Requires a public webhook endpoint and provider credentials.</p>
+<pre><code># Set up environment variables first
+export TWILIO_ACCOUNT_SID=your_account_sid
+export TWILIO_AUTH_TOKEN=your_auth_token
+
+# Restrict to Twilio and expose the webhook via a public proxy
+python bot.py -t twilio -x yourproxy.ngrok.io</code></pre>
+<p>The provider-specific XML webhook (<code>POST /</code>) is only registered when you select a single telephony transport with <code>-t</code> (the XML template needs the <code>--proxy</code> hostname). The media WebSocket at <code>/ws</code> is always available.</p>
+<p><strong>Environment Variables</strong>:</p>
+<ul><li>Twilio: <code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code></li><li>Telnyx: <code>TELNYX_API_KEY</code></li><li>Plivo: <code>PLIVO_AUTH_ID</code>, <code>PLIVO_AUTH_TOKEN</code></li><li>Exotel: None required (no hang-up functionality available)</li></ul>
+<p>Environment variables are optional, but when provided will attempt to hang up the call when the session ends.</p>
+<p><strong>Runner Arguments</strong>: <code>WebSocketRunnerArguments</code></p>
+<ul><li><code>websocket</code>: WebSocket connection for audio streaming</li></ul>
+<p>The runner automatically detects the telephony provider from incoming WebSocket messages and configures the appropriate serializers and audio settings. Your bot receives a pre-configured FastAPI WebSocket connection ready for telephony audio streaming.</p>
+<h3>WebSocket (<code>"transport": "websocket"</code>)</h3>
+<p>Plain (non-telephony) WebSocket connections, for clients such as browser apps that speak protobuf framing directly. Selecting this transport on <code>/start</code> returns a <code>wsUrl</code> pointing at the <code>/ws-client</code> endpoint, which the client then connects to.</p>
+<pre><code>python bot.py
+# POST /start with {"transport": "websocket"} → returns wsUrl for /ws-client</code></pre>
+<p><strong>Runner Arguments</strong>: <code>WebSocketRunnerArguments</code></p>
+<ul><li><code>websocket</code>: WebSocket connection for audio streaming</li><li><code>transport_type</code>: <code>"websocket"</code> for plain clients (distinguishes them from telephony connections, which arrive on <code>/ws</code>)</li></ul>
+<p>Use the <code>transport_type</code> field to branch your bot's setup — plain WebSocket clients typically use a <code>ProtobufFrameSerializer</code>, whereas telephony clients use a provider-specific serializer.</p>
+<h2>Command Line Options</h2>
+<p>The development runner accepts several command-line arguments to customize its behavior:</p>
+<pre><code>python bot.py [OPTIONS]
+
+Options:
+  --host TEXT                Server host address (default: localhost)
+  --port INTEGER             Server port (default: 7860)
+  -t, --transport            Restrict to a single transport and set it as the default
+                             for /start: daily, webrtc, twilio, telnyx, plivo, exotel.
+                             Omit to support all transports simultaneously (default).
+  -x, --proxy TEXT           Public proxy hostname for telephony webhooks (required for telephony)
+  --allowed-origins [ORIGIN] Allowed origins for HTTP and WebSocket connections.
+                             Can be specified multiple times. Omit or leave empty to allow
+                             all origins. Defaults to PIPECAT_ALLOWED_ORIGINS env var.
+  --esp32                    Enable SDP munging for ESP32 WebRTC compatibility
+  -d, --direct               Connect directly to Daily room for testing (automatically sets transport to daily)
+  --dialin                   Enable Daily PSTN dial-in webhook handling
+  --whatsapp                 Verify required WhatsApp environment variables are present
+  -v, --verbose              Increase logging verbosity</code></pre>
+<h3>Key Arguments</h3>
+<p><strong><code>--transport</code> / <code>-t</code></strong>: Optional. When omitted, the server supports <strong>all</strong> transports at once and the client chooses one per <code>/start</code> request. When provided, it restricts the server to a single transport and makes it the default for <code>/start</code>; requests for any other transport are rejected with HTTP 400. Valid values:</p>
+<ul><li><code>webrtc</code>: Local WebRTC with browser interface</li><li><code>daily</code>: Daily.co integration with room management</li><li><code>twilio</code>, <code>telnyx</code>, <code>plivo</code>, <code>exotel</code>: Telephony provider integration</li></ul>
+<p><strong><code>--proxy</code> / <code>-x</code></strong>: Required for most telephony transports (Twilio, Telnyx, Plivo). This should be a publicly accessible hostname (like <code>yourbot.ngrok.io</code>) that can receive webhooks from telephony providers. The runner automatically strips protocol prefixes (http\://, https\://) if provided. Not required for Exotel, which uses direct WebSocket connections.</p>
+<p><strong><code>--direct</code> / <code>-d</code></strong>: Special mode for Daily that bypasses the web server and connects your bot directly to a Daily room. Useful for quick testing but not recommended for production use.</p>
+<p><strong><code>--dialin</code></strong>: Enables the <code>/daily-dialin-webhook</code> endpoint for handling Daily PSTN dial-in calls. This endpoint receives webhook data from Daily when a phone call dials into your configured phone number, creates a SIP-enabled room, and spawns your bot. (It no longer requires <code>-t daily</code>, though dial-in is a Daily feature.)</p>
+<p><strong><code>--allowed-origins</code></strong>: Restricts which origins can connect to HTTP and WebSocket endpoints. Useful for preventing Cross-Site WebSocket Hijacking (CSWSH) attacks. When set, connections with a missing or disallowed <code>Origin</code> header are rejected. Can be specified multiple times for multiple origins. Defaults to the <code>PIPECAT_ALLOWED_ORIGINS</code> environment variable (comma-separated). Leave unset to allow all origins.</p>
+<p><strong><code>--esp32</code></strong>: Enables SDP (Session Description Protocol) modifications needed for ESP32 WebRTC compatibility. Must be used with a specific IP address via <code>--host</code>.</p>
+<h3>Environment Variables</h3>
+<p>Different transports require different environment variables:</p>
+<p><strong>Daily</strong>:</p>
+<ul><li><code>DAILY_API_KEY</code>: Daily API key for creating rooms and tokens (required for dial-in)</li><li><code>DAILY_SAMPLE_ROOM_URL</code> (Optional): Existing room URL to use</li><li><code>DAILY_API_URL</code> (Optional): Daily API URL (defaults to <a href="https://api.daily.co/v1">https://api.daily.co/v1</a>)</li></ul>
+<p><strong>Telephony</strong>:</p>
+<ul><li><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>: Twilio credentials</li><li><code>PLIVO_AUTH_ID</code>, <code>PLIVO_AUTH_TOKEN</code>: Plivo credentials</li><li><code>TELNYX_API_KEY</code>: Telnyx API key</li></ul>
+<p><strong>Security</strong>:</p>
+<ul><li><code>PIPECAT_ALLOWED_ORIGINS</code>: Comma-separated list of allowed origins for HTTP and WebSocket connections. When set, the runner and WebSocket transports reject any connection whose <code>Origin</code> header is missing or not in this list. Leave unset or empty to allow all origins. Example: <code>https://example.com,https://app.example.com</code></li></ul>
+<p>The runner automatically uses these environment variables when creating transport sessions and authentication tokens.</p>
+<h2>Simplifying with the Transport Utility</h2>
+<p>While the manual approach gives you full control, the <code>create_transport</code> utility provides a much cleaner way to handle multiple transports. Instead of writing conditional logic for each transport type, you define transport configurations upfront and let the utility handle the selection:</p>
+<pre><code>from pipecat.runner.utils import create_transport
+
+# Define transport configurations using factory functions
+transport_params = {
+    "daily": lambda: DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+    ),
+    "webrtc": lambda: TransportParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+    ),
+    "twilio": lambda: FastAPIWebsocketParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        # add_wav_header and serializer handled automatically
+    ),
+    "websocket": lambda: FastAPIWebsocketParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        # plain (non-telephony) WebSocket clients, e.g. protobuf framing
+    ),
+}
+
+async def bot(runner_args):
+    """Simplified bot entry point using the transport utility."""
+    transport = await create_transport(runner_args, transport_params)
+    await run_bot(transport)</code></pre>
+<p>The utility automatically:</p>
+<ul><li>Detects the telephony provider from WebSocket messages</li><li>Configures the appropriate serializer (Twilio, Telnyx, Plivo, or Exotel)</li><li>Sets up authentication using environment variables</li><li>Handles WebRTC, Daily, and plain WebSocket transport creation</li></ul>
+<p>Now your bot supports all seven transport types with just two lines of code in the bot() function.</p>
+<h2>RTVI Integration</h2>
+<p>The development runner provides RTVI (Real-Time Voice Interface) compatible endpoints for the Pipecat client SDKs. This allows you to use the Pipecat client libraries locally during development as well as when deployed to Pipecat Cloud.</p>
+<h3>The <code>/start</code> Endpoint</h3>
+<p>The runner exposes a single unified <code>POST /start</code> endpoint that works for <strong>all</strong> transports. The client picks the transport via the <code>"transport"</code> field in the request body (default: <code>"webrtc"</code>); the runner then spawns the bot and returns transport-specific connection details in RTVI-compatible format.</p>
+<pre><code># Start the runner (all transports available)
+python bot.py
+
+# The /start endpoint is available at:
+# POST http://localhost:7860/start</code></pre>
+<p>If you started the runner with <code>-t &lt;transport&gt;</code>, a <code>/start</code> request for any other transport is rejected with HTTP 400.</p>
+<p><strong>Request Format (<code>"transport": "webrtc"</code>, the default):</strong></p>
+<pre><code>{
+  "transport": "webrtc",
+  "enableDefaultIceServers": false,
+  "body": {
+    "custom_data": "your_value",
+    "user_id": "user123"
+  }
+}</code></pre>
+<p>Returns a <code>sessionId</code> (and an <code>iceConfig</code> when <code>enableDefaultIceServers</code> is set). The bot starts when the WebRTC offer arrives.</p>
+<p>&lt;Note&gt;   <code>enableDefaultIceServers</code> is the only ICE option the runner exposes, and it   adds Google's public STUN server (<code>stun:stun.l.google.com:19302</code>) and nothing   else. The runner builds the <code>SmallWebRTCConnection</code> for you, so you cannot   pass a custom STUN or TURN server from your <code>bot()</code> function. To use a custom   TURN server, run your own signaling server that creates the   <code>SmallWebRTCConnection</code> directly: see <a href="/api-reference/server/services/transport/small-webrtc#using-ice-servers-with-the-development-runner">Using ICE servers with the development   runner</a>. &lt;/Note&gt;</p>
+<p><strong>Request Format (<code>"transport": "daily"</code>):</strong></p>
+<pre><code>{
+  "transport": "daily",
+  "createDailyRoom": true,
+  "dailyRoomProperties": {
+    "start_video_off": true,
+    "start_audio_off": false
+  },
+  "dailyMeetingTokenProperties": {
+    "is_owner": true,
+    "user_name": "Bot"
+  },
+  "body": {
+    "custom_data": "your_value",
+    "user_id": "user123"
+  }
+}</code></pre>
+<p><code>createDailyRoom: true</code> (or a configured <code>DAILY_ROOM_URL</code>) makes the runner create a room and token using your <code>DAILY_API_KEY</code>. <code>dailyRoomProperties</code> and <code>dailyMeetingTokenProperties</code> are applied when provided. Response:</p>
+<pre><code>{
+  "dailyRoom": "https://domain.daily.co/room-name",
+  "dailyToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "sessionId": "uuid"
+}</code></pre>
+<p><strong>Request Format (telephony or plain WebSocket):</strong></p>
+<p>For <code>"transport": "twilio" | "telnyx" | "plivo" | "exotel"</code> or <code>"transport": "websocket"</code>, <code>/start</code> returns the WebSocket URL the client should connect to:</p>
+<pre><code>{
+  "wsUrl": "ws://localhost:7860/ws"
+}</code></pre>
+<p>Telephony connections use <code>/ws</code>; plain WebSocket clients use <code>/ws-client</code> (and also receive a <code>sessionId</code>). The bot starts when the connection is established.</p>
+<h3>The <code>/status</code> Endpoint</h3>
+<p><code>GET /status</code> reports which transports the running instance accepts — all of them by default, or the single transport passed via <code>-t</code>:</p>
+<pre><code>{
+  "status": "ready",
+  "transports": [
+    "webrtc",
+    "daily",
+    "twilio",
+    "telnyx",
+    "plivo",
+    "exotel",
+    "websocket"
+  ]
+}</code></pre>
+<h3>Accessing Request Data in Your Bot</h3>
+<p>The <code>body</code> field from the <code>/start</code> request is passed to your bot through <code>DailyRunnerArguments.body</code>:</p>
+<pre><code>async def bot(runner_args: DailyRunnerArguments):
+    # Access custom data from the /start request
+    custom_data = runner_args.body.get("custom_data")
+    user_id = runner_args.body.get("user_id")
+
+    print(f"Bot started for user: {user_id}")
+    print(f"Custom data: {custom_data}")
+
+    # Your bot logic here
+    transport = DailyTransport(runner_args.room_url, runner_args.token, "Bot")
+    await run_bot(transport)</code></pre>
+<h3>RTVI Client Example</h3>
+<p>You can use RTVI client libraries to connect to your local development runner:</p>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+const client = new PipecatClient({
+  transport: new DailyTransport(),
+  enableMic: true,
+  enableCam: false,
+});
+
+// Start a session with custom data
+await client.connect({ endpoint: "http://localhost:7860/start" });</code></pre>
+<p>&lt;Info&gt;   The <code>/start</code> endpoint serves every transport. The client SDK's transport (e.g.   <code>DailyTransport</code>, <code>SmallWebRTCTransport</code>) determines the <code>"transport"</code> value   sent in the request. &lt;/Info&gt;</p>
+<h2>Daily Dial-In Webhook</h2>
+<p>The development runner can handle Daily PSTN dial-in webhooks when started with the <code>--dialin</code> flag. This allows you to test phone call integrations locally before deploying to production.</p>
+<h3>Enabling Dial-In Support</h3>
+<pre><code>python bot.py -t daily --dialin
+# Webhook endpoint available at:
+# POST http://localhost:7860/daily-dialin-webhook</code></pre>
+<h3>How It Works</h3>
+<p>When a phone call dials into your Daily phone number:</p>
+<ol><li><strong>Daily sends a webhook</strong> to your configured endpoint with call details</li><li><strong>The runner creates a SIP-enabled room</strong> with appropriate configuration</li><li><strong>Your bot is spawned</strong> with dial-in context in <code>runner_args.body</code></li><li><strong>The call is connected</strong> to the room where your bot is waiting</li></ol>
+<h3>Webhook Payload</h3>
+<p>Daily sends the following data to the <code>/daily-dialin-webhook</code> endpoint:</p>
+<pre><code>{
+  "From": "+15551234567",
+  "To": "+15559876543",
+  "callId": "uuid-call-id",
+  "callDomain": "uuid-call-domain",
+  "sipHeaders": {}
+}</code></pre>
+<h3>Accessing Dial-In Data in Your Bot</h3>
+<p>The dial-in webhook data is passed to your bot through <code>DailyRunnerArguments.body</code>. You need to parse it and configure the Daily transport with dial-in settings:</p>
+<pre><code>from pipecat.runner.types import DailyDialinRequest, RunnerArguments
+from pipecat.transports.daily.transport import DailyDialinSettings, DailyParams, DailyTransport
+
+async def bot(runner_args: RunnerArguments):
+    # Parse the dial-in request from the runner
+    request = DailyDialinRequest.model_validate(runner_args.body)
+
+    # Configure Daily transport with dial-in settings
+    daily_dialin_settings = DailyDialinSettings(
+        call_id=request.dialin_settings.call_id,
+        call_domain=request.dialin_settings.call_domain,
+    )
+
+    transport = DailyTransport(
+        runner_args.room_url,
+        runner_args.token,
+        "Daily PSTN Dial-in Bot",
+        params=DailyParams(
+            api_key=request.daily_api_key,
+            api_url=request.daily_api_url,
+            dialin_settings=daily_dialin_settings,
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+        ),
+    )
+
+    # Log caller information if available
+    if request.dialin_settings.From:
+        print(f"Handling call from: {request.dialin_settings.From}")
+
+    # Your bot logic here
+    await run_bot(transport)</code></pre>
+<h3>Configuring Daily Phone Numbers</h3>
+<p>To test dial-in locally, you need to:</p>
+<ol><li><strong>Configure a Daily phone number</strong> in your Daily dashboard</li><li><strong>Set the webhook URL</strong> to your public endpoint (e.g., via ngrok)</li><li><strong>Ensure <code>DAILY_API_KEY</code> is set</strong> in your environment</li></ol>
+<pre><code># Example with ngrok
+ngrok http 7860
+
+# Configure webhook URL in Daily dashboard:
+# https://your-subdomain.ngrok.io/daily-dialin-webhook</code></pre>
+<p>&lt;Note&gt;   Dial-in is a Daily feature and requires a valid <code>DAILY_API_KEY</code> environment   variable. <code>--dialin</code> no longer requires <code>-t daily</code>, but you can still pass it   to restrict the runner to Daily. &lt;/Note&gt;</p>
+<h2>Error Handling and Debugging</h2>
+<p>The development runner includes built-in error handling to help debug issues with incoming requests and webhook payloads.</p>
+<h3>422 Validation Error Logging</h3>
+<p>When FastAPI receives a malformed request that fails Pydantic validation (HTTP 422 Unprocessable Entity), the runner automatically logs both the validation errors and the raw request body. This makes it much easier to debug malformed payloads from any transport — WhatsApp webhooks, WebRTC signaling, telephony providers, or RTVI clients.</p>
+<p>The runner logs:</p>
+<ul><li>The request URL path where the error occurred</li><li>Detailed validation error messages from Pydantic</li><li>The raw request body (up to 5000 characters)</li></ul>
+<pre><code>ERROR: 422 Validation error on /whatsapp: [{'type': 'missing', 'loc': ['body', 'calls'], ...}]
+ERROR: Raw body: {"from": "+1234567890", "to": ...}</code></pre>
+<p>This automatic logging applies to all runner endpoints and helps identify issues with webhook configurations, client implementations, or API changes without requiring manual debugging code.</p>
+<h2>Quick Reference</h2>
+<p>All transports are available from <code>python bot.py</code>; the <code>-t</code> form below restricts the server to one. Access columns assume the default <code>localhost:7860</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Transport</th><th>Command</th><th>Access</th><th>Environment Variables</th></tr></thead><tbody><tr><td>All (default)</td><td><code>python bot.py</code></td><td><a href="http://localhost:7860/client">http://localhost:7860/client</a></td><td>Per transport (see below)</td></tr><tr><td>WebRTC</td><td><code>python bot.py -t webrtc</code></td><td><a href="http://localhost:7860/client">http://localhost:7860/client</a></td><td>None</td></tr><tr><td>Daily</td><td><code>python bot.py -t daily</code></td><td><code>GET /daily</code>, <code>POST /start</code></td><td><code>DAILY_API_KEY</code>, <code>DAILY_SAMPLE_ROOM_URL</code> (Optional)</td></tr><tr><td>Daily Direct</td><td><code>python bot.py -d</code></td><td>Direct connection</td><td><code>DAILY_API_KEY</code>, <code>DAILY_SAMPLE_ROOM_URL</code> (Optional)</td></tr><tr><td>Daily Dial-In</td><td><code>python bot.py --dialin</code></td><td>Phone calls via Daily PSTN</td><td><code>DAILY_API_KEY</code> (Required)</td></tr><tr><td>Twilio</td><td><code>python bot.py -t twilio -x proxy.ngrok.io</code></td><td>Phone calls</td><td><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code></td></tr><tr><td>Telnyx</td><td><code>python bot.py -t telnyx -x proxy.ngrok.io</code></td><td>Phone calls</td><td><code>TELNYX_API_KEY</code></td></tr><tr><td>Plivo</td><td><code>python bot.py -t plivo -x proxy.ngrok.io</code></td><td>Phone calls</td><td><code>PLIVO_AUTH_ID</code>, <code>PLIVO_AUTH_TOKEN</code></td></tr><tr><td>Exotel</td><td><code>python bot.py -t exotel</code></td><td>Phone calls</td><td>None</td></tr><tr><td>WebSocket</td><td><code>python bot.py</code></td><td><code>ws://localhost:7860/ws-client</code></td><td>None</td></tr><tr><td>ESP32 WebRTC</td><td><code>python bot.py --esp32 --host &lt;ESP32_IP&gt;</code></td><td>ESP32 WebRTC connection</td><td>None</td></tr></tbody></table></div>
+<h2>Examples</h2>
+<p>For practical examples of using the development runner with different transports, check out the following:</p>
+<p>&lt;Card title="Runner Examples" icon="code" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/runner-examples"&gt;   Explore the examples for different ways to use the development runner with   various transports. &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/runner/guide">https://docs.pipecat.ai/api-reference/server/utilities/runner/guide</a></p>
+</div></main></div></body></html>

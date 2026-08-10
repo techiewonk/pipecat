@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L24 · The worker bus & bridge — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 24 · Part V — Multi-agent</div>
+      <h1>The worker bus & bridge</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">Everything so far was one agent. Pipecat is also multi-agent: one <code>WorkerRunner</code> coordinates many workers over a shared <strong>bus</strong>. A normal bot is just the one-worker case — so every app is already A2A-ready.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="bus">Workers on a bus</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="main worker:transport|BusBridgeProcessor|🚌 WorkerBus|LLMWorker A|LLMWorker B"
+           data-caption="The main worker owns the transport (mic/speaker)|a bridge tees its frames onto the bus as BusFrameMessages|the WorkerBus is a pub/sub channel between workers|specialist LLM workers subscribe to it|and exchange frames or coordinate jobs — many brains, one mic">
+      </div>
+      <p>The bus carries typed messages, not raw frames — frames ride the bus only when wrapped in a <code>BusFrameMessage</code>. System messages (interruptions, cancel) get a high-priority queue, just like system frames in a pipeline.</p>
+
+      <h2 id="bridge">Bridging a pipeline to the bus</h2>
+      <pre><code class="language-python">from pipecat.workers.runner import WorkerRunner
+from pipecat.pipeline.worker import PipelineWorker
+
+runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)   # owns the bus
+main = PipelineWorker(pipeline, bus=runner.bus)                  # tee frames to the bus
+await runner.add_workers(main, GreeterWorker(), SupportWorker())  # many workers, one runner
+await runner.run()</code></pre>
+      <p>A <code>BusBridgeProcessor</code> sends most frames to the bus (consuming them locally) while letting lifecycle frames pass through; incoming bus frames are injected back into the pipeline. When a <code>PipelineWorker</code> is <code>bridged</code>, it tees frames both locally and to the bus via internal edge processors.</p>
+
+      <h2 id="buses">Three bus implementations</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Bus</th><th>Where</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><code>AsyncQueueBus</code></td><td><code>bus/local/async_queue.py</code></td><td>In-process (default) — one machine.</td></tr>
+          <tr><td><code>RedisBus</code></td><td><code>bus/network/redis.py</code></td><td>Across processes/machines via Redis pub/sub.</td></tr>
+          <tr><td><code>PgmqBus</code></td><td><code>bus/network/pgmq.py</code></td><td>Postgres/Supabase message queue — ops-friendly.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Swapping between them is a one-line change on the runner (<a href="l28-distributed-proxy.html">Lesson 28</a>).</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>bus/bus.py</code> — <code>WorkerBus</code> (subscriptions, priority queues, <code>publish</code>/<code>on_message_received</code>). <code>bus/messages.py</code> — <code>BusFrameMessage</code>, job/lifecycle/registry messages. <code>bus/bridge_processor.py</code> — <code>BusBridgeProcessor</code>, <code>_BusEdgeProcessor</code>. <code>bus/queue.py</code> — <code>BusMessageQueue</code>. Docs: agent-bus, understanding-the-bus-bridge.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Read <code>bus/messages.py</code> and list the message categories (frame, job, lifecycle, registry). (2) Run <code>examples/multi-worker/local-handoff/</code> and watch two workers share one transport. (3) Find where the main worker's frames enter the bus.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What makes an app multi-agent?</summary><p>More than one worker on the shared bus, supervised by one <code>WorkerRunner</code>.</p></details>
+      <details><summary>2. How does audio reach a specialist worker that doesn't own the mic?</summary><p>The main worker bridges its frames onto the bus as <code>BusFrameMessage</code>s; specialists subscribe.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l25-workers-registry.html">Lesson 25 — Workers, @tool, registry →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

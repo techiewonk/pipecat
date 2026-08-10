@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Management · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Context Management</h1>
+<blockquote>Work with Pipecat's LLM context and context aggregators: how conversation history is built and shared in a pipeline.</blockquote>
+<h2>What is Context in Pipecat?</h2>
+<p>In Pipecat, <strong>context</strong> refers to the conversation history that the LLM uses to generate responses. The context consists of user/assistant messages representing the conversation history, and can also include <strong>developer messages</strong> for task-specific instructions to the LLM.</p>
+<pre><code># Example context structure
+messages = [
+    {"role": "developer", "content": "Keep responses under two sentences."},
+    {"role": "user", "content": "Hello!"},
+    {"role": "assistant", "content": "Hi there! How can I help you?"},
+    # Context aggregators automatically add new messages here
+]</code></pre>
+<p>The system prompt is typically set via <code>system_instruction</code> in the LLM service's <a href="/pipecat/fundamentals/service-settings">Settings</a>, not as a message in the context. See <a href="#system-instruction-developer-messages-and-system-messages">System Instruction, Developer Messages, and System Messages</a> below for details.</p>
+<p>Since Pipecat is a real-time voice AI framework, context management happens automatically as the conversation flows, but you can also control it manually when needed.</p>
+<h2>How Context Updates During Conversations</h2>
+<p>Context updates happen automatically as frames flow through your pipeline:</p>
+<p><strong>User Messages:</strong></p>
+<ol><li>User speaks → <code>InputAudioRawFrame</code> → STT Service → <code>TranscriptionFrame</code></li><li><code>context_aggregator.user()</code> receives <code>TranscriptionFrame</code> and adds user message to context</li></ol>
+<p><strong>Assistant Messages:</strong></p>
+<ol><li>LLM generates response → <code>LLMTextFrame</code> → TTS Service → <code>TTSTextFrame</code></li><li><code>context_aggregator.assistant()</code> receives <code>TTSTextFrame</code> and adds assistant message to context</li></ol>
+<p><strong>Frame types that update context:</strong></p>
+<ul><li><strong><code>TranscriptionFrame</code></strong>: Contains user speech converted to text by STT service</li><li><strong><code>LLMTextFrame</code></strong>: Contains LLM-generated responses</li><li><strong><code>TTSTextFrame</code></strong>: Contains bot responses converted to text by TTS service (represents what was actually spoken)</li></ul>
+<p>&lt;Note&gt;   The TTS service processes <code>LLMTextFrame</code>s but outputs <code>TTSTextFrame</code>s, which   represent the actual spoken text returned by the TTS provider. This ensures   context matches what users actually hear. &lt;/Note&gt;</p>
+<h2>Setting Up Context Management</h2>
+<p>Pipecat includes a context aggregator that creates and manages context for both user and assistant messages:</p>
+<h3>1. Create the Context and Context Aggregator</h3>
+<pre><code># Create LLM service with system instruction
+llm = OpenAILLMService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    settings=OpenAILLMService.Settings(
+        model="gpt-4o",
+        system_instruction="You are a helpful voice assistant.",
+    ),
+)
+
+# Create context (no system message needed — system_instruction handles it)
+context = LLMContext()
+
+# Create context aggregator instance
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(context)</code></pre>
+<p>&lt;Note&gt;   The context aggregator also supports configuring <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">user turn   strategies</a>   and <a href="/api-reference/server/utilities/turn-management/user-mute-strategies">user mute   strategies</a>   via <code>LLMUserAggregatorParams</code>. &lt;/Note&gt;</p>
+<p><strong>About LLMContext:</strong></p>
+<p><code>LLMContext</code> is Pipecat's universal context container that stores conversation messages, tool definitions, and tool choice settings. It uses an OpenAI-compatible format that works across all LLM services through automatic adapter translation.</p>
+<p>Key properties:</p>
+<ul><li><strong><code>messages</code></strong>: List of conversation messages (user, assistant, developer, tool)</li><li><strong><code>tools</code></strong>: Optional available functions — a list of direct functions and/or <code>FunctionSchema</code> objects (or a <code>ToolsSchema</code>)</li><li><strong><code>tool_choice</code></strong>: Optional strategy for tool selection</li></ul>
+<h3>2. Context with Function Calling</h3>
+<p>Context can also include <a href="/pipecat/learn/function-calling#1-define-a-tool">tools</a> (function definitions) that the LLM can call during conversations:</p>
+<pre><code>from pipecat.services.llm_service import FunctionCallParams
+
+# A direct function: schema is auto-derived from the signature and docstring
+async def get_current_weather(params: FunctionCallParams, location: str, format: str):
+    """Get the current weather.
+
+    Args:
+        location: The city and state, e.g. "San Francisco, CA".
+        format: The temperature unit to use. Must be either "celsius" or "fahrenheit".
+    """
+    await params.result_callback({"conditions": "sunny", "temperature": "75"})
+
+# Create context with both messages and tools
+context = LLMContext(messages, tools=[get_current_weather])
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(context)</code></pre>
+<p>Function call results are also automatically stored in the context, maintaining a complete conversation history including tool interactions.</p>
+<p>&lt;Note&gt;   We'll cover function calling in detail in an upcoming section. The context   aggregator handles function call storage automatically. &lt;/Note&gt;</p>
+<h3>3. Add Context Aggregators to Your Pipeline</h3>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    stt,
+    context_aggregator.user(),      # User context aggregator
+    llm,
+    tts,
+    transport.output(),
+    context_aggregator.assistant(), # Assistant context aggregator
+])</code></pre>
+<h2>System Instruction, Developer Messages, and System Messages</h2>
+<p>Pipecat provides three ways to give instructions to your LLM, each suited for a different purpose.</p>
+<h3>Using <code>system_instruction</code> (recommended)</h3>
+<p>Set the bot's personality and core behavior via the LLM service's Settings. The service automatically prepends it to the context messages on each request:</p>
+<pre><code>llm = OpenAILLMService(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    settings=OpenAILLMService.Settings(
+        model="gpt-4o",
+        system_instruction="You are a helpful voice assistant.",
+    ),
+)
+
+# Context only needs conversation messages
+context = LLMContext()</code></pre>
+<p>This approach is recommended because:</p>
+<ul><li><strong>Survives context updates</strong>: The system prompt is always prepended, even after <code>LLMMessagesUpdateFrame</code> replaces the context or context summarization compresses older messages.</li><li><strong>Shared context</strong>: Multiple LLM services can share a single <code>LLMContext</code> while each provides its own system instruction.</li><li><strong>Runtime updates</strong>: You can change the system prompt mid-conversation via <code>LLMUpdateSettingsFrame</code>.</li></ul>
+<h3>Using developer messages in context</h3>
+<p><strong>Developer messages</strong> (<code>"role": "developer"</code>) are task-specific instructions placed directly in the context. Use them for supplementary guidance that applies to a particular phase of the conversation rather than defining the bot's overall personality.</p>
+<pre><code>messages = [
+    {"role": "developer", "content": "Keep responses under two sentences. Use metric units."},
+]
+context = LLMContext(messages)</code></pre>
+<p>Key characteristics:</p>
+<ul><li><strong>Task-specific</strong>: Use for instructions like response format constraints, domain rules, or workflow steps. The bot's personality belongs in <code>system_instruction</code>.</li><li><strong>Part of normal context flow</strong>: Developer messages participate in context like any other message. They are included in the summarization range and may be compressed or dropped during <a href="/pipecat/fundamentals/context-summarization">context summarization</a>.</li><li><strong>Cross-provider translation</strong>: Pipecat's adapters automatically convert developer messages for providers that don't support the role natively (for example, Anthropic receives them as user messages).</li></ul>
+<h3>Using a context system message (legacy)</h3>
+<p>You can also include a system message directly in the context messages:</p>
+<pre><code>messages = [
+    {"role": "system", "content": "You are a helpful voice assistant."},
+]
+context = LLMContext(messages)</code></pre>
+<p>This works but has limitations: the system message can be lost during full context replacement, and it cannot be shared across multiple LLM services with different system prompts. Context summarization does preserve <code>messages[0]</code> when it's a system message, but <code>system_instruction</code> is still more reliable because it sits outside the context entirely.</p>
+<p>For new projects, prefer <code>system_instruction</code> for personality and developer messages for task-specific instructions.</p>
+<p>&lt;Warning&gt;   If both <code>system_instruction</code> and a system message in the context are set,   <code>system_instruction</code> takes precedence and a warning is logged. Avoid using   both at the same time. &lt;/Warning&gt;</p>
+<h2>Context Aggregator Placement</h2>
+<p>The placement of context aggregator instances in your pipeline is <strong>crucial</strong> for proper operation:</p>
+<h3>User Context Aggregator</h3>
+<p>Place the user context aggregator <strong>downstream from the STT service</strong>. Since the user's speech results in <code>TranscriptionFrame</code> objects pushed by the STT service, the user aggregator needs to be positioned to collect these frames.</p>
+<h3>Assistant Context Aggregator</h3>
+<p>Place the assistant context aggregator <strong>after <code>transport.output()</code></strong>. This positioning is important because:</p>
+<ul><li>The TTS service outputs <code>TTSTextFrame</code>s in addition to audio</li><li>The assistant aggregator must be downstream to collect those frames</li><li>It ensures context updates happen word-by-word for specific services (e.g. Cartesia, ElevenLabs, and Rime)</li><li>Your context stays updated at the word level in case an interruption occurs</li></ul>
+<p>&lt;Tip&gt;   Always place the assistant context aggregator <strong>after</strong> <code>transport.output()</code>   to ensure proper word-level context updates during interruptions. See   <a href="/pipecat/fundamentals/interruptions#what-ends-up-in-the-context">Interruptions</a>   for what the context contains when the bot is cut off mid-sentence. &lt;/Tip&gt;</p>
+<h2>Manual Context Control</h2>
+<p>You can programmatically add new messages to the context by pushing or queueing specific frames:</p>
+<h3>Adding Messages</h3>
+<ul><li><strong><code>LLMMessagesAppendFrame</code></strong>: Appends a new message to the existing context</li><li><strong><code>LLMMessagesUpdateFrame</code></strong>: Completely replaces the existing context with new messages</li><li><strong><code>LLMMessagesTransformFrame</code></strong>: Edits the existing context in place using a transform function</li></ul>
+<pre><code># Add a new user message to context and trigger a response
+new_message = {"role": "user", "content": "Tell me about your capabilities."}
+await worker.queue_frames([
+    LLMMessagesAppendFrame([new_message], run_llm=True), # Optionally trigger bot response, too
+])</code></pre>
+<h4>Adding a message silently</h4>
+<p>All three frames take a <code>run_llm</code> argument that controls whether the change also prompts a bot response. Pass <code>run_llm=True</code> to respond; the default (<code>None</code>, which behaves like <code>False</code>) updates the context silently. This is useful when you collect information in the background and don't want the bot to react every time:</p>
+<pre><code># Add a message to context without triggering a bot response
+note = {"role": "user", "content": "Caller's name is Maria. Account verified."}
+await worker.queue_frames([
+    LLMMessagesAppendFrame([note], run_llm=False), # Silent: no response
+])</code></pre>
+<h4>Editing or removing specific messages</h4>
+<p>To surgically edit or remove individual messages without rebuilding the whole list, push an <code>LLMMessagesTransformFrame</code>. It takes a function that receives the current list of messages and returns a modified list. Use it to drop stale instructions, remove an offensive turn, or rewrite content:</p>
+<pre><code>from pipecat.frames.frames import LLMMessagesTransformFrame
+
+def remove_language_instructions(messages):
+    # Drop any message that contains a per-turn language instruction
+    return [m for m in messages if "LANGUAGE INSTRUCTION" not in str(m.get("content", ""))]
+
+await worker.queue_frames([
+    LLMMessagesTransformFrame(transform=remove_language_instructions, run_llm=False),
+])</code></pre>
+<p>&lt;Note&gt;   To make the bot <strong>speak</strong> specific text and have it recorded in context (for   example, a greeting the LLM did not generate), use <a href="/pipecat/learn/text-to-speech"><code>TTSSpeakFrame</code> with   <code>append_to_context=True</code></a>. That path is for   driving speech output; the frames above are for editing the context directly. &lt;/Note&gt;</p>
+<h3>Retrieving Current Context</h3>
+<p>The context aggregator provides a <code>context</code> property for getting the current context:</p>
+<pre><code>context = context_aggregator.user().context</code></pre>
+<h2>Context Summarization</h2>
+<p>In long-running conversations, context grows with every exchange, increasing token usage and potentially hitting context window limits. Pipecat includes built-in context summarization that automatically compresses older conversation history while preserving recent messages.</p>
+<p>Enable it by setting <code>enable_auto_context_summarization=True</code> when creating your context aggregators (default: <code>False</code>):</p>
+<pre><code>user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    assistant_params=LLMAssistantAggregatorParams(
+        enable_auto_context_summarization=True,
+    ),
+)</code></pre>
+<p>&lt;Card title="Context Summarization Guide" icon="arrow-right" href="/pipecat/fundamentals/context-summarization"&gt;   Learn how to configure summarization triggers, customize behavior, and control   what gets preserved. &lt;/Card&gt;</p>
+<h2>Triggering Bot Responses</h2>
+<p>You may want to manually trigger the bot to speak in two scenarios:</p>
+<ol><li><strong>Starting a pipeline</strong> where the bot should speak first</li><li><strong>After editing the context</strong> using <code>LLMMessagesAppendFrame</code> or <code>LLMMessagesUpdateFrame</code></li></ol>
+<pre><code># Example: Bot speaks first when pipeline starts
+@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, client):
+    # Trigger a response
+    await worker.queue_frames([LLMRunFrame()])</code></pre>
+<pre><code># Example: Bot speaks after context is edited
+new_message = {"role": "user", "content": "Tell me a fun fact."}
+await worker.queue_frames([
+    LLMMessagesAppendFrame([new_message], run_llm=True), # Trigger bot response
+])</code></pre>
+<p>This gives you fine-grained control over when and how the bot responds during the conversation flow.</p>
+<h2>Key Takeaways</h2>
+<ul><li><strong>Context is conversation history</strong> - automatically maintained as users and bots exchange messages</li><li><strong>Use <code>system_instruction</code> for system prompts</strong> - set it in LLM Settings rather than as a context message for reliability across context updates and summarization</li><li><strong>Use developer messages for task instructions</strong> - place task-specific guidance in context with <code>"role": "developer"</code> rather than overloading the system prompt</li><li><strong>Frame types matter</strong> - <code>TranscriptionFrame</code> for users, <code>TTSTextFrame</code> for assistants</li><li><strong>Placement matters</strong> - user aggregator after STT, assistant aggregator after transport output</li><li><strong>Tools are included</strong> - function definitions and results are stored in context</li><li><strong>Manual control available</strong> - use frames to append messages or trigger responses when needed</li><li><strong>Word-level precision</strong> - proper placement ensures context accuracy during interruptions</li><li><strong>Automatic summarization</strong> - enable context summarization to manage long conversations efficiently and reduce token costs</li></ul>
+<h2>What's Next</h2>
+<p>Now that you understand context management, let's explore how to configure the LLM services that process this context to generate intelligent responses.</p>
+<p>&lt;Card title="LLM Inference" icon="arrow-right" href="/pipecat/learn/llm"&gt;   Learn how to configure language models in your voice AI pipeline &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/context-management">https://docs.pipecat.ai/pipecat/learn/context-management</a></p>
+</div></main></div></body></html>

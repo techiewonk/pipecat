@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L13 · Text to Speech — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 13 · Part II — The voice loop</div>
+      <h1>Text to Speech</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">TTS is the bot's voice: LLM text in, audio out. Drop-in like STT, with a few powerful extras — sentence aggregation, word timestamps, and skipping speech.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Text in, audio out</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="LLMTextFrame(s)|sentence aggregation|TTSService.run_tts()|TTSAudioRawFrame|transport.output"
+           data-caption="Streaming LLM tokens arrive as LLMTextFrames|By default they're aggregated into whole sentences|run_tts synthesizes each (WebSocket streaming or HTTP)|Audio arrives as TTSAudioRawFrames + word timestamps|The output transport plays it — often under 200ms to first audio">
+      </div>
+
+      <h2 id="config">Configure a voice, switch it live</h2>
+      <pre><code class="language-python">from pipecat.services.cartesia.tts import CartesiaTTSService
+from pipecat.frames.frames import TTSUpdateSettingsFrame
+
+tts = CartesiaTTSService(api_key=os.environ["CARTESIA_API_KEY"],
+    settings=CartesiaTTSService.Settings(voice="71a7ad14-...-01c121"))
+
+# switch voice mid-conversation (Settings pattern from Lesson 11):
+await tts.queue_frame(TTSUpdateSettingsFrame({"voice": "&lt;another-voice-id&gt;"}))</code></pre>
+      <p><code>-http</code> variants return audio in one response; the default streams it as generated (lower latency). WebSocket providers (Cartesia, ElevenLabs, Rime) also give <strong>word timestamps</strong> for precise interruption handling and subtitles.</p>
+
+      <h2 id="skip">Skipping speech &amp; transforms</h2>
+      <p>Sometimes text should flow through the pipeline (update context, reach processors) without being spoken — e.g. structured markers. Set <code>skip_tts</code>, or use an <code>LLMTextProcessor</code> with a pattern aggregator to skip code blocks or reshape text just-in-time.</p>
+      <pre><code class="language-python">from pipecat.frames.frames import LLMConfigureOutputFrame
+await worker.queue_frame(LLMConfigureOutputFrame(skip_tts=True))    # don't speak the next output
+# ... later ...
+await worker.queue_frame(LLMConfigureOutputFrame(skip_tts=False))
+
+# TTS-only text transforms (e.g. spell out phone numbers) without touching the LLM text:
+tts.add_text_transformer(spell_out_numbers, "phone_number")</code></pre>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/tts_service.py</code> — <code>TTSService</code> (107), sentence aggregation & <code>TextAggregationMode</code>, the audio-context ordering system, word timestamps, <code>WebsocketTTSService</code>/<code>InterruptibleTTSService</code>. <code>services/cartesia/tts.py</code> — a concrete streaming provider. <code>processors/aggregators/llm_text_processor.py</code> — <code>LLMTextProcessor</code> / <code>PatternPairAggregator</code>. <code>utils/text/*</code> — text filters.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Map two voice ids to "male"/"female" and switch on command. (2) Wrap code blocks in a pattern and add them to <code>skip_aggregator_types</code> so they aren't read aloud. (3) Compare a streaming vs <code>-http</code> provider for smoothness.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Streaming vs <code>-http</code> TTS — the difference?</summary><p>Streaming emits audio as it's generated (lower latency); <code>-http</code> returns it in one response (simpler, slightly higher latency).</p></details>
+      <details><summary>2. What does <code>skip_tts</code> allow?</summary><p>Text to flow through the pipeline and into context without being spoken — useful for structured markers or text-only responses.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l14-output-playback.html">Lesson 14 — Output & playback →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

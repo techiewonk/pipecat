@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Examples · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Examples</h1>
+<blockquote>Common Pipecat Cloud Python SDK patterns: starting agent sessions, handling session arguments, and managing deployments.</blockquote>
+<p>This page provides examples of common tasks with the Pipecat Cloud Python SDK.</p>
+<h2>Starting an Agent Session</h2>
+<p>This example shows how to start a session with various configurations:</p>
+<pre><code>import asyncio
+
+from pipecatcloud.exception import AgentStartError
+from pipecatcloud.session import Session, SessionParams
+
+
+async def main():
+    try:
+        # Create session object
+        session = Session(
+            agent_name="my-first-agent",
+            api_key=API_KEY,  # Replace with your actual API key
+            params=SessionParams(
+                use_daily=True,  # Optional: Creates a Daily room
+                daily_room_properties={"start_video_off": False},
+                data={"key": "value"},
+            ),
+        )
+
+        # Start the session
+        response = await session.start()
+
+        # Get Daily room URL
+        daily_url = f"{response['dailyRoom']}?t={response['dailyToken']}"
+        print(f"Join Daily room: {daily_url}")
+
+    except AgentStartError as e:
+        print(f"Error starting agent: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
+
+# Run the async function
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+<h2>Building a Bot Entry Point with Daily Arguments</h2>
+<pre><code>from loguru import logger
+from pipecat.runner.types import DailyRunnerArguments
+
+async def bot(args: DailyRunnerArguments):
+    """Main bot entry point compatible with the FastAPI route handler.
+
+    Args:
+        room_url: The Daily room URL
+        token: The Daily room token
+        body: The configuration object from the request body
+    """
+    logger.info(f"Bot process initialized {args.room_url} {args.token}")
+
+    try:
+        await main(args.room_url, args.token)
+        logger.info("Bot process completed")
+    except Exception as e:
+        logger.exception(f"Error in bot process: {str(e)}")
+        raise</code></pre>
+<h2>Building a Bot Entry Point with WebSocket Arguments</h2>
+<pre><code>from loguru import logger
+from pipecat.runner.types import WebSocketRunnerArguments
+
+async def bot(args: WebSocketRunnerArguments):
+    """Main bot entry point for WebSocket connections.
+
+    Args:
+        ws: The WebSocket connection
+    """
+    logger.info("WebSocket bot process initialized")
+
+    try:
+        await main(args.websocket)
+        logger.info("WebSocket bot process completed")
+    except Exception as e:
+        logger.exception(f"Error in WebSocket bot process: {str(e)}")
+        raise</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/examples">https://docs.pipecat.ai/api-reference/pipecat-cloud/sdk-reference/examples</a></p>
+</div></main></div></body></html>

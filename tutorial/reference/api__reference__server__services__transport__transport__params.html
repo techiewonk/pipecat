@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TransportParams · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>TransportParams</h1>
+<blockquote>TransportParams is the base configuration class shared by all Pipecat transports: audio, video, and VAD settings.</blockquote>
+<h2>Overview</h2>
+<p><code>TransportParams</code> is the base configuration class for all Pipecat transports. It controls audio input/output settings, video settings, and voice activity detection. Every transport's params class (<code>DailyParams</code>, <code>LiveKitParams</code>, <code>WebsocketServerParams</code>, etc.) inherits from <code>TransportParams</code>.</p>
+<p>You typically pass these via the transport's <code>params</code> argument:</p>
+<pre><code>from pipecat.transports.daily import DailyTransport, DailyParams
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Bot",
+    params=DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        audio_out_sample_rate=24000,
+        video_out_enabled=True,
+        video_out_width=1280,
+        video_out_height=720,
+    ),
+)</code></pre>
+<h2>Audio Output</h2>
+<p>&lt;ParamField path="audio_out_enabled" type="bool" default="False"&gt;   Enable audio output streaming. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the default rate from the   TTS service. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_channels" type="int" default="1"&gt;   Number of output audio channels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_bitrate" type="int" default="96000"&gt;   Output audio bitrate in bits per second. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_10ms_chunks" type="int" default="4"&gt;   Number of 10ms chunks to buffer before sending output audio. Higher values   increase latency but reduce overhead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_mixer" type="BaseAudioMixer | Mapping[str, BaseAudioMixer]" default="None"&gt;   Audio mixer instance for combining audio streams, or a mapping of destination   names to mixer instances. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_destinations" type="List[str]" default="[]"&gt;   List of audio output destination identifiers for routing audio to specific   participants or endpoints. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_end_silence_secs" type="int" default="2"&gt;   Seconds of silence to send after an <code>EndFrame</code>. Set to <code>0</code> to disable. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_out_auto_silence" type="bool" default="True"&gt;   Insert silence frames when the audio output queue is empty. When <code>False</code>, the   transport waits for audio data instead of inserting silence, which is useful   for scenarios that require uninterrupted audio playback without artificial   gaps. &lt;/ParamField&gt;</p>
+<h2>Audio Input</h2>
+<p>&lt;ParamField path="audio_in_enabled" type="bool" default="False"&gt;   Enable audio input streaming. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_sample_rate" type="int" default="None"&gt;   Input audio sample rate in Hz. When <code>None</code>, uses the transport's native rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_channels" type="int" default="1"&gt;   Number of input audio channels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_filter" type="BaseAudioFilter" default="None"&gt;   Audio filter to apply to incoming audio (e.g., noise suppression). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_stream_on_start" type="bool" default="True"&gt;   Start audio input streaming immediately when the transport starts. Set to   <code>False</code> to manually control when audio input begins. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_passthrough" type="bool" default="True"&gt;   Pass input audio frames downstream through the pipeline. When <code>False</code>, audio   is consumed by VAD but not forwarded. &lt;/ParamField&gt;</p>
+<h2>Video Output</h2>
+<p>&lt;ParamField path="video_out_enabled" type="bool" default="False"&gt;   Enable video output streaming. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_is_live" type="bool" default="False"&gt;   Enable real-time video output. When <code>True</code>, frames are sent as they arrive   rather than buffered. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_width" type="int" default="1024"&gt;   Video output width in pixels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_height" type="int" default="768"&gt;   Video output height in pixels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_bitrate" type="int | None" default="None" deprecated&gt;   Video output bitrate in bits per second.</p>
+<p>  <strong>Deprecated in 1.1.0:</strong> Use provider-specific settings instead (e.g.,   <code>DailyParams.camera_out_send_settings</code> for Daily). This parameter will be   removed in 2.0.0. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_framerate" type="int" default="30"&gt;   Video output frame rate in frames per second. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_color_format" type="str" default="RGB"&gt;   Video output color format string. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_codec" type="str" default="None"&gt;   Preferred video codec for output (e.g., <code>VP8</code>, <code>H264</code>, <code>H265</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="video_out_destinations" type="List[str]" default="[]"&gt;   List of video output destination identifiers. &lt;/ParamField&gt;</p>
+<h2>Video Input</h2>
+<p>&lt;ParamField path="video_in_enabled" type="bool" default="False"&gt;   Enable video input streaming. &lt;/ParamField&gt;</p>
+<h2>Transport Subclasses</h2>
+<p>Each transport extends <code>TransportParams</code> with provider-specific fields:</p>
+<div class="tablewrap"><table><thead><tr><th>Transport</th><th>Params Class</th><th>Additional Fields</th></tr></thead><tbody><tr><td><a href="/api-reference/server/services/transport/daily">DailyTransport</a></td><td><code>DailyParams</code></td><td><code>api_key</code>, <code>api_url</code>, <code>dialin_settings</code>, <code>transcription_enabled</code>, <code>transcription_settings</code></td></tr><tr><td><a href="/api-reference/server/services/transport/livekit">LiveKitTransport</a></td><td><code>LiveKitParams</code></td><td>(no additional fields)</td></tr><tr><td><a href="/api-reference/server/services/transport/small-webrtc">SmallWebRTCTransport</a></td><td><code>TransportParams</code></td><td>Uses base class directly</td></tr><tr><td><a href="/api-reference/server/services/transport/websocket-server">WebsocketServerTransport</a></td><td><code>WebsocketServerParams</code></td><td><code>add_wav_header</code>, <code>serializer</code>, <code>session_timeout</code></td></tr><tr><td><a href="/api-reference/server/services/transport/fastapi-websocket">FastAPIWebsocketTransport</a></td><td><code>FastAPIWebsocketParams</code></td><td><code>serializer</code>, <code>session_timeout</code></td></tr></tbody></table></div>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/transport-params">https://docs.pipecat.ai/api-reference/server/services/transport/transport-params</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fish Audio Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Fish Audio Text-to-Speech</h1>
+<blockquote>FishAudioTTSService streams real-time TTS through Fish Audio's WebSocket API with custom voice models and prosody control.</blockquote>
+<h2>Overview</h2>
+<p><code>FishAudioTTSService</code> provides real-time text-to-speech synthesis through Fish Audio's WebSocket-based streaming API. The service offers custom voice models, prosody controls, and multiple audio formats optimized for conversational AI applications with low latency.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Fish TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.fish.tts.html"&gt;     Pipecat's API methods for Fish Audio TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-fish.py"&gt;     Complete example with custom voice model   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Fish Audio Documentation" icon="book" href="https://docs.fish.audio/developer-platform/getting-started/introduction"&gt;     Official Fish Audio documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Models" icon="microphone" href="https://fish.audio/app/my-voices/"&gt;     Create and manage custom voice models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Fish Audio services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[fish]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Fish Audio Account Setup</h3>
+<p>Before using Fish Audio TTS services, you need:</p>
+<ol><li><strong>Fish Audio Account</strong>: Sign up at <a href="https://fish.audio/auth/">Fish Audio Console</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Models</strong>: Create or select custom voice models for synthesis</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>FISH_API_KEY</code>: Your Fish Audio API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>FishAudioTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Fish Audio API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="reference_id" type="str" default="None" deprecated&gt;   Reference ID of the voice model to use for synthesis. Deprecated in v0.0.105.   Use <code>settings=FishAudioTTSService.Settings(voice=...)</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_id" type="str" default="s2-pro" deprecated&gt;   Fish Audio TTS model to use.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=FishAudioTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_format" type="str" default="pcm"&gt;   Audio output format. Options: <code>"pcm"</code>, <code>"opus"</code>, <code>"mp3"</code>, <code>"wav"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable voice settings. See <a href="#settings">Settings</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=FishAudioTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="FishAudioTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>FishAudioTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>latency</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Latency mode setting.</td></tr><tr><td><code>normalize</code></td><td><code>bool</code></td><td><code>NOT_GIVEN</code></td><td>Whether to normalize audio.</td></tr><tr><td><code>temperature</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Temperature for sampling.</td></tr><tr><td><code>top_p</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Top-p sampling parameter.</td></tr><tr><td><code>prosody_speed</code></td><td><code>float</code></td><td><code>NOT_GIVEN</code></td><td>Prosody speed control.</td></tr><tr><td><code>prosody_volume</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Prosody volume control.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.fish import FishAudioTTSService
+
+tts = FishAudioTTSService(
+    api_key=os.getenv("FISH_API_KEY"),
+    settings=FishAudioTTSService.Settings(
+        voice="your-voice-reference-id",
+    ),
+)</code></pre>
+<h3>With Prosody Controls</h3>
+<pre><code>tts = FishAudioTTSService(
+    api_key=os.getenv("FISH_API_KEY"),
+    settings=FishAudioTTSService.Settings(
+        voice="your-voice-reference-id",
+        model="s2-pro",
+        prosody_speed=1.2,
+        prosody_volume=3,
+        latency="balanced",
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong><code>voice</code> required</strong>: You must specify either <code>voice</code> (preferred) or the deprecated <code>reference_id</code> parameter.</li><li><strong>Model switching</strong>: Changing the model or voice via settings automatically disconnects and reconnects the WebSocket with the new configuration.</li></ul>
+<h2>Event Handlers</h2>
+<p>Fish Audio TTS supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Fish Audio WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Fish Audio WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Fish Audio")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/fish">https://docs.pipecat.ai/api-reference/server/services/tts/fish</a></p>
+</div></main></div></body></html>

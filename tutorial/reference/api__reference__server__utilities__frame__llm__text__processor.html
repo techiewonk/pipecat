@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLMTextProcessor · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>LLMTextProcessor</h1>
+<blockquote>A processor for aggregating LLMTextFrames into logical units before passing them to downstream services</blockquote>
+<h2>Overview</h2>
+<p><code>LLMTextProcessor</code> is a processor designed to aggregate <code>LLMTextFrame</code>s into coherent text units before passing them to downstream services, such as TTS. By utilizing text aggregators, it ensures that text is properly segmented and structured, enhancing the quality of subsequent processing. This processor expects <code>LLMTextFrame</code>s as input and outputs <code>AggregatedTextFrame</code>s containing the aggregated text.</p>
+<p>&lt;Note&gt;   When an <code>LLMTextProcessor</code> is in use, text aggregation is handled upstream and   the TTS service's built-in aggregator is bypassed. &lt;/Note&gt;</p>
+<p>The benefit of pre-aggregating LLM text frames is that it allows for more controlled and meaningful text synthesis. Downstream services can operate on complete sentences or logical text blocks. For TTS services, this means being able to customize how certain types of text are spoken (e.g., spelling out phone numbers, stripping out url protocols, or inserting other tts-specific annotations) or even skipping over certain text segments entirely (e.g., code snippets or markup). For other services, such as RTVI, it allows for sending these logical text units as separate <code>bot-output</code> messages, supporting custom client-side handling and rendering (e.g. collapsible code blocks, clickable links, etc.).</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="LLMTextProcessor API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.processors.aggregators.llm_text_processor.html"&gt;     Pipecat's API methods for LLMTextProcessor   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/blob/main/code-helper"&gt;     Complete example with LLMTextProcessor and custom TTS and RTVI handling   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="text_aggregator" type="BaseTextAggregator" default="None"&gt;   An instance of a text aggregator (e.g., <code>PatternPairAggregator</code> or a custom   aggregator type) used to aggregate incoming text from <code>LLMTextFrame</code>s. If   <code>None</code>, a <code>SimpleTextAggregator</code> will be used by default, aggregating text   based on sentence boundaries. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>The <code>LLMTextProcessor</code> should be integrated into your pipeline after the LLM service and before any services that consume text, such as TTS. It processes incoming <code>LLMTextFrame</code>s, aggregates their text content, and outputs <code>AggregatedTextFrame</code>s.</p>
+<p>&lt;Tip&gt;   For more usage examples, check out the docs for the   <a href="/api-reference/server/utilities/text/pattern-pair-aggregator#usage-examples">PatternPairAggregator</a>. &lt;/Tip&gt;</p>
+<pre><code>from pipecat.processors.aggregators.llm_text_processor import LLMTextProcessor
+
+...
+
+llm_text_aggregator = PatternPairAggregator()
+llm_text_aggregator.add_pattern(
+    type="code",
+    start_pattern="&lt;code&gt;",
+    end_pattern="&lt;/code&gt;",
+    action=MatchAction.AGGREGATE,
+)
+llm_text_processor = LLMTextProcessor(text_aggregator=llm_text_aggregator)
+
+...
+
+# Pipeline - The following pipeline is typical for a STT-&gt;LLM-&gt;TTS bot + RTVI
+#            with the addition of the LLMTextProcessor to handle special text segments.
+pipeline = Pipeline(
+    [
+        transport.input(),
+        rtvi,
+        stt,
+        transcript_processor.user(),
+        context_aggregator.user(),
+        llm,
+        llm_text_processor,
+        tts,
+        transport.output(),
+        transcript_processor.assistant(),
+        context_aggregator.assistant(),
+    ]
+)</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/frame/llm-text-processor">https://docs.pipecat.ai/api-reference/server/utilities/frame/llm-text-processor</a></p>
+</div></main></div></body></html>

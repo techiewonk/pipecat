@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentry Metrics · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Sentry Metrics</h1>
+<blockquote>SentryMetrics extends FrameProcessorMetrics for performance monitoring of Pipecat pipelines with Sentry.</blockquote>
+<h2>Overview</h2>
+<p><code>SentryMetrics</code> extends <code>FrameProcessorMetrics</code> to provide performance monitoring integration with Sentry. It tracks Time to First Byte (TTFB) and processing duration metrics for frame processors, enabling real-time performance monitoring and error tracking for your Pipecat applications.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Sentry Metrics API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.processors.metrics.sentry.html"&gt;     Pipecat's API methods for Sentry metrics integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/observability/observability-sentry-metrics.py"&gt;     Browse examples using Sentry metrics   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sentry Documentation" icon="book" href="https://docs.sentry.io/platforms/python/"&gt;     Official Sentry Python SDK documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Sentry Platform" icon="chart-line" href="https://sentry.io/"&gt;     Access performance monitoring and error tracking   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Sentry analytics services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[sentry]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Sentry Account Setup</h3>
+<p>Before using Sentry metrics services, you need:</p>
+<ol><li><strong>Sentry Account</strong>: Sign up at <a href="https://sentry.io/">Sentry Platform</a></li><li><strong>Project Setup</strong>: Create a project and obtain your DSN</li><li><strong>SDK Initialization</strong>: Configure Sentry SDK in your application</li><li><strong>Metrics Configuration</strong>: Set up performance monitoring and error tracking</li></ol>
+<h3>Required Configuration</h3>
+<ul><li><strong>Sentry DSN</strong>: Your project's Data Source Name for authentication</li><li><strong>Traces Sample Rate</strong>: Configure performance monitoring sampling</li><li><strong>SDK Initialization</strong>: Initialize Sentry before using metrics</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Performance Monitoring</strong>: Track TTFB and processing duration metrics</li><li><strong>Error Tracking</strong>: Automatic error capture and reporting</li><li><strong>Frame Processor Metrics</strong>: Monitor individual processor performance</li><li><strong>Real-time Analytics</strong>: Live performance data and alerting</li></ul>
+<h2>Configuration</h2>
+<p><code>SentryMetrics</code> takes no constructor parameters. It automatically detects whether the Sentry SDK has been initialized and logs a warning if it has not.</p>
+<p>&lt;Note&gt;   You must initialize the Sentry SDK in your application before creating   <code>SentryMetrics</code>. The metrics collector checks <code>sentry_sdk.is_initialized()</code> at   construction time. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import sentry_sdk
+from pipecat.processors.metrics.sentry import SentryMetrics
+
+# Initialize Sentry SDK first
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    traces_sample_rate=1.0,
+)
+
+# Create metrics and assign to a service
+sentry = SentryMetrics()
+tts = SomeTTSService(
+    metrics=sentry,
+)</code></pre>
+<h3>With Multiple Services</h3>
+<pre><code>sentry_tts = SentryMetrics()
+sentry_llm = SentryMetrics()
+
+tts = SomeTTSService(metrics=sentry_tts)
+llm = SomeLLMService(metrics=sentry_llm)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>SDK initialization required</strong>: Sentry metrics are silently disabled if <code>sentry_sdk.init()</code> has not been called. A warning is logged in this case.</li><li><strong>Transaction types</strong>: The service creates two types of Sentry transactions: <code>ttfb</code> for time-to-first-byte tracking and <code>processing</code> for frame processing duration.</li><li><strong>Background processing</strong>: Transactions are completed in a background task to avoid blocking the pipeline.</li><li><strong>Graceful shutdown</strong>: On cleanup, the service flushes all pending transactions to Sentry with a 5-second timeout.</li><li><strong>Observer integration</strong>: Metrics tracked by <code>SentryMetrics</code> are emitted as <code>MetricsFrame</code> objects downstream, enabling integration with pipeline observers like <code>UserBotLatencyObserver</code> and <code>MetricsLogObserver</code>.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/analytics/sentry">https://docs.pipecat.ai/api-reference/server/services/analytics/sentry</a></p>
+</div></main></div></body></html>

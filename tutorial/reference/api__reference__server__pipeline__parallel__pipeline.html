@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParallelPipeline · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>ParallelPipeline</h1>
+<blockquote>Run multiple pipeline branches in parallel, with synchronized inputs and outputs for complex flows</blockquote>
+<h2>Overview</h2>
+<p><code>ParallelPipeline</code> allows you to create multiple independent processing branches that run simultaneously, sharing input and coordinating output. It's particularly useful for multi-agent systems, parallel stream processing, and creating redundant service paths.</p>
+<p>Each branch receives the same downstream frames, processes them independently, and the results are merged back into a single stream. System frames (like <code>StartFrame</code> and <code>EndFrame</code>) are synchronized across all branches.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="*args" type="List[List[FrameProcessor]]" required&gt;   Multiple lists of processors, where each list defines a parallel branch. All   branches execute simultaneously when frames flow through the pipeline. &lt;/ParamField&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Multi-Agent Conversation</h3>
+<p>Create a conversation with two AI agents that can interact with the user independently:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    ParallelPipeline(
+        # Agent 1: Customer service representative
+        [
+            stt_1,
+            context_aggregator.user_a(),
+            llm_agent_1,
+            tts_agent_1,
+        ],
+        # Agent 2: Technical specialist
+        [   stt_2,
+            context_aggregator.user_b(),
+            llm_agent_2,
+            tts_agent_2,
+        ]
+    ),
+    transport.output(),
+])</code></pre>
+<h3>Redundant Services with Failover</h3>
+<p>Set up redundant services with automatic failover:</p>
+<pre><code>pipeline = Pipeline([
+    transport.input(),
+    stt,
+    ParallelPipeline(
+        # Primary LLM service
+        [   gate_primary,
+            primary_llm,
+            error_detector,
+        ],
+        # Backup LLM service (used only if primary fails)
+        [   gate_backup,
+            backup_llm,
+            fallback_processor,
+        ]
+    ),
+    tts,
+    transport.output(),
+])</code></pre>
+<h3>Cross-Branch Communication</h3>
+<p>Using Producer/Consumer processors to share data between branches:</p>
+<pre><code># Create producer/consumer pair for cross-branch communication
+frame_producer = ProducerProcessor(filter=is_important_frame)
+frame_consumer = ConsumerProcessor(producer=frame_producer)
+
+pipeline = Pipeline([
+    transport.input(),
+    ParallelPipeline(
+        # Branch that generates important frames
+        [
+            stt,
+            llm,
+            tts,
+            frame_producer,  # Share frames with other branch
+        ],
+        # Branch that consumes those frames
+        [
+            frame_consumer,  # Receive frames from other branch
+            llm,             # Speech to Speech LLM (audio in)
+        ]
+    ),
+    transport.output(),
+])</code></pre>
+<h2>How It Works</h2>
+<ol><li><code>ParallelPipeline</code> adds special source and sink processors to each branch</li><li>System frames (like <code>StartFrame</code> and <code>EndFrame</code>) are sent to all branches</li><li>Other frames flow downstream to all branch sources</li><li>Results from each branch are collected at the sinks</li><li>The pipeline ensures proper frame ordering:</li><li><code>StartFrame</code> is pushed before any buffered frames (ensuring downstream processors initialize first)</li><li><code>EndFrame</code> and <code>CancelFrame</code> are pushed after buffered frames are flushed (ensuring pending work completes before shutdown)</li></ol>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/pipeline/parallel-pipeline">https://docs.pipecat.ai/api-reference/server/pipeline/parallel-pipeline</a></p>
+</div></main></div></body></html>

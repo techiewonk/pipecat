@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uplift AI Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Uplift AI Speech-to-Text</h1>
+<blockquote>UpliftAISTTService transcribes Urdu-optimized speech using Uplift AI's Scribe STT API with VAD-segmented audio.</blockquote>
+<p>export const CommunityMaintained = ({maintainer, maintainerUrl, repo}) =&gt; &lt;Note&gt;     &lt;strong&gt;Community-maintained integration.&lt;/strong&gt; This service is built and     maintained by{" "}     &lt;a href={maintainerUrl} target="_blank" rel="noreferrer"&gt;       {maintainer}     &lt;/a&gt;     . Pipecat does not test or officially support it. Please report issues and     request changes on the{" "}     &lt;a href={repo} target="_blank" rel="noreferrer"&gt;       source repository     &lt;/a&gt;     . Learn more about{" "}     &lt;a href="/api-reference/server/services/community-integrations"&gt;       community integrations     &lt;/a&gt;     .   &lt;/Note&gt;;</p>
+<p>&lt;CommunityMaintained maintainer="havkerboi123" maintainerUrl="https://github.com/havkerboi123" repo="https://github.com/havkerboi123/pipecat-upliftai-stt" /&gt;</p>
+<h2>Overview</h2>
+<p><code>UpliftAISTTService</code> transcribes audio into text using <a href="https://upliftai.org">Uplift AI</a>'s Scribe speech-to-text API, optimized for the Urdu language with optional domain-specific optimization. It is a <code>SegmentedSTTService</code> built on Uplift AI's HTTP transcription endpoint.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Source Repository" icon="github" href="https://github.com/havkerboi123/pipecat-upliftai-stt"&gt;     Source code, examples, and issues for the Uplift AI STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Uplift AI" icon="book" href="https://upliftai.org"&gt;     Learn more about Uplift AI's speech services   &lt;/Card&gt;</p>
+<p>  &lt;Card title="API Keys" icon="key" href="https://platform.upliftai.org/studio/api-keys"&gt;     Create and manage your Uplift AI API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>This is a community-maintained package distributed separately from <code>pipecat-ai</code>. It is not yet published to PyPI, so install it directly from GitHub:</p>
+<pre><code>uv pip install git+https://github.com/havkerboi123/pipecat-upliftai-stt.git</code></pre>
+<h2>Prerequisites</h2>
+<h3>Uplift AI Account Setup</h3>
+<p>Before using the Uplift AI STT service, you need:</p>
+<ol><li><strong>Uplift AI Account</strong>: Sign up at <a href="https://upliftai.org">Uplift AI</a></li><li><strong>API Key</strong>: Generate a key (format: <code>sk_api_...</code>) from the</li></ol>
+<p>   <a href="https://platform.upliftai.org/studio/api-keys">API Keys page</a></p>
+<h3>Required Environment Variables</h3>
+<ul><li><code>UPLIFT_API_KEY</code>: Your Uplift AI API key. Falls back to this environment</li></ul>
+<p>  variable if <code>api_key</code> is not passed to the constructor.</p>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   Uplift AI API key. Falls back to the <code>UPLIFT_API_KEY</code> environment variable if   not provided. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.upliftai.org/v1"&gt;   Base URL for the Uplift AI API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. If not provided, the pipeline's sample rate is used. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="scribe"&gt;   Model to use for transcription. Options: <code>"scribe"</code> (full accuracy, 40   credits/min) or <code>"scribe-mini"</code> (cost-effective, 20 credits/min). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="domain" type="str" default="None"&gt;   Optional domain-specific optimization. Options: <code>"phone-commerce"</code> or   <code>"farming"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="UpliftAISTTService.InputParams" default="None"&gt;   Alternative parameter configuration. See <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<p>Advanced configuration passed via the <code>params</code> constructor argument using <code>UpliftAISTTService.InputParams(...)</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"scribe"</code></td><td>Model to use. Options: <code>"scribe"</code> or <code>"scribe-mini"</code>.</td></tr><tr><td><code>language</code></td><td><code>str</code></td><td><code>"ur"</code></td><td>Transcription language. Currently only Urdu (<code>"ur"</code>) is supported.</td></tr><tr><td><code>domain</code></td><td><code>str</code></td><td><code>None</code></td><td>Optional domain optimization: <code>"phone-commerce"</code> or <code>"farming"</code>.</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   See the <a href="https://github.com/havkerboi123/pipecat-upliftai-stt">source   repository</a> for the   authoritative, up-to-date configuration options. &lt;/Note&gt;</p>
+<h2>Usage</h2>
+<pre><code>import os
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat_upliftai import UpliftAISTTService
+
+stt = UpliftAISTTService(
+    api_key=os.getenv("UPLIFT_API_KEY"),
+    model="scribe",
+    domain="phone-commerce",  # optional
+)
+
+pipeline = Pipeline([
+    transport.input(),               # audio/user input
+    stt,                             # Uplift STT transcription
+    context_aggregator.user(),       # add user text to context
+    llm,                             # LLM generates response
+    tts,                             # text to speech synthesis
+    transport.output(),              # stream audio back to user
+    context_aggregator.assistant(),  # store assistant response
+])</code></pre>
+<p>You can also switch the model or domain at runtime:</p>
+<pre><code>await stt.set_model("scribe-mini")
+await stt.set_domain("farming")
+await stt.set_domain(None)  # disable domain optimization</code></pre>
+<h2>Compatibility</h2>
+<p>Tested with Pipecat v0.0.86 and later. Check the <a href="https://github.com/havkerboi123/pipecat-upliftai-stt">source repository</a> for the latest tested version and changelog.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/upliftai">https://docs.pipecat.ai/api-reference/server/services/stt/upliftai</a></p>
+</div></main></div></body></html>

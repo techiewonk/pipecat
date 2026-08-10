@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 0 — Foundations · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Chapter 0 · Part A — Core</div>
+      <h1>Foundations: the shared vocabulary</h1>
+      <div class="meta"><span class="pill">⏱ 25 min</span><span class="pill grey">Level: beginner</span><span class="pill grey">Do this first</span></div>
+      <p class="lead">Every other chapter builds on the words defined here. Learn them once and the whole framework — and all 380 examples — becomes readable.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="what">What Pipecat is</h2>
+      <p>Pipecat is an open-source Python framework for building <strong>voice and multimodal AI agents</strong> — programs you talk to that talk back, in real time. It connects AI services (speech-to-text, a language model, text-to-speech) and a network <strong>transport</strong> (how audio reaches the user), keeping the round-trip fast (typically 500–800&nbsp;ms). Official intro: <a href="reference/pipecat__get__started__introduction.html" target="_blank" rel="noopener">docs.pipecat.ai</a>.</p>
+
+      <h2 id="frames">Frames &amp; the pipeline</h2>
+      <div class="box concept">
+        <p class="title">🎯 Concept</p>
+        <p>Everything moving through a Pipecat app is a <strong>frame</strong> — a small typed packet (a chunk of audio, transcribed text, an LLM token, or a control signal). Frames travel through a <strong>pipeline</strong>: an ordered list of <strong>processors</strong>, each of which handles frames and passes them on.</p>
+      </div>
+      <pre class="diagram">  🎤 you speak
+     │  (audio frames)
+     ▼
+[transport.input] ─▶ [STT] ─▶ [user aggregator] ─▶ [LLM] ─▶ [TTS] ─▶ [transport.output] ─▶ 🔊 bot speaks
+     audio           text        adds to context     reply    audio         playback</pre>
+      <p>Docs: <a href="reference/pipecat__learn__pipeline.html" target="_blank" rel="noopener">Pipeline &amp; frame processing</a>.</p>
+
+      <h2 id="words">The seven words you need</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Term</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>Frame</code></td><td>A typed data packet flowing through the app.</td></tr>
+          <tr><td><code>FrameProcessor</code></td><td>A node that receives frames, optionally transforms them, and pushes them onward. Sits <em>in</em> the pipeline.</td></tr>
+          <tr><td><code>Pipeline</code></td><td>An ordered list of processors; order defines data flow.</td></tr>
+          <tr><td><code>PipelineWorker</code></td><td>One agent = one pipeline.</td></tr>
+          <tr><td><code>WorkerRunner</code></td><td>Starts and supervises one <em>or many</em> workers — this is what makes multi-agent (Chapter 11) possible.</td></tr>
+          <tr><td><code>Bus</code></td><td>The shared channel workers use to talk to each other (in-memory, Redis, or PGMQ).</td></tr>
+          <tr><td><code>Transport</code></td><td>How the user connects (WebRTC, Daily, phone…); always the first and last processor.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="skeleton">The skeleton shared by all 380 files</h2>
+      <p>Open any example and you'll see this shape. Memorize it and every file is readable:</p>
+      <pre><code class="language-python">transport_params = {                     # how the user can connect (chosen at launch)
+    "webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True),
+    "daily":  lambda: DailyParams(audio_in_enabled=True, audio_out_enabled=True),
+}
+
+async def run_bot(transport, runner_args):
+    stt = DeepgramSTTService(api_key=...)          # 1. build services
+    llm = OpenAILLMService(api_key=...)
+    tts = CartesiaTTSService(api_key=...)
+    pipeline = Pipeline([transport.input(), stt, llm, tts, transport.output()])  # 2. wire them
+    worker = PipelineWorker(pipeline)              # 3. one agent = one pipeline
+
+    @transport.event_handler("on_client_connected")   # 4. react to events
+    async def _(transport, client): ...
+
+    runner = WorkerRunner()                        # 5. run & supervise workers
+    await runner.add_workers(worker)
+    await runner.run()
+
+async def bot(runner_args):                        # entry point (also Pipecat Cloud)
+    transport = await create_transport(runner_args, transport_params)
+    await run_bot(transport, runner_args)
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+    main()</code></pre>
+
+      <div class="box py">
+        <p class="title">🐍 Python note — dict of lambdas</p>
+        <p><code>transport_params</code> maps a name to a <em>lambda</em> (a tiny unnamed function). The params aren't built until the transport is chosen at launch, so unused ones cost nothing. <code>lambda: X</code> means "a function that returns <code>X</code>."</p>
+      </div>
+      <div class="box py">
+        <p class="title">🐍 Python note — <code>async def</code> / <code>await</code></p>
+        <p>Voice apps do many things at once (listening while speaking). <code>async def</code> marks a function that can pause at <code>await</code> points without freezing the program. You mostly just put <code>await</code> before calls that go over the network.</p>
+      </div>
+
+      <h2 id="transports">Transports connect the pipeline to the world</h2>
+      <p>A transport is the first and last processor. <code>transport.input()</code> produces incoming audio/video frames; <code>transport.output()</code> consumes outgoing ones. You pick a transport at launch and the code stays the same. Docs: <a href="reference/pipecat__learn__transports.html" target="_blank" rel="noopener">Transports</a>.</p>
+      <pre class="diagram">  world ─▶ [transport.input()] ─▶ ...your processors... ─▶ [transport.output()] ─▶ world
+           (mic / network in)                               (speaker / network out)</pre>
+
+      <div class="box start">
+        <p class="title">▶️ Run it</p>
+        <p>From the repo root: <code>uv sync --all-extras</code>, then <code>cp env.example .env</code> and add a Cartesia key. Run the smallest possible app:</p>
+        <pre><code class="language-bash">uv run python getting-started/01-say-one-thing.py
+# open http://localhost:7860/client/ and click Connect — the bot says "Hello there!"</code></pre>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Modify it</p>
+        <p>Open <code>getting-started/01-say-one-thing.py</code> and change the greeting text in the <code>TTSSpeakFrame(...)</code>. Then open <code>06-voice-agent.py</code> and read it against the skeleton above — find each of the five numbered steps.</p>
+      </div>
+
+      <div class="box errors">
+        <p class="title">⚠️ Common errors</p>
+        <p><code>KeyError: 'CARTESIA_API_KEY'</code> → the key isn't in <code>.env</code> (or you didn't <code>cp env.example .env</code>). Nothing happens in the browser → allow <strong>microphone</strong> permission and confirm the URL is <code>http://localhost:7860/client/</code>. <code>Address already in use</code> → another example is still running; stop it or add <code>--port 7861</code>.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details>
+        <summary>1. What is a "frame," and what is a "processor"?</summary>
+        <p>A frame is a typed data packet (audio, text, image, or control signal). A processor is a node in the pipeline that receives frames, optionally changes them, and pushes them onward.</p>
+      </details>
+      <details>
+        <summary>2. What is the difference between a <code>PipelineWorker</code> and the <code>WorkerRunner</code>?</summary>
+        <p>A <code>PipelineWorker</code> is one agent running one pipeline. The <code>WorkerRunner</code> starts and supervises workers — one now, many later — which is how multi-agent systems are built.</p>
+      </details>
+      <details>
+        <summary>3. Where does a transport appear in the pipeline, and why does that matter?</summary>
+        <p>First (<code>transport.input()</code>) and last (<code>transport.output()</code>). It's the boundary between the outside world and your processing, so it's swappable without touching the middle of the pipeline.</p>
+      </details>
+
+      <p class="lead" style="margin-top:28px">Next: <a href="ch01-turn-taking.html">Chapter 1 — Turn-taking →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

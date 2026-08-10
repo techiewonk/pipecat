@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L8 · Speech to Text — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 8 · Part II — The voice loop</div>
+      <h1>Speech to Text</h1>
+      <div class="meta"><span class="pill">⏱ 40 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">STT is the bot's ears: audio frames in, text frames out. Every provider is a drop-in <code>STTService</code> — learn the pattern once.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Audio in, text out</h2>
+      <div class="pcflow" data-dur="6"
+           data-stages="InputAudioRawFrame|STTService.run_stt()|provider ASR|TranscriptionFrame|user aggregator"
+           data-caption="Audio frames arrive from the transport (after VAD)|The service streams or batches them via run_stt|The provider returns recognized words|Emitted as InterimTranscriptionFrame then final TranscriptionFrame|The aggregator adds the text to the conversation context">
+      </div>
+
+      <h2 id="types">Two kinds of STT service</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Base</th><th>How it works</th><th>Latency</th></tr></thead>
+        <tbody>
+          <tr><td><code>STTService</code> (streaming)</td><td>Persistent WebSocket; audio streams continuously.</td><td>Lowest.</td></tr>
+          <tr><td><code>SegmentedSTTService</code> (HTTP)</td><td>Local VAD chunks speech; each segment POSTed as a WAV.</td><td>Higher (per-segment).</td></tr>
+        </tbody>
+      </table></div>
+      <p>They're interchangeable in the pipeline — swap providers with no other change. The one method a provider overrides is <code>run_stt(audio) -&gt; AsyncGenerator</code>.</p>
+
+      <h2 id="config">Configuring STT</h2>
+      <pre><code class="language-python">from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.transcriptions.language import Language
+
+stt = DeepgramSTTService(
+    api_key=os.environ["DEEPGRAM_API_KEY"],
+    settings=DeepgramSTTService.Settings(
+        language=Language.EN,        # or "multi" for multilingual (Deepgram); None = auto (Whisper)
+    ),
+)
+# swap providers — same pipeline slot:
+# from pipecat.services.assemblyai.stt import AssemblyAISTTService
+# stt = AssemblyAISTTService(api_key=...)</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Base-class knobs worth knowing</p>
+        <p><code>audio_passthrough=True</code> (default) lets audio continue downstream so things like recording still work. Set sample rates once in <code>PipelineParams</code> (<code>audio_in_sample_rate</code>), not per service.</p>
+      </div>
+
+      <h2 id="latency">STT latency tuning</h2>
+      <p>Each STT service has a measured P99 latency for delivering a final transcript after speech stops. The turn logic uses this to decide how long to wait before ending the user's turn. If the bot responds too early or too late, tune this — it's broadcast as an <code>STTMetadataFrame</code> and consumed by the stop strategy (<a href="l10-turn-taking.html">Lesson 10</a>).</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>services/stt_service.py</code> — <code>STTService</code> (51), <code>SegmentedSTTService</code> (770), <code>WebsocketSTTService</code> (905). <code>services/stt_latency.py</code>. <code>transcriptions/language.py</code> — the <code>Language</code> enum. Example providers: <code>services/deepgram/stt.py</code>, <code>services/whisper/</code> (local).</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas</p>
+        <p>Give Atlas ears: add a <code>DeepgramSTTService</code> to your pipeline and a <code>FrameSpy</code> (Lesson 3) right after it, then talk and watch <code>TranscriptionFrame</code>s appear.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>transcription/transcription-deepgram.py</code>, then swap for <code>transcription-whisper-local.py</code> (no key) and compare latency. (2) Set <code>language="multi"</code> and speak two languages. (3) Try <code>transcription-gladia-translation.py</code> for live translation.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What does an <code>STTService</code> output, and what feeds it?</summary><p>Text frames (<code>TranscriptionFrame</code>/<code>InterimTranscriptionFrame</code>); it's fed audio frames from the transport (after VAD).</p></details>
+      <details><summary>2. Streaming vs segmented — which is lower latency and why?</summary><p>Streaming (<code>STTService</code>) — a persistent connection sends audio continuously, versus batching WAV segments over HTTP.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l09-context-aggregators.html">Lesson 9 — Context & aggregators →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

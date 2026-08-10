@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C++ SDK Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>C++ SDK Overview</h1>
+<blockquote>The Pipecat C++ SDK: a native client library for voice and multimodal AI applications on Linux, macOS, and Windows.</blockquote>
+<p>The Pipecat C++ SDK provides a native implementation for building voice and multimodal AI applications. It supports:</p>
+<ul><li>Linux (<code>x86_64</code> and <code>aarch64</code>)</li><li>macOS (<code>aarch64</code>)</li><li>Windows (<code>x86_64</code>)</li></ul>
+<h2>Dependencies</h2>
+<h3>libcurl</h3>
+<p>The SDK uses <a href="https://curl.se/libcurl/">libcurl</a> for HTTP requests.</p>
+<p>&lt;Tabs&gt;   &lt;Tab title="Linux"&gt;     ``<code>bash theme={null}     sudo apt-get install libcurl4-openssl-dev     </code>``   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="macOS"&gt;     On macOS <code>libcurl</code> is already included so there is nothing to install.   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="Windows"&gt;     On Windows we use <a href="https://vcpkg.io/en/">vcpkg</a> to install dependencies. You     need to set it up following one of the     <a href="https://learn.microsoft.com/en-us/vcpkg/get_started/get-started">tutorials</a>.</p>
+<p>    The <code>libcurl</code> dependency will be automatically downloaded when building.   &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<h2>Installation</h2>
+<p>Clone the SDK:</p>
+<p>&lt;Tabs&gt;   &lt;Tab title="Linux/macOS/Windows"&gt;     ``<code>bash theme={null}     git clone https://github.com/pipecat-ai/pipecat-client-cxx     cd pipecat-client-cxx     </code>``   &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<p>Build the SDK using CMake:</p>
+<p>&lt;Tabs&gt;   &lt;Tab title="Linux/macOS"&gt;     ``<code>bash theme={null}     cmake . -G Ninja -Bbuild -DCMAKE_BUILD_TYPE=Release     ninja -C build     </code>``   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="Windows"&gt;     ``<code>bash theme={null}     # Initialize Visual Studio environment     "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" amd64     # Configure and build     cmake . -Bbuild --preset vcpkg     cmake --buildbuild --config Release     </code>``   &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<h3>Cross-compilation</h3>
+<p>For Linux aarch64:</p>
+<pre><code>cmake . -G Ninja -Bbuild -DCMAKE_TOOLCHAIN_FILE=aarch64-linux-toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+ninja -C build</code></pre>
+<h2>Documentation</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="API Reference" icon="book" href="https://github.com/pipecat-ai/pipecat-client-cxx"&gt;     Complete SDK API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Daily Transport" icon="network-wired" href="/api-reference/client/cpp/transport"&gt;     WebRTC implementation using Daily   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/cpp/overview">https://docs.pipecat.ai/api-reference/client/cpp/overview</a></p>
+</div></main></div></body></html>

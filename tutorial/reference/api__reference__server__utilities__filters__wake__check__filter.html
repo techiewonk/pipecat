@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WakeCheckFilter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>WakeCheckFilter</h1>
+<blockquote>Processor that passes frames only after detecting wake phrases in transcriptions</blockquote>
+<p>&lt;Warning&gt;   <strong>Deprecated:</strong> <code>WakeCheckFilter</code> is deprecated in favor of   \[<code>WakePhraseUserTurnStartStrategy</code>]\(/api-reference/server/utilities/turn-management/user-turn-strategies#wakephraseuserturns   tartstrategy). The new strategy provides better integration with turn   management and supports both timeout and single-activation modes. &lt;/Warning&gt;</p>
+<h2>Overview</h2>
+<p><code>WakeCheckFilter</code> monitors <code>TranscriptionFrame</code>s for specified wake phrases and only allows frames to pass through after a wake phrase has been detected. It includes a keepalive timeout to maintain the awake state for a period after detection, allowing continuous conversation without requiring repeated wake phrases.</p>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="wake_phrases" type="list[str]" required&gt;   List of wake phrases to detect in transcriptions &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="keepalive_timeout" type="float" default="3"&gt;   Number of seconds to remain in the awake state after each transcription &lt;/ParamField&gt;</p>
+<h2>Functionality</h2>
+<p>The filter maintains state for each participant and processes frames as follows:</p>
+<ol><li><code>TranscriptionFrame</code> objects are checked for wake phrases</li><li>If a wake phrase is detected, the filter enters the "AWAKE" state</li><li>While in the "AWAKE" state, all transcription frames pass through</li><li>After no activity for the keepalive timeout period, the filter returns to "IDLE"</li><li>All non-transcription frames pass through normally</li></ol>
+<p>Wake phrases are detected using regular expressions that match whole words with flexible spacing, making detection resilient to minor transcription variations.</p>
+<h2>States</h2>
+<p>&lt;ParamField path="IDLE" type="WakeState"&gt;   Default state - only non-transcription frames pass through &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="AWAKE" type="WakeState"&gt;   Active state after wake phrase detection - all frames pass through &lt;/ParamField&gt;</p>
+<h2>Output Frames</h2>
+<ul><li>All non-transcription frames pass through unchanged</li><li>After wake phrase detection, transcription frames pass through</li><li>When awake, transcription frames reset the keepalive timer</li></ul>
+<h2>Usage Example</h2>
+<pre><code>from pipecat.processors.filters import WakeCheckFilter
+
+# Create filter with wake phrases
+wake_filter = WakeCheckFilter(
+    wake_phrases=["hey assistant", "ok computer", "listen up"],
+    keepalive_timeout=5.0  # Stay awake for 5 seconds after each transcription
+)
+
+# Add to pipeline
+pipeline = Pipeline([
+    transport.input(),
+    stt_service,
+    wake_filter,  # Only passes transcriptions after wake phrases
+    llm_service,
+    tts_service,
+    transport.output()
+])</code></pre>
+<h2>Frame Flow</h2>
+<pre><code>graph TD
+    A[Input Frames] --&gt; B[WakeCheckFilter]
+    B --&gt; C{Transcription Frame?}
+    C --&gt;|No| F[Output Frame]
+    C --&gt;|Yes| D{Wake State}
+    D --&gt;|AWAKE| E{Keepalive Expired?}
+    E --&gt;|No| F
+    E --&gt;|Yes| G[Return to IDLE]
+    D --&gt;|IDLE| H{Contains Wake Phrase?}
+    H --&gt;|Yes| I[Set AWAKE] --&gt; F
+    H --&gt;|No| J[Filtered Out]</code></pre>
+<h2>Notes</h2>
+<ul><li>Maintains separate state for each participant ID</li><li>Uses regex pattern matching for resilient wake phrase detection</li><li>Accumulates transcription text to detect phrases across multiple frames</li><li>Trims accumulated text when wake phrase is detected</li><li>Supports multiple wake phrases</li><li>Passes all non-transcription frames through unchanged</li><li>Error handling produces ErrorFrames for robust operation</li><li>Case-insensitive matching for natural language use</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-check-filter">https://docs.pipecat.ai/api-reference/server/utilities/filters/wake-check-filter</a></p>
+</div></main></div></body></html>

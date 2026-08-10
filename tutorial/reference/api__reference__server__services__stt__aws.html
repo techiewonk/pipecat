@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS Transcribe Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AWS Transcribe Speech-to-Text</h1>
+<blockquote>AWSTranscribeSTTService streams real-time STT over Amazon Transcribe's WebSocket API, with interim results and multi-language support.</blockquote>
+<h2>Overview</h2>
+<p><code>AWSTranscribeSTTService</code> provides real-time speech recognition using Amazon Transcribe's WebSocket streaming API with support for interim results, multiple languages, and configurable audio processing parameters for enterprise-grade transcription.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="AWS Transcribe STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.aws.stt.html"&gt;     Pipecat's API methods for AWS Transcribe integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-aws.py"&gt;     Complete example with AWS services integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Transcribe Documentation" icon="book" href="https://docs.aws.amazon.com/transcribe/latest/dg/streaming.html"&gt;     Official AWS Transcribe documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="AWS Console" icon="microphone" href="https://console.aws.amazon.com/transcribe/"&gt;     Access AWS Transcribe services and IAM setup   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use AWS Transcribe services, install the required dependency:</p>
+<pre><code>uv add "pipecat-ai[aws]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>AWS Account Setup</h3>
+<p>Before using AWS Transcribe STT services, you need:</p>
+<ol><li><strong>AWS Account</strong>: Sign up at <a href="https://console.aws.amazon.com/">AWS Console</a></li><li><strong>IAM User</strong>: Create an IAM user with Amazon Transcribe permissions</li><li><strong>Credentials</strong>: Set up AWS access keys and region configuration</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>AWS_ACCESS_KEY_ID</code>: Your AWS access key ID</li><li><code>AWS_SECRET_ACCESS_KEY</code>: Your AWS secret access key</li><li><code>AWS_SESSION_TOKEN</code>: Session token (if using temporary credentials)</li><li><code>AWS_REGION</code>: AWS region (defaults to "us-east-1")</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   AWS secret access key. If <code>None</code>, falls back to environment variables and the   default botocore credential chain (instance profiles, IRSA, ECS task roles,   SSO, etc.). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_access_key_id" type="str" default="None"&gt;   AWS access key ID. Same fallback behaviour as <code>api_key</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aws_session_token" type="str" default="None"&gt;   AWS session token for temporary credentials. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" default="None"&gt;   AWS region for the service. If <code>None</code>, uses <code>AWS_REGION</code> environment variable   (defaults to <code>"us-east-1"</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. AWS Transcribe only supports <code>8000</code> or <code>16000</code> Hz; other values are   clamped to <code>16000</code> Hz at connect time. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="language" type="Language" default="Language.EN" deprecated&gt;   Language for transcription. Supports a wide range of languages including   English, Spanish, French, German, and many more. See <a href="https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html">AWS Transcribe supported   languages</a>.   *Deprecated in v0.0.105. Use <code>settings=AWSTranscribeSTTService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="AWSTranscribeSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="AWS_TRANSCRIBE_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>AWSTranscribeSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>STT model identifier. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language for transcription. *(Inherited from base STT settings.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.aws.stt import AWSTranscribeSTTService
+
+stt = AWSTranscribeSTTService(
+    api_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region=os.getenv("AWS_REGION", "us-east-1"),
+)</code></pre>
+<h3>With Custom Language and Sample Rate</h3>
+<pre><code>from pipecat.services.aws.stt import AWSTranscribeSTTService
+from pipecat.transcriptions.language import Language
+
+stt = AWSTranscribeSTTService(
+    api_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    region="eu-west-1",
+    sample_rate=8000,
+    settings=AWSTranscribeSTTService.Settings(
+        language=Language.ES,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Supported sample rates</strong>: AWS Transcribe only supports <code>8000</code> Hz and <code>16000</code> Hz. If a different rate is provided, the service automatically falls back to <code>16000</code> Hz with a warning.</li><li><strong>Pre-signed URL authentication</strong>: The service uses pre-signed URLs for WebSocket authentication rather than passing credentials directly, following AWS best practices.</li><li><strong>Partial results stabilization</strong>: Enabled by default with <code>"high"</code> stability, which reduces changes to interim transcripts at the cost of slightly higher latency.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>AWS Transcribe STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to AWS Transcribe WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from AWS Transcribe WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to AWS Transcribe")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/aws">https://docs.pipecat.ai/api-reference/server/services/stt/aws</a></p>
+</div></main></div></body></html>

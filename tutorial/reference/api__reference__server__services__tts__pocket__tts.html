@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pocket TTS · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Pocket TTS</h1>
+<blockquote>PocketTTSService runs kyutai-labs' pocket-tts streaming model for local, CPU-only TTS with no external API or GPU.</blockquote>
+<h2>Overview</h2>
+<p><code>PocketTTSService</code> provides local, CPU-only text-to-speech synthesis using the <a href="https://github.com/kyutai-labs/pocket-tts">pocket-tts</a> streaming model. It runs entirely on the host machine with no external API calls or authentication required. Model weights and voice prompts are downloaded from Hugging Face on first use.</p>
+<p>The voice may be a predefined voice name (e.g. <code>"alba"</code>), a local <code>.wav</code> file to clone, an exported <code>.safetensors</code> voice state, or an <code>hf://</code> path. The voice can be changed at runtime; the language cannot, since model weights are loaded per language.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Pocket TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.pocket_tts.tts.html"&gt;     Pipecat's API methods for Pocket TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-pockettts.py"&gt;     Complete example with voice conversation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="pocket-tts Repository" icon="book" href="https://github.com/kyutai-labs/pocket-tts"&gt;     Official pocket-tts project and documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Settings Update Example" icon="gear" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/update-settings/tts/tts-pockettts.py"&gt;     Example showing runtime settings updates   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Pocket TTS, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[pocket-tts]"</code></pre>
+<p>This installs <code>pocket-tts&gt;=2.1.0</code> and its dependencies.</p>
+<h2>Prerequisites</h2>
+<h3>Local Setup</h3>
+<p>Pocket TTS runs locally and does not require an API key or external service. On first use, the service automatically downloads model weights and voice prompts from Hugging Face, which may block for a while.</p>
+<p>&lt;Note&gt;   The initial model download may take a few minutes depending on your connection   speed. Subsequent runs use the cached files. &lt;/Note&gt;</p>
+<h2>Configuration</h2>
+<h3>PocketTTSService</h3>
+<p>&lt;ParamField path="temp" type="float" default="None"&gt;   Sampling temperature for audio generation. When <code>None</code>, uses the pocket-tts   model default. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="quantize" type="bool" default="False"&gt;   Quantize model weights for faster CPU inference (requires the <code>torchao</code>   package). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="PocketTTSService.Settings" default="None"&gt;   Runtime-configurable settings. Defaults to the <code>"alba"</code> voice and English. See   <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>PocketTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>"alba"</code></td><td>Voice identifier (e.g. <code>"alba"</code>, <code>"jane"</code>), local <code>.wav</code> file, <code>.safetensors</code> state, or <code>hf://</code> path.</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language for synthesis. See supported languages below.</td></tr></tbody></table></div>
+<h3>Supported Languages</h3>
+<p>Pocket TTS supports the following languages:</p>
+<div class="tablewrap"><table><thead><tr><th>Language</th><th>Code</th></tr></thead><tbody><tr><td>German</td><td><code>Language.DE</code></td></tr><tr><td>English</td><td><code>Language.EN</code></td></tr><tr><td>Spanish</td><td><code>Language.ES</code></td></tr><tr><td>French</td><td><code>Language.FR</code></td></tr><tr><td>Italian</td><td><code>Language.IT</code></td></tr><tr><td>Portuguese</td><td><code>Language.PT</code></td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.pocket_tts.tts import PocketTTSService
+
+tts = PocketTTSService(
+    settings=PocketTTSService.Settings(
+        voice="alba",
+    ),
+)</code></pre>
+<h3>With Language Configuration</h3>
+<pre><code>from pipecat.services.pocket_tts.tts import PocketTTSService
+from pipecat.transcriptions.language import Language
+
+tts = PocketTTSService(
+    settings=PocketTTSService.Settings(
+        voice="anna",
+        language=Language.FR,
+    ),
+)</code></pre>
+<h3>With Voice Cloning</h3>
+<pre><code>from pipecat.services.pocket_tts.tts import PocketTTSService
+
+tts = PocketTTSService(
+    settings=PocketTTSService.Settings(
+        voice="/path/to/voice-sample.wav",
+    ),
+)</code></pre>
+<h3>With Quantization</h3>
+<pre><code>from pipecat.services.pocket_tts.tts import PocketTTSService
+
+tts = PocketTTSService(
+    quantize=True,
+    settings=PocketTTSService.Settings(
+        voice="alba",
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Fully local</strong>: Pocket TTS runs entirely on the host machine using CPU. No API keys, network access, or external services are required after the initial model download.</li><li><strong>Model caching</strong>: Model weights and voice prompts are downloaded from Hugging Face on first use and cached locally. Subsequent runs use the cached files.</li><li><strong>Voice cloning</strong>: The service supports voice cloning from <code>.wav</code> files, exported <code>.safetensors</code> voice states, or <code>hf://</code> paths.</li><li><strong>Runtime voice updates</strong>: The voice can be changed mid-conversation using <code>TTSUpdateSettingsFrame</code>. The voice state is re-derived lazily on the next utterance.</li><li><strong>Language immutability</strong>: The language cannot be changed at runtime since model weights are loaded per language.</li><li><strong>Streaming output</strong>: The service uses pocket-tts' streaming API, delivering audio frames incrementally as they are generated.</li><li><strong>Metrics support</strong>: The service supports TTFB (time to first byte) and usage metrics for performance monitoring.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/pocket-tts">https://docs.pipecat.ai/api-reference/server/services/tts/pocket-tts</a></p>
+</div></main></div></body></html>

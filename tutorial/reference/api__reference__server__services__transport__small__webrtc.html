@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Small WebRTC Transport</h1>
+<blockquote>SmallWebRTCTransport makes serverless peer-to-peer WebRTC connections between a client and your Pipecat bot, no provider needed.</blockquote>
+<h2>Overview</h2>
+<p><code>SmallWebRTCTransport</code> enables peer-to-peer ("serverless") WebRTC connections between clients and your Pipecat application. It implements bidirectional audio, video and data channels using WebRTC for real-time communication. This transport is open source and self-contained, with no dependencies on any other infrastructure.</p>
+<p>&lt;Tip&gt;   For detailed notes on how to decide between using the SmallWebRTCTransport or   other WebRTC transports like the DailyTransport, see <a href="https://www.daily.co/blog/you-dont-need-a-webrtc-server-for-your-voice-agents/">this   post</a>. &lt;/Tip&gt;</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="SmallWebRTC Transport API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.smallwebrtc.transport.html"&gt;     Transport methods and configuration options   &lt;/Card&gt;</p>
+<p>  &lt;Card title="SmallWebRTC Connection API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.smallwebrtc.connection.html"&gt;     Connection management and signaling methods   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/pipecat-cloud"&gt;     Complete peer-to-peer voice agent example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebRTC Documentation" icon="book" href="https://webrtc.org/getting-started/overview"&gt;     Official WebRTC protocol documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use SmallWebRTCTransport, install the required dependencies:</p>
+<pre><code># For audio-only pipelines
+uv add "pipecat-ai[webrtc]"
+
+# For pipelines with video support
+uv add "pipecat-ai[webrtc-video]"</code></pre>
+<p>&lt;Note&gt;   The <code>webrtc</code> extra provides audio and basic video support via <code>aiortc</code>. The   <code>webrtc-video</code> extra adds OpenCV support for using <code>SmallWebRTCTransport</code> with   video. &lt;/Note&gt;</p>
+<p>&lt;Warning&gt;   <code>opencv-python-headless</code> will be removed from the <code>webrtc</code> extra in 2.0.0.   Video pipelines using <code>SmallWebRTCTransport</code> should start installing the new   <code>webrtc-video</code> extra (<code>pipecat-ai[webrtc-video]</code>) instead. &lt;/Warning&gt;</p>
+<h2>Prerequisites</h2>
+<h3>WebRTC Application Setup</h3>
+<p>Before using SmallWebRTCTransport, you need:</p>
+<ol><li><strong>Signaling Server</strong>: Implement WebRTC offer/answer exchange (required)</li><li><strong>Client Implementation</strong>: Set up WebRTC client for browser or application use</li><li><strong>ICE Configuration</strong>: Configure STUN/TURN servers for NAT traversal (optional for local networks) — see <a href="#ice-servers-configuration">ICE Servers Configuration</a></li><li><strong>Development Runner</strong>: Use Pipecat's development runner for quick setup (recommended)</li></ol>
+<p>&lt;Tip&gt;   No API keys are required since this is a peer-to-peer transport   implementation. For production deployments across different networks, you may   need to configure STUN/TURN servers for NAT traversal. &lt;/Tip&gt;</p>
+<h3>Configuration Options</h3>
+<ul><li><strong>Development Runner</strong>: Automatic server infrastructure and web interface (recommended)</li><li><strong>Manual Implementation</strong>: Custom signaling server for advanced use cases</li><li><strong>ICE Servers</strong>: STUN/TURN configuration for network traversal</li><li><strong>Media Configuration</strong>: Audio/video parameters and format handling</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Serverless Architecture</strong>: Direct peer-to-peer connections with no intermediate servers</li><li><strong>Production Ready</strong>: Heavily tested and used in Pipecat examples</li><li><strong>Bidirectional Media</strong>: Full-duplex audio and video streaming</li><li><strong>Data Channels</strong>: Application messaging and signaling support</li><li><strong>Development Tools</strong>: Built-in development runner with web interface</li></ul>
+<h2>Configuration</h2>
+<h3>SmallWebRTCTransport</h3>
+<p>&lt;ParamField path="webrtc_connection" type="SmallWebRTCConnection" required&gt;   The underlying WebRTC connection handler that manages signaling and peer   connections. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="TransportParams" required&gt;   Transport configuration parameters for audio, video, and VAD settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>SmallWebRTCTransport requires both a signaling server for WebRTC handshake and your Pipecat bot implementation. The easiest approach is using Pipecat's development runner which handles all server infrastructure automatically.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc">complete examples</a> for full implementations including:</p>
+<ul><li>Development runner setup with automatic web interface</li><li>Manual signaling server implementation</li><li>WebRTC client integration</li><li>ICE server configuration for production deployment</li></ul>
+<h2>Event Handlers</h2>
+<p>SmallWebRTCTransport provides event handlers for client connection lifecycle and application messaging. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_client_connected</code></td><td>Client WebRTC connection established</td></tr><tr><td><code>on_client_disconnected</code></td><td>Client WebRTC connection closed</td></tr><tr><td><code>on_app_message</code></td><td>App message received from client</td></tr></tbody></table></div>
+<h3>Connection Lifecycle</h3>
+<h4>on\_client\_connected</h4>
+<p>Fired when a client establishes a WebRTC peer connection.</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, webrtc_connection):
+    print("Client connected")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>SmallWebRTCTransport</code></td><td>The transport instance</td></tr><tr><td><code>webrtc_connection</code></td><td><code>SmallWebRTCConnection</code></td><td>The WebRTC connection object</td></tr></tbody></table></div>
+<h4>on\_client\_disconnected</h4>
+<p>Fired when a client's WebRTC peer connection is closed.</p>
+<pre><code>@transport.event_handler("on_client_disconnected")
+async def on_client_disconnected(transport, webrtc_connection):
+    print("Client disconnected")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>SmallWebRTCTransport</code></td><td>The transport instance</td></tr><tr><td><code>webrtc_connection</code></td><td><code>SmallWebRTCConnection</code></td><td>The WebRTC connection object</td></tr></tbody></table></div>
+<h3>Messaging</h3>
+<h4>on\_app\_message</h4>
+<p>Fired when an application message is received from a client through the WebRTC data channel.</p>
+<pre><code>@transport.event_handler("on_app_message")
+async def on_app_message(transport, message, sender):
+    print(f"Message from {sender}: {message}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>SmallWebRTCTransport</code></td><td>The transport instance</td></tr><tr><td><code>message</code></td><td><code>Any</code></td><td>The message content</td></tr><tr><td><code>sender</code></td><td><code>str</code></td><td>The sender's peer connection ID</td></tr></tbody></table></div>
+<h2>ICE Servers Configuration</h2>
+<p>WebRTC uses ICE (Interactive Connectivity Establishment) to find the best network path between two peers. ICE relies on two types of helper servers:</p>
+<ul><li><strong>STUN</strong> (Session Traversal Utilities for NAT) — Helps a client discover its public IP address and port when it's behind a NAT device. WebRTC uses this information to attempt a direct peer-to-peer connection.</li><li><strong>TURN</strong> (Traversal Using Relays around NAT) — A relay fallback used when a direct connection isn't possible due to strict NATs or firewalls. All media traffic is routed through the TURN server in this case.</li></ul>
+<p>ICE servers are <strong>optional for local network development</strong> but become important as soon as peers are on different networks.</p>
+<h3>When do you need ICE servers?</h3>
+<div class="tablewrap"><table><thead><tr><th>Scenario</th><th>STUN needed</th><th>TURN needed</th></tr></thead><tbody><tr><td>Both peers on the same local network</td><td>No</td><td>No</td></tr><tr><td>Peers on different networks (Linux)</td><td>Yes</td><td>Usually not</td></tr><tr><td>Peers on different networks (macOS / strict NAT)</td><td>Yes</td><td>Yes</td></tr><tr><td>Docker on macOS (no <code>--network=host</code>)</td><td>Yes</td><td>Yes</td></tr><tr><td>Production deployment</td><td>Yes</td><td>Recommended</td></tr></tbody></table></div>
+<h3>Server-side configuration</h3>
+<p>Pass ICE servers when creating <code>SmallWebRTCConnection</code>. You can provide simple URL strings or full <code>IceServer</code> objects (an alias for aiortc's <code>RTCIceServer</code>):</p>
+<pre><code>from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection, IceServer
+
+webrtc_connection = SmallWebRTCConnection(
+    ice_servers=[
+        IceServer(urls=["stun:stun.l.google.com:19302"]),
+        IceServer(
+            urls=["turn:your-turn-server.example.com:3478"],
+            username="your-username",
+            credential="your-password",
+        ),
+    ]
+)</code></pre>
+<h3>Using ICE servers with the development runner</h3>
+<p>If you start your bot with the <a href="/api-reference/server/utilities/runner/guide">development runner</a> (<code>from pipecat.runner.run import main</code>), the runner builds the <code>SmallWebRTCConnection</code> for you, so you cannot pass <code>ice_servers</code> from your <code>bot()</code> function. The only ICE option the runner exposes is the <code>enableDefaultIceServers</code> flag in the client's <code>/start</code> request, which adds Google's public STUN server (<code>stun:stun.l.google.com:19302</code>) and nothing else. There is no built-in way to inject a custom STUN or TURN server through the default runner.</p>
+<p>To use a custom TURN server, run your own signaling server that creates the <code>SmallWebRTCConnection</code> directly with <code>ice_servers=[...]</code>, as shown in <a href="#server-side-configuration">Server-side configuration</a> above.</p>
+<p>&lt;Note&gt;   In production, WebRTC applications must run over HTTPS. Browsers block WebRTC   access to microphone and camera on insecure origins. &lt;/Note&gt;</p>
+<h2>Advanced Configuration</h2>
+<h3>PIPECAT\_SCTP\_MAX\_CHUNK\_SIZE</h3>
+<p>Controls the maximum SCTP DATA-chunk payload size (in bytes) used by aiortc's data channel. The default is <code>1100</code>.</p>
+<pre><code>PIPECAT_SCTP_MAX_CHUNK_SIZE=1100</code></pre>
+<p>&lt;Note&gt;   This is a process-global setting due to an aiortc limitation — all SmallWebRTC   connections in the same process share the same value. &lt;/Note&gt;</p>
+<p><strong>When to lower it</strong></p>
+<p>Lower this value if the data channel silently stalls on your network. This happens when aiortc's internal default produces UDP datagrams larger than your path's MTU. Each chunk carries roughly 105 bytes of SCTP + DTLS + UDP + IP overhead, so a 1200-byte chunk results in a \~1305-byte datagram. This exceeds the 1280-byte MTU common on:</p>
+<ul><li>IPv6 paths</li><li>Tailscale overlays</li><li>Many consumer VPNs</li></ul>
+<p>When the datagram is too large the kernel drops it with <code>EMSGSIZE</code>. aiortc retransmits at the same size and the channel stalls indefinitely. Setting <code>PIPECAT_SCTP_MAX_CHUNK_SIZE=1100</code> produces \~1205-byte datagrams, which fits any path with MTU ≥ 1210.</p>
+<p><strong>When to raise it</strong></p>
+<p>Only raise it if you are on a controlled LAN with MTU 1500 and are sending large data-channel messages where extra fragmentation matters. Values above 1200 are unsafe on most internet paths.</p>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li><li><a href="/api-reference/server/utilities/runner/transport-utils">Pipecat Development Runner's Transport Utilities</a></li><li><a href="/api-reference/client/js/transports/small-webrtc">Client SDK Integration</a></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/small-webrtc">https://docs.pipecat.ai/api-reference/server/services/transport/small-webrtc</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frame Serializer Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Frame Serializer Overview</h1>
+<blockquote>How Pipecat FrameSerializers convert between internal frames and provider wire formats, and how to write a custom serializer.</blockquote>
+<h2>Overview</h2>
+<p>Frame serializers are components that convert between Pipecat's internal frame format and external protocols or formats. They're essential when integrating with third-party services or APIs that have their own message formats.</p>
+<h2>Core Responsibilities</h2>
+<p>Serializers handle:</p>
+<ol><li><strong>Serialization</strong>: Converting Pipecat frames to external formats or protocols</li><li><strong>Deserialization</strong>: Converting external messages to Pipecat frames</li><li><strong>Protocol-specific behaviors</strong>: Managing unique aspects of each integration</li></ol>
+<h2>Available Serializers</h2>
+<p>Pipecat includes serializers for popular voice and communications platforms:</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Exotel Serializer" icon="phone" href="/api-reference/server/services/serializers/exotel"&gt;     For integrating with Exotel WebSocket media streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Plivo Serializer" icon="phone" href="/api-reference/server/services/serializers/plivo"&gt;     For integrating with Telnyx WebSocket media streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Telnyx Serializer" icon="phone" href="/api-reference/server/services/serializers/telnyx"&gt;     For integrating with Telnyx WebSocket media streaming   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Twilio Serializer" icon="phone" href="/api-reference/server/services/serializers/twilio"&gt;     For integrating with Twilio Media Streams WebSocket protocol   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Vonage Serializer" icon="waveform" href="/api-reference/server/services/serializers/vonage"&gt;     For integrating with Vonage Video API Audio Connector WebSocket protocol   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Custom Serializers</h2>
+<p>You can create custom serializers by implementing the <code>FrameSerializer</code> base class:</p>
+<pre><code>from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType
+from pipecat.frames.frames import Frame, StartFrame
+
+class MyCustomSerializer(FrameSerializer):
+    @property
+    def type(self) -&gt; FrameSerializerType:
+        return FrameSerializerType.TEXT  # or BINARY
+
+    async def setup(self, frame: StartFrame):
+        # Initialize with pipeline configuration
+        pass
+
+    async def serialize(self, frame: Frame) -&gt; str | bytes | None:
+        # Convert Pipecat frame to external format
+        pass
+
+    async def deserialize(self, data: str | bytes) -&gt; Frame | None:
+        # Convert external data to Pipecat frame
+        pass</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/serializers/introduction">https://docs.pipecat.ai/api-reference/server/services/serializers/introduction</a></p>
+</div></main></div></body></html>

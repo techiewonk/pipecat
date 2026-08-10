@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metrics · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Metrics</h1>
+<blockquote>Monitor Pipecat performance metrics: TTFB, processing time, and LLM and TTS usage across pipeline services.</blockquote>
+<p>When developing real-time, multimodal AI applications, monitoring two key factors is crucial: performance (latency) and LLM/TTS usage. Performance impacts user experience, while usage can affect operational costs. Pipecat offers built-in metrics for both, which can be enabled with straightforward configuration options.</p>
+<h2>Enabling performance metrics</h2>
+<p>Set <code>enable_metrics=True</code> in <code>PipelineParams</code> when creating a worker:</p>
+<pre><code>worker = PipelineWorker(
+            pipeline,
+            params=PipelineParams(
+                ...
+                enable_metrics=True,
+                ...
+            ),
+        )</code></pre>
+<p>Once enabled, Pipecat logs the following metrics:</p>
+<div class="tablewrap"><table><thead><tr><th>Metric</th><th>Description</th></tr></thead><tbody><tr><td>TTFB</td><td>Time To First Byte in seconds</td></tr><tr><td>TTFA</td><td>Time To First Audio in seconds (TTS services only)</td></tr><tr><td>Processing Time</td><td>Time taken by the service to respond in seconds</td></tr><tr><td>Text Aggregation</td><td>Time from the first LLM token to the first complete sentence (TTS services only)</td></tr></tbody></table></div>
+<pre><code>AnthropicLLMService#0 TTFB: 0.8378312587738037
+CartesiaTTSService#0 text aggregation time: 0.2134
+CartesiaTTSService#0 TTFB: 0.17177796363830566
+AnthropicLLMService#0 processing time: 2.4927797317504883</code></pre>
+<h3>Limiting TTFB responses</h3>
+<p>If you only want the <strong>first</strong> TTFB measurement for each service, you can optionally pass <code>report_only_initial_ttfb=True</code> in <code>PipelineParams</code>:</p>
+<pre><code>worker = PipelineWorker(
+            pipeline,
+            params=PipelineParams(
+                ...
+                enable_metrics=True,
+                report_only_initial_ttfb=True,
+                ...
+            ),
+        )</code></pre>
+<blockquote><strong>Note:</strong> <code>enable_metrics=True</code> is required for this setting to have an effect.</blockquote>
+<h3>Disabling initial empty metrics</h3>
+<p>By default, Pipecat sends an initial <code>MetricsFrame</code> with zero values for all services when the pipeline starts. To disable this behavior:</p>
+<pre><code>worker = PipelineWorker(
+            pipeline,
+            params=PipelineParams(
+                ...
+                enable_metrics=True,
+                send_initial_empty_metrics=False,
+                ...
+            ),
+        )</code></pre>
+<h2>Enabling LLM/TTS Usage Metrics</h2>
+<p>Set <code>enable_usage_metrics=True</code> in PipelineParams when creating a worker:</p>
+<pre><code>worker = PipelineWorker(
+            pipeline,
+            params=PipelineParams(
+                ...
+                enable_usage_metrics=True,
+                ...
+            ),
+        )</code></pre>
+<p>Pipecat will log the following as applicable:</p>
+<div class="tablewrap"><table><thead><tr><th>Metric</th><th>Description</th></tr></thead><tbody><tr><td>LLM Usage</td><td>Number of prompt and completion tokens used</td></tr><tr><td>TTS Usage</td><td>Number of characters processed</td></tr></tbody></table></div>
+<pre><code>CartesiaTTSService#0 usage characters: 65
+AnthropicLLMService#0 prompt tokens: 104, completion tokens: 53</code></pre>
+<blockquote><strong>Note:</strong> Usage metrics are recorded per interaction and do not represent running totals.</blockquote>
+<h2>Capturing Metrics Data</h2>
+<p>When metrics are enabled, Pipecat emits a <code>MetricsFrame</code> for each interaction. The <code>MetricsFrame</code> contains a list of metrics data objects, which can include:</p>
+<ul><li><code>TTFBMetricsData</code> — Time To First Byte</li><li><code>TTFAMetricsData</code> — Time To First Audio (TTS)</li><li><code>ProcessingMetricsData</code> — Processing time</li><li><code>LLMUsageMetricsData</code> — LLM token usage</li><li><code>TTSUsageMetricsData</code> — TTS character usage</li><li><code>TextAggregationMetricsData</code> — Sentence aggregation latency (TTS)</li><li><code>TurnMetricsData</code> — Turn completion predictions</li></ul>
+<p>You can access the metrics data by either adding a custom <a href="/pipecat/fundamentals/custom-frame-processor">FrameProcessor</a> to your pipeline or adding an <a href="/api-reference/server/utilities/observers/observer-pattern">observer</a> to monitor <code>MetricsFrame</code>s.</p>
+<h3>Example: Using MetricsLogObserver</h3>
+<p>The simplest way to log metrics is with the built-in <code>MetricsLogObserver</code>. Pass it as an observer when creating your <code>PipelineWorker</code>:</p>
+<pre><code>from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
+    observers=[MetricsLogObserver()],
+)</code></pre>
+<p>You can filter which metrics types are logged by passing <code>include_metrics</code>:</p>
+<pre><code>from pipecat.metrics.metrics import LLMUsageMetricsData, TTSUsageMetricsData
+from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
+
+observers = [
+    MetricsLogObserver(
+        include_metrics={LLMUsageMetricsData, TTSUsageMetricsData}
+    )
+]</code></pre>
+<h3>Example: Using a Custom FrameProcessor</h3>
+<p>Create a custom FrameProcessor to handle metrics data. Here's an example Metrics Processor that can be added to your pipeline after the TTS processor.</p>
+<pre><code>from pipecat.frames.frames import MetricsFrame
+from pipecat.metrics.metrics import (
+    LLMUsageMetricsData,
+    ProcessingMetricsData,
+    TextAggregationMetricsData,
+    TTFAMetricsData,
+    TTFBMetricsData,
+    TTSUsageMetricsData,
+)
+from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
+
+class MetricsLogger(FrameProcessor):
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, MetricsFrame):
+            for d in frame.data:
+                if isinstance(d, TTFBMetricsData):
+                    print(f"!!! MetricsFrame: {frame}, ttfb: {d.value}")
+                elif isinstance(d, TTFAMetricsData):
+                    print(f"!!! MetricsFrame: {frame}, ttfa: {d.ttfa}, ttfb: {d.ttfb}, leading_silence: {d.leading_silence}")
+                elif isinstance(d, ProcessingMetricsData):
+                    print(f"!!! MetricsFrame: {frame}, processing: {d.value}")
+                elif isinstance(d, LLMUsageMetricsData):
+                    tokens = d.value
+                    print(
+                        f"!!! MetricsFrame: {frame}, prompt_tokens: {tokens.prompt_tokens}, completion_tokens: {tokens.completion_tokens}"
+                    )
+                elif isinstance(d, TextAggregationMetricsData):
+                    print(f"!!! MetricsFrame: {frame}, text aggregation: {d.value}")
+                elif isinstance(d, TTSUsageMetricsData):
+                    print(f"!!! MetricsFrame: {frame}, characters: {d.value}")
+        await self.push_frame(frame, direction)</code></pre>
+<h2>Metrics Data Reference</h2>
+<p>All metrics data classes inherit from <code>MetricsData</code>, which includes <code>processor</code> (the name of the processor that generated the metric) and an optional <code>model</code> field.</p>
+<h3>TTFBMetricsData</h3>
+<p>Time To First Byte — measures how long until the first byte of a response is received from a service.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>value</code></td><td><code>float</code></td><td>TTFB measurement in seconds</td></tr></tbody></table></div>
+<h3>TTFAMetricsData</h3>
+<p>Time To First Audio — measures the time from a TTS request to the first audible audio sample. This includes the time to first byte plus any leading silence padding added by the service. <code>TTFAMetricsData</code> reports the latency breakdown directly, showing how much of the perceived latency is silence padding.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>ttfa</code></td><td><code>float</code></td><td>TTFA measurement in seconds (<code>ttfb</code> plus <code>leading_silence</code>)</td></tr><tr><td><code>ttfb</code></td><td><code>float</code></td><td>Time-to-first-byte in seconds. Mirrors the standalone <code>TTFBMetricsData</code> for convenience, not a separate measurement</td></tr><tr><td><code>leading_silence</code></td><td><code>float</code></td><td>Silence padding before the first audible sample, in seconds (<code>ttfa</code> minus <code>ttfb</code>)</td></tr></tbody></table></div>
+<h3>ProcessingMetricsData</h3>
+<p>Measures the total time taken by a service to process a request.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>value</code></td><td><code>float</code></td><td>Processing time measurement in seconds</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   WebSocket-based TTS services (Cartesia, Deepgram, ElevenLabs WebSocket   variants) and <code>DeepgramSageMakerTTSService</code> do not report processing metrics.   TTFB and TTFA capture the meaningful latency for these services. &lt;/Note&gt;</p>
+<h3>TextAggregationMetricsData</h3>
+<p>Measures the time from the first LLM token to the first complete sentence, representing the latency cost of sentence aggregation in the TTS pipeline.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>value</code></td><td><code>float</code></td><td>Aggregation time in seconds</td></tr></tbody></table></div>
+<h3>LLMUsageMetricsData</h3>
+<p>Token usage for an LLM interaction. The <code>value</code> field is an <code>LLMTokenUsage</code> object with:</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>prompt_tokens</code></td><td><code>int</code></td><td>Number of tokens in the input prompt</td></tr><tr><td><code>completion_tokens</code></td><td><code>int</code></td><td>Number of tokens in the generated completion</td></tr><tr><td><code>total_tokens</code></td><td><code>int</code></td><td>Total tokens used (prompt + completion)</td></tr><tr><td><code>cache_read_input_tokens</code></td><td><code>Optional[int]</code></td><td>Tokens read from cache, if applicable</td></tr><tr><td><code>cache_creation_input_tokens</code></td><td><code>Optional[int]</code></td><td>Tokens used to create cache entries</td></tr><tr><td><code>reasoning_tokens</code></td><td><code>Optional[int]</code></td><td>Reasoning tokens (for reasoning models)</td></tr><tr><td><code>input_audio_tokens</code></td><td><code>Optional[int]</code></td><td>Prompt tokens that were audio (realtime models)</td></tr><tr><td><code>output_audio_tokens</code></td><td><code>Optional[int]</code></td><td>Completion tokens that were audio (realtime models)</td></tr><tr><td><code>cache_read_input_audio_tokens</code></td><td><code>Optional[int]</code></td><td>Cache-read tokens that were audio (realtime models)</td></tr></tbody></table></div>
+<h3>TTSUsageMetricsData</h3>
+<p>Character usage for a TTS interaction.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>value</code></td><td><code>int</code></td><td>Number of characters processed by TTS</td></tr></tbody></table></div>
+<h3>TurnMetricsData</h3>
+<p>Metrics from turn completion prediction, emitted by turn analyzers like Krisp Viva Turn and Smart Turn.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>is_complete</code></td><td><code>bool</code></td><td>Whether the turn is predicted to be complete</td></tr><tr><td><code>probability</code></td><td><code>float</code></td><td>Confidence probability of the prediction</td></tr><tr><td><code>e2e_processing_time_ms</code></td><td><code>float</code></td><td>End-to-end processing time in ms, from VAD speech-to-silence transition to turn completion</td></tr></tbody></table></div>
+<h2>Related Observers</h2>
+<p>In addition to <code>MetricsLogObserver</code>, Pipecat provides observers that track higher-level conversational metrics.</p>
+<h3>StartupTimingObserver</h3>
+<p>Measures the time taken by each processor to start up.</p>
+<pre><code>from pipecat.observers.startup_timing_observer import StartupTimingObserver
+
+startup_observer = StartupTimingObserver()
+
+@observer.event_handler("on_startup_timing_report")
+async def on_startup_timing_report(observer, report):
+    print(f"Total startup: {report.total_duration_secs:.3f}s")
+    for timing in report.processor_timings:
+        print(f"  {timing.processor_name}: {timing.duration_secs:.3f}s")</code></pre>
+<p>Additionally, it tracks the time taken to connect to the transport and the time taken to connect to the client.</p>
+<pre><code>@observer.event_handler("on_transport_timing_report")
+async def on_transport_timing_report(observer, report):
+    if report.bot_connected_secs is not None:
+        print(f"Bot connected: {report.bot_connected_secs:.3f}s")
+    print(f"Client connected: {report.client_connected_secs:.3f}s")</code></pre>
+<h3>UserBotLatencyObserver</h3>
+<p>Measures the time between when a user stops speaking and when the bot starts speaking.</p>
+<pre><code>from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
+
+latency_observer = UserBotLatencyObserver()
+
+@latency_observer.event_handler("on_latency_measured")
+async def on_latency_measured(observer, latency_seconds):
+    print(f"User-to-bot latency: {latency_seconds:.3f}s")
+
+worker = PipelineWorker(pipeline, observers=[latency_observer])</code></pre>
+<h3>TurnTrackingObserver</h3>
+<p>Tracks conversation turns, emitting events when turns start and end. Handles interruptions and configurable timeouts.</p>
+<pre><code>from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
+
+turn_observer = TurnTrackingObserver(turn_end_timeout_secs=2.5)
+
+@turn_observer.event_handler("on_turn_started")
+async def on_turn_started(observer, turn_count):
+    print(f"Turn {turn_count} started")
+
+@turn_observer.event_handler("on_turn_ended")
+async def on_turn_ended(observer, turn_count, duration, was_interrupted):
+    status = "interrupted" if was_interrupted else "completed"
+    print(f"Turn {turn_count} {status} after {duration:.2f}s")
+
+worker = PipelineWorker(pipeline, observers=[turn_observer])</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/fundamentals/metrics">https://docs.pipecat.ai/pipecat/fundamentals/metrics</a></p>
+</div></main></div></body></html>

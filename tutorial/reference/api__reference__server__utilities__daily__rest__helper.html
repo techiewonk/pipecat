@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DailyRESTHelper · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>DailyRESTHelper</h1>
+<blockquote>Classes and methods for interacting with the Daily API to manage rooms and tokens</blockquote>
+<p>&lt;Card title="Daily REST API Documentation" icon="link" href="https://docs.daily.co/reference/rest-api"&gt;   For complete Daily REST API reference and additional details &lt;/Card&gt;</p>
+<h2>Classes</h2>
+<h3>DailyRoomSipParams</h3>
+<p>Configuration for SIP (Session Initiation Protocol) parameters.</p>
+<p>&lt;ResponseField name="display_name" type="string" default="sw-sip-dialin"&gt;   Display name for the SIP endpoint &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="video" type="boolean" default={false}&gt;   Whether video is enabled for SIP &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="sip_mode" type="string" default="dial-in"&gt;   SIP connection mode &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="num_endpoints" type="integer" default={1}&gt;   Number of SIP endpoints &lt;/ResponseField&gt;</p>
+<pre><code>from pipecat.transports.daily.utils import DailyRoomSipParams
+
+sip_params = DailyRoomSipParams(
+    display_name="conference-line",
+    video=True,
+    num_endpoints=2
+)</code></pre>
+<h3>RecordingsBucketConfig</h3>
+<p>Configuration for storing Daily recordings in a custom S3 bucket.</p>
+<p>&lt;ResponseField name="bucket_name" type="string" required&gt;   Name of the S3 bucket for storing recordings &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="bucket_region" type="string" required&gt;   AWS region where the S3 bucket is located &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="assume_role_arn" type="string" required&gt;   ARN of the IAM role to assume for S3 access &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="allow_api_access" type="boolean" default={false}&gt;   Whether to allow API access to the recordings &lt;/ResponseField&gt;</p>
+<pre><code>from pipecat.transports.daily.utils import RecordingsBucketConfig
+
+bucket_config = RecordingsBucketConfig(
+    bucket_name="my-recordings-bucket",
+    bucket_region="us-west-2",
+    assume_role_arn="arn:aws:iam::123456789012:role/DailyRecordingsRole",
+    allow_api_access=True
+)</code></pre>
+<h3>DailyRoomProperties</h3>
+<p>Properties that configure a Daily room's behavior and features.</p>
+<p>&lt;ResponseField name="exp" type="float" optional&gt;   Room expiration time as Unix timestamp (e.g., time.time() + 300 for 5 minutes) &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_chat" type="boolean" default={false}&gt;   Whether chat is enabled in the room &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_prejoin_ui" type="boolean" default={false}&gt;   Whether the prejoin lobby UI is enabled &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_emoji_reactions" type="boolean" default={false}&gt;   Whether emoji reactions are enabled &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="eject_at_room_exp" type="boolean" default={false}&gt;   Whether to eject participants when room expires &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_dialout" type="boolean" optional&gt;   Whether dial-out is enabled &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_recording" type="string" optional&gt;   Recording settings ("cloud", "cloud-audio-only", "local", or "raw-tracks") &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="geo" type="string" optional&gt;   Geographic region for room &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="max_participants" type="number" optional&gt;   Maximum number of participants allowed in the room &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="recordings_bucket" type="RecordingsBucketConfig" optional&gt;   Configuration for custom S3 bucket recordings &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="sip" type="DailyRoomSipParams" optional&gt;   SIP configuration parameters &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="sip_uri" type="dict" optional&gt;   SIP URI configuration (returned by Daily) &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="start_video_off" type="boolean" default={false}&gt;   Whether the camera video is turned off by default &lt;/ResponseField&gt;</p>
+<p>The class also includes a <code>sip_endpoint</code> property that returns the SIP endpoint URI if available.</p>
+<p><code>enable_recording</code> also supports <code>cloud-audio-only</code>, which records the call server-side and produces an audio-only MPEG-4 file with <code>.m4a</code> file extension and content type as <code>audio/mp4</code>. This recording setting behaves like <code>cloud</code>, except the <code>layout</code> options do not apply because there are no video tracks. Note: you can retrieve the resulting <code>.m4a</code> recordings via the <a href="https://docs.daily.co/reference/rest-api/recordings">Daily REST API</a>, in the same way you fetch <code>cloud</code> recording assets.</p>
+<p>&lt;Tip&gt;   If you're already using <code>enable_recording="cloud"</code> and want to switch to   audio-only without changing your code, you can set   <code>force_audio_only_recording: 1</code> on your Daily domain. This forces all cloud   recordings to be audio-only (<code>.m4a</code> instead of <code>.mp4</code>) and skips recording   video tracks even if they are present. This is useful when you want to   transition to audio-only recordings immediately while avoiding an application   redeploy. Switching <code>force_audio_only_recording: 0</code> will allow recording video   tracks. &lt;/Tip&gt;</p>
+<pre><code>import time
+from pipecat.transports.daily.utils import (
+    DailyRoomProperties,
+    DailyRoomSipParams,
+    RecordingsBucketConfig,
+)
+
+properties = DailyRoomProperties(
+    exp=time.time() + 3600,  # 1 hour from now
+    enable_chat=True,
+    enable_emoji_reactions=True,
+    enable_recording="cloud-audio-only",
+    geo="us-west",
+    max_participants=50,
+    sip=DailyRoomSipParams(display_name="conference"),
+    recordings_bucket=RecordingsBucketConfig(
+        bucket_name="my-bucket",
+        bucket_region="us-west-2",
+        assume_role_arn="arn:aws:iam::123456789012:role/DailyRole"
+    )
+)
+
+# Access SIP endpoint if available
+if properties.sip_endpoint:
+    print(f"SIP endpoint: {properties.sip_endpoint}")</code></pre>
+<h3>DailyRoomParams</h3>
+<p>Parameters for creating a new Daily room.</p>
+<p>&lt;ResponseField name="name" type="string" optional&gt;   Room name (if not provided, one will be generated) &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="privacy" type="string" default="public"&gt;   Room privacy setting ("private" or "public") &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="properties" type="DailyRoomProperties"&gt;   Room configuration properties &lt;/ResponseField&gt;</p>
+<pre><code>import time
+from pipecat.transports.daily.utils import (
+    DailyRoomParams,
+    DailyRoomProperties,
+)
+
+params = DailyRoomParams(
+    name="team-meeting",
+    privacy="private",
+    properties=DailyRoomProperties(
+        enable_chat=True,
+        exp=time.time() + 7200  # 2 hours from now
+    )
+)</code></pre>
+<h3>DailyRoomObject</h3>
+<p>Response object representing a Daily room.</p>
+<p>&lt;ResponseField name="id" type="string"&gt;   Unique room identifier &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="name" type="string"&gt;   Room name &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="api_created" type="boolean"&gt;   Whether the room was created via API &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="privacy" type="string"&gt;   Room privacy setting &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="url" type="string"&gt;   Complete room URL &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="created_at" type="string"&gt;   Room creation timestamp in ISO 8601 format &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="config" type="DailyRoomProperties"&gt;   Room configuration &lt;/ResponseField&gt;</p>
+<pre><code>from pipecat.transports.daily.utils import (
+    DailyRoomObject,
+    DailyRoomProperties,
+)
+
+# Example of what a DailyRoomObject looks like when received
+room = DailyRoomObject(
+    id="abc123",
+    name="team-meeting",
+    api_created=True,
+    privacy="private",
+    url="https://your-domain.daily.co/team-meeting",
+    created_at="2024-01-20T10:00:00.000Z",
+    config=DailyRoomProperties(
+        enable_chat=True,
+        exp=1705743600
+    )
+)</code></pre>
+<h3>DailyMeetingTokenProperties</h3>
+<p>Properties for configuring a Daily meeting token.</p>
+<p>&lt;ResponseField name="room_name" type="string" optional&gt;   The room this token is valid for. If not set, token is valid for all rooms. &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="eject_at_token_exp" type="boolean" optional&gt;   Whether to eject user when token expires &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="eject_after_elapsed" type="integer" optional&gt;   Eject user after this many seconds &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="nbf" type="integer" optional&gt;   "Not before" timestamp - users cannot join before this time &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="exp" type="integer" optional&gt;   Expiration timestamp - users cannot join after this time &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="is_owner" type="boolean" optional&gt;   Whether token grants owner privileges &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="user_name" type="string" optional&gt;   User's display name in the meeting &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="user_id" type="string" optional&gt;   Unique identifier for the user (36 char limit) &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_screenshare" type="boolean" optional&gt;   Whether user can share their screen &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="start_video_off" type="boolean" optional&gt;   Whether to join with video off &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="start_audio_off" type="boolean" optional&gt;   Whether to join with audio off &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_recording" type="string" optional&gt;   Recording settings ("cloud", "cloud-audio-only", "local", or "raw-tracks") &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="enable_prejoin_ui" type="boolean" optional&gt;   Whether to show prejoin UI &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="start_cloud_recording" type="boolean" optional&gt;   Whether to start cloud recording when user joins &lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="permissions" type="dict" optional&gt;   Initial default permissions for a non-meeting-owner participant &lt;/ResponseField&gt;</p>
+<h3>DailyMeetingTokenParams</h3>
+<p>Parameters for creating a Daily meeting token.</p>
+<p>&lt;ResponseField name="properties" type="DailyMeetingTokenProperties"&gt;   Token configuration properties &lt;/ResponseField&gt;</p>
+<pre><code>from pipecat.transports.daily.utils import (
+    DailyMeetingTokenParams,
+    DailyMeetingTokenProperties,
+)
+
+token_params = DailyMeetingTokenParams(
+    properties=DailyMeetingTokenProperties(
+        user_name="John Doe",
+        enable_screenshare=True,
+        start_video_off=True,
+        enable_recording="cloud-audio-only",
+        start_cloud_recording=True,
+        permissions={"canSend": ["video", "audio"]}
+    )
+)</code></pre>
+<p>&lt;Warning&gt;   Recording type: <code>cloud</code> will produce files with a <code>.mp4</code> extension, while   <code>cloud-audio-only</code> will produce files with a <code>.m4a</code> extension. &lt;/Warning&gt;</p>
+<h2>Initialize DailyRESTHelper</h2>
+<p>Create a new instance of the Daily REST helper.</p>
+<p>&lt;ParamField path="daily_api_key" type="string" required&gt;   Your Daily API key &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="daily_api_url" type="string" default="https://api.daily.co/v1"&gt;   The Daily API base URL &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp client session for making HTTP requests &lt;/ParamField&gt;</p>
+<pre><code>helper = DailyRESTHelper(
+    daily_api_key="your-api-key",
+    aiohttp_session=session
+)</code></pre>
+<h2>Create Room</h2>
+<p>Creates a new Daily room with specified parameters.</p>
+<p>&lt;ParamField path="params" type="DailyRoomParams" required&gt;   Room configuration parameters including name, privacy, and properties &lt;/ParamField&gt;</p>
+<pre><code># Create a room that expires in 1 hour
+params = DailyRoomParams(
+    name="my-room",
+    privacy="private",
+    properties=DailyRoomProperties(
+        exp=time.time() + 3600,
+        enable_chat=True
+    )
+)
+room = await helper.create_room(params)
+print(f"Room URL: {room.url}")</code></pre>
+<h2>Get Room From URL</h2>
+<p>Retrieves room information using a Daily room URL.</p>
+<p>&lt;ParamField path="room_url" type="string" required&gt;   The complete Daily room URL &lt;/ParamField&gt;</p>
+<pre><code>room = await helper.get_room_from_url("https://your-domain.daily.co/my-room")
+print(f"Room name: {room.name}")</code></pre>
+<h2>Get Token</h2>
+<p>Generates a meeting token for a specific room.</p>
+<p>&lt;ParamField path="room_url" type="string" required&gt;   The complete Daily room URL &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="expiry_time" type="float" default="3600"&gt;   Token expiration time in seconds &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="eject_at_token_exp" type="bool" default="False"&gt;   Whether to eject user when token expires &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="owner" type="bool" default="True"&gt;   Whether the token should have owner privileges (overrides any setting in   params) &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="DailyMeetingTokenParams" optional&gt;   Additional token configuration. Note that <code>room_name</code>, <code>exp</code>,   <code>eject_at_token_exp</code>, and <code>is_owner</code> will be set based on the other function   parameters. &lt;/ParamField&gt;</p>
+<pre><code># Basic token generation
+token = await helper.get_token(
+    room_url="https://your-domain.daily.co/my-room",
+    expiry_time=1800,  # 30 minutes
+    owner=True,
+    eject_at_token_exp=True
+)
+
+# Advanced token generation with additional properties
+token_params = DailyMeetingTokenParams(
+    properties=DailyMeetingTokenProperties(
+        user_name="John Doe",
+        start_video_off=True
+    )
+)
+token = await helper.get_token(
+    room_url="https://your-domain.daily.co/my-room",
+    expiry_time=1800,
+    owner=False,
+    eject_at_token_exp=True,
+    params=token_params
+)</code></pre>
+<h2>Delete Room By URL</h2>
+<p>Deletes a room using its URL.</p>
+<p>&lt;ParamField path="room_url" type="string" required&gt;   The complete Daily room URL &lt;/ParamField&gt;</p>
+<pre><code>success = await helper.delete_room_by_url("https://your-domain.daily.co/my-room")
+if success:
+    print("Room deleted successfully")</code></pre>
+<h2>Delete Room By Name</h2>
+<p>Deletes a room using its name.</p>
+<p>&lt;ParamField path="room_name" type="string" required&gt;   The name of the Daily room &lt;/ParamField&gt;</p>
+<pre><code>success = await helper.delete_room_by_name("my-room")
+if success:
+    print("Room deleted successfully")</code></pre>
+<h2>Get Name From URL</h2>
+<p>Extracts the room name from a Daily room URL.</p>
+<p>&lt;ParamField path="room_url" type="string" required&gt;   The complete Daily room URL &lt;/ParamField&gt;</p>
+<pre><code>room_name = helper.get_name_from_url("https://your-domain.daily.co/my-room")
+print(f"Room name: {room_name}")  # Outputs: "my-room"</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/daily/rest-helper">https://docs.pipecat.ai/api-reference/server/utilities/daily/rest-helper</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camb AI Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Camb AI Text-to-Speech</h1>
+<blockquote>CambTTSService streams high-quality TTS using Camb AI's MARS model family, with multiple model and voice options.</blockquote>
+<h2>Overview</h2>
+<p><code>CambTTSService</code> provides high-quality text-to-speech synthesis using Camb AI's MARS model family with streaming capabilities. The service offers multiple model options optimized for different use cases: <code>mars-flash</code> for fast inference and <code>mars-pro</code> for high-quality output.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Camb AI TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.camb.tts.html"&gt;     Pipecat's API methods for Camb AI TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-camb.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Camb AI Documentation" icon="book" href="https://docs.camb.ai/"&gt;     Official Camb AI API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Camb AI Platform" icon="microphone" href="https://studio.camb.ai/"&gt;     Access the Camb AI studio platform   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Camb AI services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[camb]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Camb AI Account Setup</h3>
+<p>Before using Camb AI TTS services, you need:</p>
+<ol><li><strong>Camb AI Account</strong>: Sign up at <a href="https://studio.camb.ai/">Camb AI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Selection</strong>: Choose voice IDs from the platform</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>CAMB_API_KEY</code>: Your Camb AI API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>CambTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Camb.ai API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="int" default="147320" deprecated&gt;   Voice ID to use for synthesis.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=CambTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="mars-flash" deprecated&gt;   TTS model to use. Options: <code>"mars-flash"</code> (fast, 22.05kHz), <code>"mars-pro"</code> (high   quality, 48kHz), <code>"mars-instruct"</code> (instruction-following, 22.05kHz).</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=CambTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="timeout" type="float" default="60.0"&gt;   Request timeout in seconds. 60 seconds is the minimum recommended by Camb.ai. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. If <code>None</code>, uses the model-specific default   (22050 for mars-flash, 48000 for mars-pro). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable voice settings. See <a href="#settings">Settings</a> below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=CambTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="CambTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>CambTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>int</code></td><td><code>None</code></td><td>Voice identifier.</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>user_instructions</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>Instructions to guide voice synthesis style.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.camb import CambTTSService
+
+tts = CambTTSService(
+    api_key=os.getenv("CAMB_API_KEY"),
+    settings=CambTTSService.Settings(
+        model="mars-flash",
+        voice=12345,
+    ),
+)</code></pre>
+<h3>With Language Customization</h3>
+<pre><code>from pipecat.transcriptions.language import Language
+
+tts = CambTTSService(
+    api_key=os.getenv("CAMB_API_KEY"),
+    settings=CambTTSService.Settings(
+        model="mars-flash",
+        language=Language.FR,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<p>&lt;Tip&gt;   Set the <code>audio_out_sample_rate</code> in <code>PipelineParams</code> to match the model's   sample rate (22050 for <code>mars-flash</code>, 48000 for <code>mars-pro</code>) for optimal   quality. See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-camb.py">example   implementation</a>   for usage. &lt;/Tip&gt;</p>
+<ul><li><strong>Model-specific sample rates</strong>: Each model has a fixed output sample rate. Setting a mismatched <code>sample_rate</code> will produce a warning and may cause audio issues.</li><li><strong>Text length limit</strong>: Input text is limited to 3000 characters per request. Longer text is automatically truncated with a warning.</li><li><strong>140+ languages</strong>: Camb.ai supports a wide range of languages through BCP-47 codes.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/camb">https://docs.pipecat.ai/api-reference/server/services/tts/camb</a></p>
+</div></main></div></body></html>

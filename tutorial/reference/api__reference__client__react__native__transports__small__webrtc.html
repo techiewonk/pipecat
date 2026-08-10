@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Small WebRTC Transport</h1>
+<blockquote>SmallWebRTCTransport for the React Native SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider.</blockquote>
+<p><code>SmallWebRTCTransport</code> enables peer-to-peer WebRTC connections between clients and your Pipecat application. It implements bidirectional audio and video streaming using WebRTC for real-time communication.</p>
+<p>This transport is intended for lightweight implementations, particularly for local development and testing. It expects your Pipecat server to include the corresponding <a href="/api-reference/server/services/transport/small-webrtc"><code>SmallWebRTCTransport</code> server-side</a> implementation.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import {
+  RNSmallWebRTCTransport,
+  SmallWebRTCTransportConstructorOptions,
+} from '@pipecat-ai/react-native-small-webrtc-transport';
+import { DailyMediaManager } from '@pipecat-ai/react-native-daily-media-manager/src';
+
+const options: SmallWebRTCTransportConstructorOptions = {
+  mediaManager: new DailyMediaManager()
+};
+const pcClient = new PipecatClient({
+  transport: new RNSmallWebRTCTransport(options),
+  enableCam: false, // Default camera off
+  enableMic: true, // Default microphone on
+  callbacks: {
+    // Event handlers
+  },
+});
+
+const connectParams: APIRequest = {
+  endpoint: baseUrl + '/start'
+};
+await client?.startBotAndConnect(connectParams);</code></pre>
+<h2>API Reference</h2>
+<p>&lt;Note&gt;   The Pipecat React Native SDK leverages the Pipecat JavaScript SDK for seamless integration with React Native applications.   For detailed information, please reference to the <a href="/api-reference/client/js/transports/small-webrtc">Javascript SDK docs</a>.</p>
+<p>  <strong>Just ensure you use the appropriate transport layer for React Native.</strong> &lt;/Note&gt;</p>
+<h2>More Information</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Video Transform Demo" icon="video" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/video-transform"&gt;     Real-time video transformation example   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Package" icon="browser" href="https://www.npmjs.com/package/@pipecat-ai/react-native-small-webrtc-transport"&gt;     <code>@pipecat-ai/small-webrtc-transport</code>   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react-native/transports/small-webrtc">https://docs.pipecat.ai/api-reference/client/react-native/transports/small-webrtc</a></p>
+</div></main></div></body></html>

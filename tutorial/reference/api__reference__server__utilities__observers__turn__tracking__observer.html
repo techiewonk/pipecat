@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turn Tracking Observer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Turn Tracking Observer</h1>
+<blockquote>TurnTrackingObserver tracks conversation turns in a Pipecat pipeline and emits turn started and ended events.</blockquote>
+<p>The <code>TurnTrackingObserver</code> monitors and tracks conversational turns in your Pipecat pipeline, providing events when turns start and end. It intelligently identifies when a user-bot interaction cycle begins and completes.</p>
+<h2>Turn Lifecycle</h2>
+<p>A turn represents a complete user-bot interaction cycle:</p>
+<ol><li><strong>Start</strong>: When the user starts speaking (or pipeline starts for first turn)</li><li><strong>Processing</strong>: User speaks, bot processes and responds</li><li><strong>End</strong>: After the bot finishes speaking and either:</li><li>The user starts speaking again</li><li>A timeout period elapses with no further activity</li></ol>
+<h2>Events</h2>
+<p>The observer emits two main events:</p>
+<ul><li><strong><code>on_turn_started</code></strong>: When a new turn begins</li><li>Parameters: <code>turn_number</code> (int)</li><li><strong><code>on_turn_ended</code></strong>: When a turn completes</li><li>Parameters: <code>turn_number</code> (int), <code>duration</code> (float, in seconds), <code>was_interrupted</code> (bool)</li></ul>
+<h2>Usage</h2>
+<p>The observer is automatically created when you initialize a <code>PipelineWorker</code> with <code>enable_turn_tracking=True</code> (which is the default):</p>
+<pre><code>worker = PipelineWorker(
+    pipeline,
+    # Turn tracking is enabled by default
+)
+
+# Access the observer
+turn_observer = worker.turn_tracking_observer
+
+# Register event handlers
+@turn_observer.event_handler("on_turn_started")
+async def on_turn_started(observer, turn_number):
+    logger.info(f"Turn {turn_number} started")
+
+@turn_observer.event_handler("on_turn_ended")
+async def on_turn_ended(observer, turn_number, duration, was_interrupted):
+    status = "interrupted" if was_interrupted else "completed"
+    logger.info(f"Turn {turn_number} {status} in {duration:.2f}s")</code></pre>
+<h2>Configuration</h2>
+<p>You can configure the observer's behavior when creating a <code>PipelineWorker</code>:</p>
+<pre><code>from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
+
+# Create a custom observer instance
+custom_turn_tracker = TurnTrackingObserver(
+    turn_end_timeout_secs=3.5,     # Turn end timeout (default: 2.5)
+)
+
+# Add it as a regular observer
+worker = PipelineWorker(
+    pipeline,
+    observers=[custom_turn_tracker],
+    # Disable the default one if adding your own
+    enable_turn_tracking=False,
+)</code></pre>
+<h2>Interruptions</h2>
+<p>The observer automatically detects interruptions when the user starts speaking while the bot is still speaking. In this case:</p>
+<ul><li>The current turn is marked as interrupted (<code>was_interrupted=True</code>)</li><li>A new turn begins immediately</li></ul>
+<h2>How It Works</h2>
+<p>The observer monitors specific frame types to track conversation flow:</p>
+<ul><li><strong>StartFrame</strong>: Initiates the first turn</li><li><strong>UserStartedSpeakingFrame</strong>: Starts user speech or triggers a new turn</li><li><strong>BotStartedSpeakingFrame</strong>: Marks bot speech beginning</li><li><strong>BotStoppedSpeakingFrame</strong>: Starts the turn end timeout</li></ul>
+<p>After a bot stops speaking, the observer waits for the configured timeout period. If no further bot speech occurs, the turn ends; otherwise, it continues as part of the same turn.</p>
+<h2>Use Cases</h2>
+<ul><li><strong>Analytics</strong>: Measure turn durations, interruption rates, and conversation flow</li><li><strong>Logging</strong>: Record turn-based logs for diagnostics and analysis</li><li><strong>Visualization</strong>: Show turn-based conversation timelines in UIs</li><li><strong>Tracing</strong>: Group spans and metrics by conversation turns</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/observers/turn-tracking-observer">https://docs.pipecat.ai/api-reference/server/utilities/observers/turn-tracking-observer</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVIDIA Nemotron Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>NVIDIA Nemotron Text-to-Speech</h1>
+<blockquote>TTS with NvidiaTTSService plus SageMaker variants, running NVIDIA Nemotron Speech models for real-time synthesis.</blockquote>
+<h2>Overview</h2>
+<p>NVIDIA Nemotron Speech provides three TTS service implementations:</p>
+<ul><li><strong><code>NvidiaTTSService</code></strong> -- High-quality TTS using both locally deployed and cloud-based NVIDIA TTS models. Supports multilingual synthesis, configurable quality settings, per-sentence and stitched synthesis modes, and zero-shot voice cloning.</li><li><strong><code>NvidiaSageMakerHTTPTTSService</code></strong> -- Single HTTP invocation to an AWS SageMaker endpoint, streaming raw PCM audio back for each text segment.</li><li><strong><code>NvidiaSageMakerTTSService</code></strong> -- Persistent HTTP/2 bidi-stream to an AWS SageMaker endpoint with full interruption support via <code>InterruptibleTTSService</code>.</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="NVIDIA Nemotron Speech TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.nvidia.tts.html"&gt;     Pipecat's API methods for NVIDIA Nemotron Speech TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-nvidia.py"&gt;     Complete example with Nemotron Speech NIM   &lt;/Card&gt;</p>
+<p>  &lt;Card title="NVIDIA TTS NIM Documentation" icon="book" href="https://docs.nvidia.com/nim/speech/latest/tts/"&gt;     Official NVIDIA TTS NIM documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="NVIDIA Developer Portal" icon="microphone" href="https://developer.nvidia.com/"&gt;     Access API keys and Nemotron Speech services   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use NVIDIA Nemotron Speech services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[nvidia]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>NVIDIA Nemotron Speech Setup</h3>
+<p>Before using Nemotron Speech TTS services, you need:</p>
+<ol><li><strong>NVIDIA Developer Account</strong>: Sign up at <a href="https://developer.nvidia.com/">NVIDIA Developer Portal</a></li><li><strong>API Key</strong>: Generate an NVIDIA API key for Nemotron Speech services (required for cloud endpoint)</li><li><strong>Nemotron Speech Access</strong>: Ensure access to NVIDIA Nemotron Speech TTS services</li></ol>
+<p>For local deployments, see the <a href="https://docs.nvidia.com/nim/speech/latest/tts/">NVIDIA TTS NIM documentation</a>.</p>
+<h3>Required Environment Variables</h3>
+<ul><li><code>NVIDIA_API_KEY</code>: Your NVIDIA API key for authentication (required for cloud endpoint, not needed for local deployments)</li></ul>
+<h2>Configuration</h2>
+<h3>NvidiaTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" default="None"&gt;   NVIDIA API key for authentication. Required when using the cloud endpoint. Not   needed for local deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="server" type="str" default="grpc.nvcf.nvidia.com:443"&gt;   gRPC server endpoint. Defaults to NVIDIA's cloud endpoint. For local   deployments, pass the local address (e.g. <code>localhost:50051</code>). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="Magpie-Multilingual.EN-US.Aria" deprecated&gt;   Voice model identifier.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NvidiaTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_function_map" type="dict" default="{&amp;#x22;function_id&amp;#x22;: &amp;#x22;877104f7-e885-42b9-8de8-f6e4c6303969&amp;#x22;, &amp;#x22;model_name&amp;#x22;: &amp;#x22;magpie-tts-multilingual&amp;#x22;}"&gt;   Dictionary containing <code>function_id</code> and <code>model_name</code> for the TTS model. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_ssl" type="bool" default="True"&gt;   Whether to use SSL for the gRPC connection. Defaults to True for the NVIDIA   cloud endpoint. Set to False for local deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="custom_dictionary" type="dict" default="None"&gt;   Custom pronunciation dictionary mapping words (graphemes) to IPA phonetic   representations (phonemes), e.g. <code>{"NVIDIA": "ɛn.vɪ.diː.ʌ"}</code>. See <a href="https://docs.nvidia.com/nim/speech/latest/tts/phoneme-support.html">NVIDIA TTS   NIM phoneme   support</a>   for the list of supported IPA phonemes. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="zero_shot_audio_prompt_file" type="str | os.PathLike[str]" default="None"&gt;   Optional audio prompt file for Magpie zero-shot voice cloning. NVIDIA   recommends a 16-bit mono WAV prompt, sample rate 22.05 kHz or higher, and   duration 3 to 10 seconds. Access to NVIDIA's hosted zero-shot models requires   approval through <a href="https://developer.nvidia.com/riva-tts-zeroshot-models">NVIDIA Riva TTS Zero-Shot   Models</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_prompt_encoding" type="AudioEncoding" default="AudioEncoding.ENCODING_UNSPECIFIED"&gt;   Audio encoding for <code>zero_shot_audio_prompt_file</code>. Use this when the server   expects a specific prompt encoding for Magpie zero-shot voice cloning. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="AudioEncoding" default="AudioEncoding.LINEAR_PCM"&gt;   Output audio encoding format. Defaults to <code>AudioEncoding.LINEAR_PCM</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   Runtime-configurable synthesis settings. See <a href="#settings">Settings</a>   below.</p>
+<p>  *Deprecated in v0.0.105. Use <code>settings=NvidiaTTSService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="NvidiaTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>NvidiaTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr><tr><td><code>quality</code></td><td><code>int</code></td><td><code>NOT_GIVEN</code></td><td>Audio quality setting (0-100). For Magpie zero-shot, NVIDIA expects values in range 1 to 40.</td></tr><tr><td><code>synthesis_mode</code></td><td><code>NvidiaTTSSynthesisMode</code></td><td><code>NOT_GIVEN</code></td><td>Whether to synthesize one sentence per request or stitch multiple sentences in one stream.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.nvidia import NvidiaTTSService
+
+tts = NvidiaTTSService(
+    api_key=os.getenv("NVIDIA_API_KEY"),
+)</code></pre>
+<h3>With Custom Voice and Quality</h3>
+<pre><code>from pipecat.services.nvidia import NvidiaTTSService
+from pipecat.transcriptions.language import Language
+
+tts = NvidiaTTSService(
+    api_key=os.getenv("NVIDIA_API_KEY"),
+    model_function_map={
+        "function_id": "877104f7-e885-42b9-8de8-f6e4c6303969",
+        "model_name": "magpie-tts-multilingual",
+    },
+    settings=NvidiaTTSService.Settings(
+        voice="Magpie-Multilingual.EN-US.Aria",
+        language=Language.EN_US,
+        quality=40,
+    ),
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>gRPC-based</strong>: NVIDIA Nemotron Speech uses gRPC (not HTTP or WebSocket) for communication with the TTS service.</li><li><strong>Synthesis modes</strong>: The service supports two synthesis modes via the <code>synthesis_mode</code> setting:</li><li><code>PER_SENTENCE</code> (default): Opens a separate <code>SynthesizeOnline</code> call for each sentence. Compatible with all NVIDIA TTS NIMs, including Chatterbox, Magpie multilingual, and Magpie zero-shot.</li><li><code>STITCHED</code>: Reuses one <code>SynthesizeOnline</code> stream across multiple sentences within the same LLM response for improved multi-sentence synthesis quality. Only use with models that support cross-sentence stitching, such as Magpie multilingual and Magpie zero-shot v1.7.0 or later.</li><li><strong>Zero-shot voice cloning</strong>: Magpie zero-shot models support voice cloning via the <code>zero_shot_audio_prompt_file</code> parameter. NVIDIA recommends a 16-bit mono WAV prompt (22.05 kHz or higher, 3-10 seconds duration). Access to hosted zero-shot models requires approval.</li><li><strong>Runtime settings updates</strong>: Voice, language, quality, and synthesis mode can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. New values take effect on the next synthesis turn, not for the current turn's in-flight requests.</li><li><strong>Model cannot be changed after initialization</strong>: The model and function ID must be set during construction via <code>model_function_map</code>. Calling <code>set_model()</code> after initialization will log a warning and have no effect.</li><li><strong>SSL enabled by default</strong>: The service connects to NVIDIA's cloud endpoint with SSL. Set <code>use_ssl=False</code> only for local or custom Nemotron Speech deployments.</li><li><strong>Metrics generation</strong>: This service supports metric generation via <code>can_generate_metrics()</code>. Metrics are automatically stopped when an audio context is interrupted.</li></ul>
+<h2>NvidiaSageMakerHTTPTTSService</h2>
+<p>NVIDIA Magpie TTS service that calls a SageMaker HTTP endpoint for each text segment. Sends JSON to the endpoint's <code>/invocations</code> path and streams raw PCM audio back.</p>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="endpoint_name" type="str" required&gt;   Name of the deployed SageMaker endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" default="us-west-2"&gt;   AWS region where the endpoint is deployed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="NvidiaSageMakerHTTPTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings-2">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>NvidiaSageMakerHTTPTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>magpie</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>Magpie-Multilingual.EN-US.Aria</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>en-US</code></td><td>BCP-47 language code for synthesis.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.nvidia.sagemaker.tts import NvidiaSageMakerHTTPTTSService
+
+tts = NvidiaSageMakerHTTPTTSService(
+    endpoint_name=os.getenv("SAGEMAKER_MAGPIE_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION", "us-west-2"),
+    settings=NvidiaSageMakerHTTPTTSService.Settings(
+        voice="Magpie-Multilingual.EN-US.Aria",
+        language="en-US",
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>AWS SageMaker deployment required</strong>: This service requires a deployed SageMaker endpoint running NVIDIA Magpie TTS NIM. See the <a href="https://github.com/pipecat-ai/pipecat-examples/tree/main/deployment/aws-sagemaker-nvidia">deployment example</a> for setup instructions.</li><li><strong>AWS credentials</strong>: Requires <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> environment variables for SageMaker authentication.</li><li><strong>Environment variables</strong>: <code>SAGEMAKER_MAGPIE_ENDPOINT_NAME</code> for the endpoint name.</li><li><strong>HTTP-based</strong>: Each text segment triggers a new HTTP POST request to the SageMaker endpoint.</li><li><strong>Metrics support</strong>: This service supports metrics generation (<code>can_generate_metrics()</code> returns <code>True</code>).</li></ul>
+<h2>NvidiaSageMakerTTSService</h2>
+<p>NVIDIA Magpie TTS service using SageMaker bidirectional streaming. Maintains a persistent HTTP/2 bidi-stream connection for the lifetime of the pipeline with full interruption support.</p>
+<h3>Configuration</h3>
+<p>&lt;ParamField path="endpoint_name" type="str" required&gt;   Name of the deployed SageMaker endpoint. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="str" default="us-west-2"&gt;   AWS region where the endpoint is deployed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="NvidiaSageMakerTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings-3">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>NvidiaSageMakerTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>magpie</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>Magpie-Multilingual.EN-US.Aria</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>en-US</code></td><td>BCP-47 language code for synthesis.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.nvidia.sagemaker.tts import NvidiaSageMakerTTSService
+
+tts = NvidiaSageMakerTTSService(
+    endpoint_name=os.getenv("SAGEMAKER_MAGPIE_ENDPOINT_NAME"),
+    region=os.getenv("AWS_REGION", "us-west-2"),
+    settings=NvidiaSageMakerTTSService.Settings(
+        voice="Magpie-Multilingual.EN-US.Aria",
+        language="en-US",
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>AWS SageMaker deployment required</strong>: This service requires a deployed SageMaker endpoint running NVIDIA Magpie TTS NIM. See the <a href="https://github.com/pipecat-ai/pipecat-examples/tree/main/deployment/aws-sagemaker-nvidia">deployment example</a> for setup instructions.</li><li><strong>AWS credentials</strong>: Requires <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> environment variables for SageMaker authentication.</li><li><strong>Environment variables</strong>: <code>SAGEMAKER_MAGPIE_ENDPOINT_NAME</code> for the endpoint name.</li><li><strong>Persistent connection</strong>: Maintains a single HTTP/2 bidi-stream session for the pipeline's lifetime, reconnecting automatically on error.</li><li><strong>Interruption support</strong>: Extends <code>InterruptibleTTSService</code> for proper handling of user interruptions.</li><li><strong>Metrics support</strong>: This service supports metrics generation (<code>can_generate_metrics()</code> returns <code>True</code>).</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/nvidia">https://docs.pipecat.ai/api-reference/server/services/tts/nvidia</a></p>
+</div></main></div></body></html>

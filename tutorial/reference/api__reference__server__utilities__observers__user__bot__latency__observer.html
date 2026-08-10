@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User-Bot Latency Observer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>User-Bot Latency Observer</h1>
+<blockquote>Measure response time between user speech and bot responses in Pipecat</blockquote>
+<p>The <code>UserBotLatencyObserver</code> measures the time between when a user stops speaking and when the bot starts responding, emitting events for custom handling and optional OpenTelemetry tracing integration. It also tracks first-bot-speech latency and provides detailed per-service latency breakdowns when metrics are enabled.</p>
+<h2>Features</h2>
+<ul><li>Tracks user speech start/stop timing using VAD frames</li><li>Measures bot response latency from the actual moment the user started speaking</li><li>Measures first bot speech latency (client connection to first speech)</li><li>Provides detailed latency breakdown with per-service TTFB, text aggregation, user turn duration, and function call metrics</li><li>Emits <code>on_latency_measured</code> events for custom processing</li><li>Emits <code>on_latency_breakdown</code> events with detailed per-service metrics</li><li>Emits <code>on_first_bot_speech_latency</code> event for greeting latency measurement</li><li>Automatically records latency as OpenTelemetry span attributes when tracing is enabled</li><li>Automatically resets between conversation turns</li></ul>
+<h2>Usage</h2>
+<h3>Basic Latency Monitoring</h3>
+<p>Add latency monitoring to your pipeline and handle the event:</p>
+<pre><code>from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
+
+latency_observer = UserBotLatencyObserver()
+
+@latency_observer.event_handler("on_latency_measured")
+async def on_latency_measured(observer, latency):
+    print(f"User-to-bot latency: {latency:.3f}s")
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(observers=[latency_observer]),
+)</code></pre>
+<h3>Detailed Latency Breakdown</h3>
+<p>Enable metrics to collect per-service latency breakdown:</p>
+<pre><code>from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
+
+latency_observer = UserBotLatencyObserver()
+
+@latency_observer.event_handler("on_latency_breakdown")
+async def on_latency_breakdown(observer, breakdown):
+    print(f"Latency breakdown ({len(breakdown.chronological_events())} events):")
+    for event in breakdown.chronological_events():
+        print(f"  {event}")
+
+worker = PipelineWorker(
+    pipeline,
+    params=PipelineParams(
+        observers=[latency_observer],
+        enable_metrics=True,  # Required for breakdown metrics
+    ),
+)</code></pre>
+<h3>OpenTelemetry Integration</h3>
+<p>When tracing is enabled, latency measurements are automatically recorded as <code>turn.user_bot_latency_seconds</code> attributes on OpenTelemetry turn spans. No additional configuration is needed.</p>
+<h2>How It Works</h2>
+<p>The observer tracks conversation flow through these key events:</p>
+<ol><li><strong>Client connects</strong> (<code>ClientConnectedFrame</code>) → Records timestamp for first-bot-speech measurement</li><li><strong>User starts speaking</strong> (<code>VADUserStartedSpeakingFrame</code>) → Resets latency tracking</li><li><strong>User stops speaking</strong> (<code>VADUserStoppedSpeakingFrame</code>) → Records timestamp, accounting for VAD <code>stop_secs</code> delay</li><li><strong>Bot starts speaking</strong> (<code>BotStartedSpeakingFrame</code>) → Calculates latency and emits <code>on_latency_measured</code> and <code>on_latency_breakdown</code> events</li></ol>
+<p>When <code>enable_metrics=True</code> in <code>PipelineParams</code>, the observer also collects per-service metrics (TTFB, text aggregation, function call latency) from <code>MetricsFrame</code> instances and includes them in the latency breakdown.</p>
+<h2>Event Handlers</h2>
+<h3>on\_latency\_measured</h3>
+<p>Called each time a user-to-bot latency measurement is captured.</p>
+<pre><code>@latency_observer.event_handler("on_latency_measured")
+async def on_latency_measured(observer, latency):
+    # latency is a float representing seconds
+    logger.info(f"Response latency: {latency:.3f}s")</code></pre>
+<h3>on\_latency\_breakdown</h3>
+<p>Called alongside <code>on_latency_measured</code> with detailed per-service metrics collected during the user→bot cycle. The breakdown includes TTFB from each service, text aggregation latency, user turn duration, and function call timings.</p>
+<pre><code>@latency_observer.event_handler("on_latency_breakdown")
+async def on_latency_breakdown(observer, breakdown):
+    # breakdown is a LatencyBreakdown object
+    logger.info("Latency breakdown:")
+    for event in breakdown.chronological_events():
+        logger.info(f"  {event}")</code></pre>
+<p><strong>LatencyBreakdown fields:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>ttfb</code></td><td><code>List[TTFBBreakdownMetrics]</code></td><td>Time-to-first-byte metrics from each service</td></tr><tr><td><code>text_aggregation</code></td><td><code>Optional[TextAggregationBreakdownMetrics]</code></td><td>First text aggregation measurement (sentence aggregation latency)</td></tr><tr><td><code>user_turn_start_time</code></td><td><code>Optional[float]</code></td><td>Unix timestamp when user turn started (adjusted for VAD stop\_secs)</td></tr><tr><td><code>user_turn_secs</code></td><td><code>Optional[float]</code></td><td>User turn duration including VAD silence detection, STT finalization, and turn analyzer wait</td></tr><tr><td><code>function_calls</code></td><td><code>List[FunctionCallMetrics]</code></td><td>Latency for each function call executed during the cycle</td></tr></tbody></table></div>
+<p>The <code>breakdown.chronological_events()</code> method returns a human-readable list of all metrics sorted by start time, useful for logging and debugging.</p>
+<h3>on\_first\_bot\_speech\_latency</h3>
+<p>Called once when the bot first speaks after client connection. Measures the time from <code>ClientConnectedFrame</code> to the first <code>BotStartedSpeakingFrame</code>. This is particularly useful for measuring greeting latency.</p>
+<pre><code>@latency_observer.event_handler("on_first_bot_speech_latency")
+async def on_first_bot_speech_latency(observer, latency):
+    logger.info(f"First bot speech latency: {latency:.3f}s")</code></pre>
+<p>&lt;Note&gt;   The <code>on_latency_breakdown</code> event is also emitted for the first bot speech,   allowing you to see the detailed breakdown of what contributed to the greeting   latency. &lt;/Note&gt;</p>
+<h2>Configuration</h2>
+<h3>Constructor Parameters</h3>
+<p>&lt;ParamField path="max_frames" type="int" default="100"&gt;   Maximum number of frame IDs to keep in history for duplicate detection.   Prevents unbounded memory growth in long conversations. &lt;/ParamField&gt;</p>
+<h2>Limitations</h2>
+<ul><li>Requires proper frame sequencing to work accurately</li><li>Per-service metrics are only collected when <code>enable_metrics=True</code> in <code>PipelineParams</code></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/observers/user-bot-latency-observer">https://docs.pipecat.ai/api-reference/server/utilities/observers/user-bot-latency-observer</a></p>
+</div></main></div></body></html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L10 · Turn-taking & muting — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 10 · Part II — The voice loop</div>
+      <h1>Turn-taking & muting</h1>
+      <div class="meta"><span class="pill">⏱ 50 min</span><span class="pill grey">Level: intermediate</span><span class="pill">Gets it right</span></div>
+      <p class="lead">Knowing when the user has finished is the hardest part of natural conversation — and the thing most old tutorials get wrong. It's configured on the aggregator, not the transport.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <div class="box source">
+        <p class="title">⚠️ What changed</p>
+        <p>In this version, <strong>VAD, turn detection, and muting all live on the LLM user aggregator</strong> via <code>LLMUserAggregatorParams</code> — not on <code>TransportParams</code>. If a tutorial tells you to set <code>turn_analyzer</code> on the transport, it's out of date.</p>
+      </div>
+
+      <h2 id="flow">How a turn ends</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="VAD:silence?|transcript:final?|smart-turn model:complete?|end-of-turn|run the LLM"
+           data-caption="VAD detects the user stopped making sound|STT delivers a finalized transcript|A smart-turn ML model judges: real end, or just a pause?|When conditions agree, the turn ends|The LLM runs and the bot responds">
+      </div>
+      <p>Turn-taking is a set of <strong>strategies</strong>. <em>Start</em> strategies decide when a turn begins (VAD, transcription, wake-phrase, min-words); <em>stop</em> strategies decide when it ends. The default stop strategy is a smart-turn model gated by VAD + transcript.</p>
+
+      <h2 id="config">Configuring it</h2>
+      <pre><code class="language-python">from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair, LLMUserAggregatorParams)
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+
+user_agg, assistant_agg = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=SileroVADAnalyzer(),                       # the fast baseline
+        user_turn_strategies=UserTurnStrategies(
+            stop=[TurnAnalyzerUserTurnStopStrategy(
+                turn_analyzer=LocalSmartTurnAnalyzerV3())],     # model refines end-of-turn
+        ),
+    ),
+).pair()</code></pre>
+      <p>Just a <code>vad_analyzer</code> gives you working turns; adding the smart-turn analyzer stops the bot from cutting you off during natural mid-sentence pauses.</p>
+
+      <h2 id="mute">Muting (mic-off), server-side</h2>
+      <p>Sometimes you must ignore the user's mic — while the greeting plays, or during a tool call — so the bot doesn't interrupt itself or capture stray audio. Declare <em>strategies</em>:</p>
+      <pre><code class="language-python">from pipecat.turns.user_mute import (
+    MuteUntilFirstBotCompleteUserMuteStrategy, FunctionCallUserMuteStrategy)
+
+user_params=LLMUserAggregatorParams(
+    user_mute_strategies=[
+        MuteUntilFirstBotCompleteUserMuteStrategy(),   # ignore mic until intro finishes
+        FunctionCallUserMuteStrategy(),                # ignore mic while a tool runs
+    ],
+    vad_analyzer=SileroVADAnalyzer(),
+)
+
+@user_agg.event_handler("on_user_mute_started")
+async def _(agg): logger.info("mic muted")
+@user_agg.event_handler("on_user_mute_stopped")
+async def _(agg): logger.info("mic live")</code></pre>
+
+      <h2 id="idle">Idle & interruptions</h2>
+      <p>The aggregator also drives <strong>idle</strong> handling (nudge, then end, after silence) and <strong>interruptions</strong> (the user talking over the bot cancels in-flight output). Interruptions ride the system lane so they take effect instantly (Lesson 20 goes deeper).</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>turns/user_turn_strategies.py</code> (defaults), <code>turns/user_start/*</code>, <code>turns/user_stop/*</code> (<code>TurnAnalyzerUserTurnStopStrategy</code>), <code>turns/user_mute/*</code>, <code>turns/user_turn_controller.py</code>, <code>turns/user_idle_controller.py</code>. Models: <code>audio/turn/smart_turn/*</code>. Wiring: <code>LLMUserAggregatorParams</code> in <code>processors/aggregators/llm_response_universal.py</code>.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>getting-started/06</code> (VAD only) vs <code>turn-management/turn-management-smart-turn-local.py</code> and feel the difference on mid-sentence pauses. (2) Add both mute strategies and confirm the bot ignores you during its intro. (3) Try <code>turn-management-detect-user-idle.py</code> and stay silent.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Where are VAD/turns/muting configured?</summary><p>On the user aggregator via <code>LLMUserAggregatorParams</code> — not the transport.</p></details>
+      <details><summary>2. Name the three signals a stop strategy can combine.</summary><p>VAD silence, a finalized transcript, and a smart-turn model verdict.</p></details>
+      <details><summary>3. Why mute during the bot's first message?</summary><p>So it doesn't capture its own audio or treat leftover noise as an interruption before the intro finishes.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l11-llm-settings.html">Lesson 11 — LLM inference, adapters & settings →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piper Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Piper Text-to-Speech</h1>
+<blockquote>PiperTTSService and PiperHttpTTSService synthesize neural TTS from a self-hosted Piper server: private, no external API.</blockquote>
+<h2>Overview</h2>
+<p><code>PiperTTSService</code> provides high-quality neural text-to-speech synthesis through a self-hosted HTTP server. The service offers complete privacy and control with no external API dependencies, making it ideal for on-premise deployments and applications requiring data sovereignty.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Piper TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.piper.tts.html"&gt;     Pipecat's API methods for Piper TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/tree/main/examples"&gt;     Browse examples using Piper TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Piper Documentation" icon="book" href="https://github.com/OHF-Voice/piper1-gpl"&gt;     Official Piper TTS documentation and setup   &lt;/Card&gt;</p>
+<p>  &lt;Card title="HTTP Server Setup" icon="server" href="https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_HTTP.md"&gt;     Configure Piper HTTP server for Pipecat   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Piper services, no additional Pipecat dependencies are required:</p>
+<pre><code>uv add "pipecat-ai"  # Base installation is sufficient</code></pre>
+<h2>Prerequisites</h2>
+<h3>Piper Server Setup</h3>
+<p>Before using PiperTTSService, you need:</p>
+<ol><li><strong>Piper TTS Server</strong>: Set up a running Piper TTS server following the <a href="https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_HTTP.md">HTTP server documentation</a></li><li><strong>Voice Models</strong>: Download and configure voice models for your target languages</li><li><strong>Server Configuration</strong>: Configure server endpoint and voice selection</li></ol>
+<h3>Required Configuration</h3>
+<ul><li><strong>Server URL</strong>: Configure the Piper server endpoint in your service initialization</li><li><strong>Voice Models</strong>: Ensure required voice models are available on the server</li></ul>
+<p>&lt;Tip&gt;   Piper runs entirely locally, providing complete privacy and eliminating API   key requirements. &lt;/Tip&gt;</p>
+<h2>Configuration</h2>
+<p>Piper offers two service implementations: <code>PiperTTSService</code> for local inference and <code>PiperHttpTTSService</code> for HTTP server-based synthesis.</p>
+<h3>PiperTTSService</h3>
+<p>Runs Piper locally, automatically downloading voice models as needed.</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   Piper voice model identifier (e.g. <code>en_US-ryan-high</code>). *Deprecated in   v0.0.105. Use <code>settings=PiperTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="PiperTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#piperttsservice-settings">PiperTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="download_dir" type="Path" default="None"&gt;   Directory for storing voice model files. Defaults to the current working   directory. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="force_redownload" type="bool" default="False"&gt;   Re-download the voice model even if it already exists locally. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="use_cuda" type="bool" default="False"&gt;   Use CUDA for GPU-accelerated inference. &lt;/ParamField&gt;</p>
+<h4>PiperTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>PiperTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h3>PiperHttpTTSService</h3>
+<p>Connects to a running Piper HTTP TTS server.</p>
+<p>&lt;ParamField path="base_url" type="str" required&gt;   Base URL for the Piper TTS HTTP server. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" default="None" deprecated&gt;   Piper voice model identifier (e.g. <code>en_US-ryan-high</code>). *Deprecated in   v0.0.105. Use <code>settings=PiperHttpTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="PiperHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#piperhttpttsservice-settings">PiperHttpTTSService   Settings</a> below. &lt;/ParamField&gt;</p>
+<h4>PiperHttpTTSService Settings</h4>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>PiperHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited.)*</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Local Inference</h3>
+<pre><code>from pipecat.services.piper import PiperTTSService
+
+tts = PiperTTSService(
+    settings=PiperTTSService.Settings(
+        voice="en_US-ryan-high",
+    ),
+)</code></pre>
+<h3>HTTP Server</h3>
+<p>Start the Piper HTTP server first:</p>
+<pre><code>uv add "piper-tts[http]"
+uv run python -m piper.http_server -m en_US-ryan-high</code></pre>
+<p>Then connect to it:</p>
+<pre><code>import aiohttp
+from pipecat.services.piper import PiperHttpTTSService
+
+async with aiohttp.ClientSession() as session:
+    tts = PiperHttpTTSService(
+        base_url="http://localhost:5000",
+        aiohttp_session=session,
+        settings=PiperHttpTTSService.Settings(
+            voice="en_US-ryan-high",
+        ),
+    )</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>Local execution</strong>: <code>PiperTTSService</code> runs entirely locally with no network requests. Voice models are automatically downloaded on first use.</li><li><strong>GPU acceleration</strong>: Set <code>use_cuda=True</code> for GPU-accelerated inference with <code>PiperTTSService</code> (requires CUDA-compatible hardware).</li><li><strong>Audio resampling</strong>: Audio output is automatically resampled to match the pipeline's configured sample rate.</li><li><strong>No API key required</strong>: Piper is open-source and runs locally, so no API credentials are needed.</li><li><strong>GPL-3.0 license</strong>: <code>PiperTTSService</code> runs Piper in-process via the <code>piper-tts</code> package (the <code>piper</code> extra), which is GPL-3.0 licensed. Distributing an application that includes it may subject the application to the GPL's source-disclosure terms. To keep Piper out of your application's license scope, use <code>PiperHttpTTSService</code> instead, which talks to a separately installed Piper HTTP server.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/piper">https://docs.pipecat.ai/api-reference/server/services/tts/piper</a></p>
+</div></main></div></body></html>

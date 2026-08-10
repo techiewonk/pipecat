@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speech Input &amp; Turn Detection · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Speech Input &amp; Turn Detection</h1>
+<blockquote>Learn how Pipecat detects user turns using VAD, transcriptions, and turn detection models</blockquote>
+<p>A key to natural conversations is properly detecting when the user starts and stops speaking. This is more nuanced than simply detecting audio; a brief pause doesn't always mean the user is done talking.</p>
+<h2>Overview</h2>
+<p>Pipecat uses <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">user turn strategies</a> to determine when user turns start and end. These strategies can use different techniques:</p>
+<p><strong>For detecting turn start:</strong></p>
+<ul><li>Voice Activity Detection (VAD): triggers when speech is detected</li><li>Transcription-based (fallback): triggers when transcription is received but VAD didn't detect speech</li><li>Minimum words: waits for a minimum number of spoken words before triggering</li></ul>
+<p><strong>For detecting turn end (default: Smart Turn):</strong></p>
+<ul><li>Turn detection model (default): uses AI to understand if the user has finished their thought</li><li>Speech timeout: waits for silence after transcription to determine when the user is done</li></ul>
+<p>Custom strategies can also be implemented for specific use cases. By combining these techniques, you can create responsive yet natural conversations that don't interrupt users mid-sentence or wait too long after they've finished.</p>
+<h2>Voice Activity Detection (VAD)</h2>
+<h3>What VAD Does</h3>
+<p>VAD is responsible for detecting when a user starts and stops speaking. Pipecat includes <a href="https://github.com/snakers4/silero-vad">Silero VAD</a>, an open-source model that runs locally on CPU with minimal overhead. <a href="/api-reference/server/services/vad/krisp-viva-vad-analyzer">Krisp VIVA VAD</a> is also available for applications requiring support for higher sample rates.</p>
+<p><strong>Silero VAD performance characteristics:</strong></p>
+<ul><li>Processes 30+ms audio chunks in less than 1ms</li><li>Runs on a single CPU thread</li><li>Minimal system resource impact</li></ul>
+<h3>VAD Configuration</h3>
+<p>VAD is configured through <code>VADParams</code> in the <code>LLMContextAggregatorPair</code>:</p>
+<pre><code>from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+
+vad_analyzer = SileroVADAnalyzer(
+    params=VADParams(
+        confidence=0.7,      # Minimum confidence for voice detection
+        start_secs=0.2,      # Time to wait before confirming speech start
+        stop_secs=0.2,       # Time to wait before confirming speech stop
+        min_volume=0.6,      # Minimum volume threshold
+    )
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(vad_analyzer=vad_analyzer),
+)</code></pre>
+<p>VAD is configured on the user aggregator because its speech start/stop signals feed the <a href="/api-reference/server/utilities/turn-management/user-turn-strategies">user turn strategies</a> that decide when a turn begins and ends. In the vast majority of cases, the default values will work well. Only adjust these parameters if you have specific audio conditions that require it.</p>
+<h3>Key Parameters</h3>
+<p><strong><code>start_secs</code> (default: 0.2)</strong></p>
+<ul><li>How long a user must speak before VAD confirms speech has started</li><li>Lower values = more responsive, but may trigger on brief sounds</li><li>Higher values = less sensitive, but may miss quick utterances, like "yes", "no", or "ok"</li></ul>
+<p><strong><code>stop_secs</code> (default: 0.2)</strong></p>
+<ul><li>How much silence must be detected before confirming speech has stopped</li><li>Critical for turn-taking behavior</li><li>A short value (0.2s) allows STT services to finalize sooner, improving transcription speed</li><li><strong>Important</strong>: Built-in STT P99 latency values are measured with <code>stop_secs=0.2</code>. If you change this value, re-run the <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a> with your settings and pass the measured latency to your STT service via <code>ttfs_p99_latency</code></li></ul>
+<p><strong><code>confidence</code> and <code>min_volume</code></strong></p>
+<ul><li>Generally work well with defaults</li><li>Only adjust after extensive testing with your specific audio conditions</li></ul>
+<p>&lt;Warning&gt;   Changing confidence and min\_volume requires careful profiling to ensure   optimal performance across different audio environments and use cases. &lt;/Warning&gt;</p>
+<p>&lt;Tip&gt;   <code>confidence</code> and <code>min_volume</code> only raise the bar for what counts as speech —   blunt instruments for noisy audio. If your bot reacts to background voices or   your STT transcribes noise, it's usually better to remove the noise upstream   with an input audio filter — <a href="/pipecat/features/krisp-viva">Krisp VIVA</a>,   <a href="/api-reference/server/services/audio-filters/aic-filter">ai-coustic</a>, or   <a href="/api-reference/server/services/audio-filters/rnnoise-filter">RNNoise</a> —   before the audio reaches VAD and STT. &lt;/Tip&gt;</p>
+<h2>User Turn Detection</h2>
+<p>While VAD detects speech vs. silence, it can't understand linguistic context. A pause doesn't mean the user is done. User turn strategies interpret VAD signals and transcriptions to determine actual turn boundaries.</p>
+<h3>How It Works</h3>
+<ol><li><strong>Turn Start</strong>: When VAD detects speech (or transcription arrives), the start strategy emits <code>UserStartedSpeakingFrame</code> and optionally triggers an interruption</li><li><strong>Turn End</strong>: When the stop strategy determines the user is done, it emits <code>UserStoppedSpeakingFrame</code></li></ol>
+<p>&lt;Note&gt;   VAD also emits its own frames (<code>VADUserStartedSpeakingFrame</code>,   <code>VADUserStoppedSpeakingFrame</code>) which indicate raw speech/silence detection.   These are inputs to the turn strategies, not the final turn decisions. &lt;/Note&gt;</p>
+<h3>Detecting Turn End</h3>
+<p>Turn end detection determines when the user has finished speaking and expects a response:</p>
+<p><strong>Smart Turn Model (Default)</strong>: Uses an AI model to analyze audio and determine if the user has finished their thought. This is the default turn stop strategy.</p>
+<pre><code>from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
+
+stop_strategy = TurnAnalyzerUserTurnStopStrategy(
+    turn_analyzer=LocalSmartTurnAnalyzerV3()
+)</code></pre>
+<p><strong>Speech Timeout</strong>: Waits for a configurable timeout after VAD detects silence and a transcript is received. Useful as a simpler alternative to Smart Turn.</p>
+<pre><code>from pipecat.turns.user_stop import SpeechTimeoutUserTurnStopStrategy
+
+stop_strategy = SpeechTimeoutUserTurnStopStrategy(user_speech_timeout=0.6)</code></pre>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="User Turn Strategies" icon="arrows-turn-to-dots" href="/api-reference/server/utilities/turn-management/user-turn-strategies"&gt;     Complete reference for start and stop strategies   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Smart Turn Overview" icon="brain" href="/api-reference/server/utilities/turn-detection/smart-turn-overview"&gt;     Smart Turn model implementation guide   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h3>Interruptions</h3>
+<p>When a user turn starts with interruptions enabled (the default, via the <code>enable_interruptions</code> parameter on start strategies), the bot immediately stops speaking, in-flight work is cancelled, and the pipeline is ready for the new user input.</p>
+<p>Keep interruptions enabled for natural conversations. For how the cancellation works, what ends up in the LLM context, and how to tune, disable, or trigger interruptions yourself, see <a href="/pipecat/fundamentals/interruptions">Interruptions</a>.</p>
+<h2>Best Practices</h2>
+<h3>Optimal Configuration</h3>
+<p><strong>For most voice AI use cases, the defaults work well:</strong></p>
+<pre><code>from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+
+transport = YourTransport(
+    params=TransportParams(),
+)
+
+# Default configuration: Smart Turn detection + VAD with stop_secs=0.2
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
+)
+
+worker = PipelineWorker(pipeline)</code></pre>
+<p>The defaults use <code>TurnAnalyzerUserTurnStopStrategy</code> with <code>LocalSmartTurnAnalyzerV3</code> for turn detection and <code>SileroVADAnalyzer</code> with <code>stop_secs=0.2</code> for voice activity detection.</p>
+<h3>Performance Considerations</h3>
+<ul><li><strong>Use local VAD</strong>: 150-200ms faster than remote VAD services</li><li><strong>Tune for your use case</strong>: Test with real audio conditions</li><li><strong>Monitor CPU usage</strong>: VAD adds minimal overhead but monitor in production</li><li><strong>Consider turn detection</strong>: Improves conversation quality but adds complexity</li></ul>
+<h2>Key Takeaways</h2>
+<ul><li><strong>VAD detects speech activity</strong> but turn detection understands conversation context</li><li><strong>Configuration affects user experience</strong> - tune parameters for your specific use case</li><li><strong>System frames coordinate behavior</strong> - enable interruptions and natural turn-taking</li><li><strong>Local processing is faster</strong> - Silero VAD provides low-latency speech detection</li><li><strong>Turn detection improves quality</strong> - but requires careful VAD configuration</li></ul>
+<h2>What's Next</h2>
+<p>Now that you understand how speech input is detected and processed, let's explore how that audio gets converted to text through speech recognition.</p>
+<p>&lt;Card title="Speech to Text" icon="arrow-right" href="/pipecat/learn/speech-to-text"&gt;   Learn how to configure speech recognition in your voice AI pipeline &lt;/Card&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/pipecat/learn/speech-input">https://docs.pipecat.ai/pipecat/learn/speech-input</a></p>
+</div></main></div></body></html>

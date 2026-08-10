@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L26 · Handoff — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 26 · Part V — Multi-agent</div>
+      <h1>Handoff</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: advanced</span></div>
+      <p class="lead">Handoff is how several agents share one conversation: they swap "who's talking" on the same audio pipeline. A greeter routes you to support; support takes over seamlessly.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="flow">Swapping who's active</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="Greeter active|user needs billing|activate_worker('billing')|deactivate_self|Billing active"
+           data-caption="The greeter is the active agent on the shared audio|the user asks about a bill|the greeter calls activate_worker('billing')|and steps aside with deactivate_self=True|now the billing agent talks on the same pipeline — no mic moved">
+      </div>
+      <div class="box concept">
+        <p class="title">🧠 Handoff is activation, not a function call</p>
+        <p>Agents don't call each other like functions. One agent <em>activates</em> another and <em>deactivates</em> itself, flipping which worker owns the shared audio. The main (transport-owning) worker keeps bridging audio the whole time.</p>
+      </div>
+
+      <h2 id="code">The handoff tool</h2>
+      <pre><code class="language-python">from pipecat.workers.llm.llm_context_worker import LLMContextWorker
+from pipecat.workers.llm.tool_decorator import tool
+from pipecat.workers.llm import LLMWorkerActivationArgs
+
+class GreeterAgent(LLMContextWorker):
+    @tool
+    async def transfer_to(self, params, agent: str, reason: str):
+        """Transfer the conversation to another agent."""
+        await self.activate_worker(
+            agent,
+            args=LLMWorkerActivationArgs(messages=[{"role": "developer",
+                "content": f"Context: {reason}"}], run_llm=True),
+            deactivate_self=True,               # step aside
+        )
+
+# in run_bot: main owns the transport; greeter + specialists live on the bus
+await runner.add_workers(GreeterAgent("greeter"), BillingAgent("billing"),
+                         SupportAgent("support"), main)</code></pre>
+      <p>On activation, an <code>LLMWorker</code> sends its tools and any seed messages, then responds — so the newly active agent greets with the handed-over context. <code>on_activated</code>/<code>on_deactivated</code> hooks let you react.</p>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>workers/base_worker.py</code> — <code>activate_worker</code>, <code>deactivate_worker</code>, <code>on_activated</code>/<code>on_deactivated</code>. <code>workers/llm/llm_worker.py</code> — <code>LLMWorkerActivationArgs</code>, activation sends <code>LLMSetToolsFrame</code> + <code>LLMMessagesAppendFrame</code>, finishes in-flight tool calls first. Example: <code>examples/multi-worker/local-handoff/local-handoff-two-agents.py</code>.</p>
+      </div>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 10</p>
+        <p>Split Atlas into a triage agent + one specialist. Triage greets, decides, and hands off with <code>activate_worker</code>. This is the first half of the capstone.</p>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>local-handoff-two-agents.py</code> and trigger a handoff. (2) Add a third agent ("billing") with its own <code>transfer_to</code> path. (3) Log <code>on_activated</code> to see the baton pass.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. How does control move between agents in handoff?</summary><p>By activating another worker and deactivating the current one — not a function call.</p></details>
+      <details><summary>2. Who owns the microphone during a handoff?</summary><p>The main (transport) worker — it keeps bridging audio while the active brain changes.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l27-job-coordination.html">Lesson 27 — Job coordination →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

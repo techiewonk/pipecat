@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plivo Frame Serializer · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Plivo Frame Serializer</h1>
+<blockquote>PlivoFrameSerializer integrates Pipecat with Plivo's Audio Streaming WebSocket protocol for telephony bots.</blockquote>
+<h2>Overview</h2>
+<p><code>PlivoFrameSerializer</code> enables integration with Plivo's Audio Streaming WebSocket protocol, allowing your Pipecat application to handle phone calls via Plivo's voice services with bidirectional audio conversion, DTMF event handling, and automatic call termination.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Plivo Serializer API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.serializers.plivo.html"&gt;     Pipecat's API methods for Plivo Audio Streaming integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/plivo-chatbot"&gt;     Complete telephony examples with Plivo   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Plivo Documentation" icon="book" href="https://www.plivo.com/docs/voice/api/stream/"&gt;     Official Plivo Audio Streaming documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Plivo Console" icon="microphone" href="https://console.plivo.com/"&gt;     Manage phone numbers and streaming configuration   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>The <code>PlivoFrameSerializer</code> does not require any additional dependencies beyond the core Pipecat library:</p>
+<pre><code>uv add "pipecat-ai"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Plivo Account Setup</h3>
+<p>Before using PlivoFrameSerializer, you need:</p>
+<ol><li><strong>Plivo Account</strong>: Sign up at <a href="https://console.plivo.com/">Plivo Console</a></li><li><strong>Phone Number</strong>: Purchase a Plivo phone number with voice capabilities</li><li><strong>Audio Streaming</strong>: Configure your phone number for WebSocket streaming</li><li><strong>Webhook Configuration</strong>: Set up webhook endpoints for call handling</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>PLIVO_AUTH_ID</code>: Your Plivo Auth ID for authentication</li><li><code>PLIVO_AUTH_TOKEN</code>: Your Plivo Auth Token for API operations</li></ul>
+<h3>Required Configuration</h3>
+<ul><li><strong>Stream ID</strong>: Provided by Plivo during Audio Streaming connection</li><li><strong>Call ID</strong>: Required for automatic call termination (optional)</li></ul>
+<h3>Key Features</h3>
+<ul><li><strong>Bidirectional Audio</strong>: Convert between Pipecat and Plivo audio formats</li><li><strong>DTMF Handling</strong>: Process touch-tone events from callers</li><li><strong>Auto Hang-up</strong>: Terminate calls via Plivo's REST API</li><li><strong>μ-law Encoding</strong>: Handle Plivo's standard audio encoding format</li></ul>
+<h2>Configuration</h2>
+<p>&lt;ParamField path="stream_id" type="str" required&gt;   The Plivo Stream ID. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="call_id" type="str" default="None"&gt;   The associated Plivo Call ID. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auth_id" type="str" default="None"&gt;   Plivo auth ID. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="auth_token" type="str" default="None"&gt;   Plivo auth token. Required when <code>auto_hang_up</code> is enabled. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None"&gt;   Configuration parameters for audio and hang-up behavior. See   <a href="#inputparams">InputParams</a> below. &lt;/ParamField&gt;</p>
+<h3>InputParams</h3>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>plivo_sample_rate</code></td><td><code>int</code></td><td><code>8000</code></td><td>Sample rate used by Plivo (Hz).</td></tr><tr><td><code>sample_rate</code></td><td><code>int</code></td><td><code>None</code></td><td>Optional override for pipeline input sample rate. When <code>None</code>, uses the pipeline's configured rate.</td></tr><tr><td><code>auto_hang_up</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to automatically terminate the call on <code>EndFrame</code> or <code>CancelFrame</code>.</td></tr><tr><td><code>ignore_rtvi_messages</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to ignore RTVI protocol messages during serialization.</td></tr><tr><td><code>resampler_clear_after_secs</code></td><td>`float \</td><td>None`</td><td><code>0.2</code></td><td>Seconds of inactivity after which the stream resampler clears its internal history to avoid audio artefacts. Set to <code>None</code> to never clear (recommended for telephony providers with irregular gaps).</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.serializers.plivo import PlivoFrameSerializer
+from pipecat.transports.network.websocket_server import WebSocketServerTransport
+
+serializer = PlivoFrameSerializer(
+    stream_id=stream_id,
+    call_id=call_id,
+    auth_id=os.getenv("PLIVO_AUTH_ID"),
+    auth_token=os.getenv("PLIVO_AUTH_TOKEN"),
+)
+
+transport = WebSocketServerTransport(
+    params=WebSocketServerParams(
+        audio_out_enabled=True,
+        add_wav_header=False,
+        serializer=serializer,
+    )
+)</code></pre>
+<h3>Without Auto Hang-up</h3>
+<pre><code>serializer = PlivoFrameSerializer(
+    stream_id=stream_id,
+    params=PlivoFrameSerializer.InputParams(
+        auto_hang_up=False,
+    ),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Auto hang-up requires credentials</strong>: When <code>auto_hang_up</code> is enabled (the default), you must provide <code>call_id</code>, <code>auth_id</code>, and <code>auth_token</code>. A <code>ValueError</code> is raised at initialization if any are missing.</li><li><strong>Audio format</strong>: Plivo uses 8kHz mu-law (PCMU) audio encoding. The serializer automatically converts between this format and Pipecat's PCM audio.</li><li><strong>DTMF support</strong>: Touch-tone digit events from callers are converted to <code>InputDTMFFrame</code> objects.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/serializers/plivo">https://docs.pipecat.ai/api-reference/server/services/serializers/plivo</a></p>
+</div></main></div></body></html>

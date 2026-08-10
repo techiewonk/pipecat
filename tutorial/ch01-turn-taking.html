@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch 1 — Turn-taking · Pipecat Feature Tutorial</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Chapters</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Chapter 1 · Part A — Core</div>
+      <h1>Turn-taking: knowing when to listen and when to speak</h1>
+      <div class="meta"><span class="pill">⏱ 45 min</span><span class="pill grey">Level: beginner → intermediate</span></div>
+      <p class="lead">The hardest part of natural conversation is detecting when the <em>user</em> has finished a thought, and gracefully handling interruptions and silence. This chapter covers the decision layer; the raw audio machinery it relies on (VAD engines, resamplers, filters) is detailed next in <a href="ch02-audio-frame-processing.html">Chapter&nbsp;2</a>.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="concept">The concept</h2>
+      <div class="box concept">
+        <p class="title">🎯 Turn-taking = end-of-turn detection</p>
+        <p>Pipecat decides "the user's turn ended" by combining up to three signals: <strong>VAD</strong> (voice-activity detection — is there speech or silence?), <strong>transcription</strong> signals from the STT service, and an optional <strong>turn-detection model</strong> ("smart turn") that predicts whether a pause is a real end-of-turn or just a thinking pause. Around that sit <strong>interruptions</strong> (user talks over the bot), <strong>idle detection</strong> (user goes quiet), and <strong>muting</strong> (ignore user audio at chosen times).</p>
+      </div>
+      <p>Docs: <a href="reference/pipecat__learn__speech__input.html" target="_blank" rel="noopener">Speech Input &amp; Turn Detection</a>, <a href="reference/pipecat__fundamentals__interruptions.html" target="_blank" rel="noopener">Interruptions</a>, <a href="reference/pipecat__fundamentals__detecting__user__idle.html" target="_blank" rel="noopener">Detecting Idle Users</a>.</p>
+
+      <pre class="diagram">mic audio ─▶ VAD (speech?/silence?) ─┐
+STT partials ────────────────────────┼─▶ end-of-turn decision ─▶ run the LLM
+turn model (real pause vs. end?) ─────┘</pre>
+
+      <h2 id="config">Configuring turn detection</h2>
+      <p>Turn behavior is configured on the <strong>user aggregator</strong> (the processor that collects user speech into the context). The minimal setup is just a VAD analyzer; adding a smart-turn model is one more strategy.</p>
+      <pre><code class="language-python"># Minimal: VAD only (used in getting-started/06)
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
+)
+
+# Add a model-based turn detector (from turn-management-smart-turn-local-coreml.py)
+user_params=LLMUserAggregatorParams(
+    user_turn_strategies=UserTurnStrategies(
+        stop=[TurnAnalyzerUserTurnStopStrategy(
+            turn_analyzer=LocalCoreMLSmartTurnAnalyzer(smart_turn_model_path=path)
+        )]
+    ),
+    vad_analyzer=SileroVADAnalyzer(),
+)</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Python note — strategies as a list</p>
+        <p><code>UserTurnStrategies(stop=[...])</code> takes a list of stop conditions. VAD gives a fast baseline; the turn analyzer refines it. You compose behavior by adding strategy objects rather than writing detection logic yourself.</p>
+      </div>
+
+      <h2 id="idle">Handling silence (idle)</h2>
+      <p>When the user goes quiet, you usually want to nudge them, then eventually end the call. The pattern keeps a retry counter and escalates.</p>
+      <pre><code class="language-python">class IdleHandler:
+    def __init__(self):
+        self._retry_count = 0                     # state persists between idle events
+
+    async def handle_idle(self, aggregator):
+        self._retry_count += 1
+        if self._retry_count == 1:                # 1st: gentle nudge
+            msg = {"role": "developer", "content": "The user has been quiet. Ask if they're still there."}
+            await aggregator.push_frame(LLMMessagesAppendFrame([msg], run_llm=True))
+        elif self._retry_count == 2:              # 2nd: firmer
+            ...
+        else:                                     # 3rd: say goodbye and end
+            await aggregator.push_frame(TTSSpeakFrame("It seems you're busy. Have a nice day!"))
+            await aggregator.push_frame(EndWorkerFrame())</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Python note — <code>run_llm=True</code></p>
+        <p><code>LLMMessagesAppendFrame([msg], run_llm=True)</code> both injects a message <em>and</em> triggers a response, so the nudge is spoken immediately.</p>
+      </div>
+
+      <h2 id="mute">Muting (mic-off) — quick preview</h2>
+      <p>You often want to <strong>ignore the user's mic</strong> at specific moments — while the bot is still delivering its first message, or while a function call runs — to prevent the bot interrupting itself or capturing stray audio. Pipecat calls these <em>user-mute strategies</em>. The full treatment (all strategies, events) is in <a href="ch02-audio-frame-processing.html#mute">Chapter 2 → Muting</a>; the one-liner:</p>
+      <pre><code class="language-python">user_params=LLMUserAggregatorParams(
+    user_mute_strategies=[
+        MuteUntilFirstBotCompleteUserMuteStrategy(),   # ignore mic until the intro finishes
+        FunctionCallUserMuteStrategy(),                # ignore mic while a tool runs
+    ],
+    vad_analyzer=SileroVADAnalyzer(),
+)</code></pre>
+
+      <div class="box start">
+        <p class="title">▶️ Run it</p>
+        <pre><code class="language-bash">uv run python turn-management/turn-management-detect-user-idle.py   # stay silent, watch it escalate
+uv run python turn-management/turn-management-smart-turn-local.py   # feel model-based turn-taking</code></pre>
+      </div>
+      <div class="box modify">
+        <p class="title">🔨 Modify it</p>
+        <p>Change the number of idle retries before goodbye and reword each nudge. Then compare plain VAD (<code>06-voice-agent.py</code>) against the smart-turn example — notice how the model tolerates mid-sentence pauses without cutting you off.</p>
+      </div>
+      <div class="box errors">
+        <p class="title">⚠️ Common errors</p>
+        <p>Bot cuts you off mid-sentence → VAD end-of-speech is too aggressive; add a turn analyzer. It never responds to silence → no idle handler registered. The <code>-coreml</code> smart-turn example needs Apple Silicon; use <code>turn-management-smart-turn-local.py</code> otherwise.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Name the three signals Pipecat can combine for end-of-turn.</summary><p>VAD (speech vs. silence), STT transcription signals, and an optional turn-detection model.</p></details>
+      <details><summary>2. Where is turn detection configured?</summary><p>On the user aggregator, via <code>LLMUserAggregatorParams</code> (<code>vad_analyzer</code> and/or <code>user_turn_strategies</code>).</p></details>
+      <details><summary>3. Why mute the mic during the bot's first message?</summary><p>So the bot doesn't capture its own audio or treat leftover noise as the user interrupting before the intro finishes.</p></details>
+
+      <h2 id="files">Example files</h2>
+      <div class="tablewrap"><table><thead><tr><th>File</th><th>What it teaches</th></tr></thead><tbody><tr><td><code>turn-management-detect-user-idle.py</code></td><td>turn management detect user idle</td></tr><tr><td><code>turn-management-filter-incomplete-turns.py</code></td><td>Example 22: Filter Incomplete Turns</td></tr><tr><td><code>turn-management-filter-incomplete-turns-function-calling.py</code></td><td>Example 22: Filter Incomplete Turns</td></tr><tr><td><code>turn-management-filter-incomplete-turns-user-idle.py</code></td><td>Example 22: Filter Incomplete Turns with User Idle Re-Prompts</td></tr><tr><td><code>turn-management-interruption-config.py</code></td><td>turn management interruption config</td></tr><tr><td><code>turn-management-smart-turn-local.py</code></td><td>turn management smart turn local — on-device</td></tr><tr><td><code>turn-management-smart-turn-local-coreml.py</code></td><td>turn management smart turn local coreml — on-device</td></tr><tr><td><code>turn-management-turn-tracking-observer.py</code></td><td>turn management turn tracking observer</td></tr><tr><td><code>turn-management-user-assistant-turns.py</code></td><td>turn management user assistant turns — provider turn detection</td></tr><tr><td><code>turn-management-user-mute-strategy.py</code></td><td>turn management user mute strategy</td></tr></tbody></table></div>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

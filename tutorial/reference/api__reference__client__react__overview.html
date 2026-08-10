@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React SDK Overview · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>React SDK Overview</h1>
+<blockquote>The Pipecat React SDK wraps PipecatClient with React components and hooks for building voice and multimodal AI applications.</blockquote>
+<p>The Pipecat React SDK provides React-specific components and hooks for building voice and multimodal AI applications. It wraps the core JavaScript SDK functionality in an idiomatic React interface that handles:</p>
+<ul><li>React context for client state management</li><li>Built-in conversation state with real-time speech progress</li><li>Components for audio and video rendering</li><li>Hooks for accessing client functionality</li><li>Media device management</li><li>Event handling through hooks</li></ul>
+<h2>Installation</h2>
+<p>Install the SDK, core client, and a transport implementation (e.g. Daily for WebRTC):</p>
+<pre><code>npm install @pipecat-ai/client-js
+npm install @pipecat-ai/client-react
+npm install @pipecat-ai/daily-transport</code></pre>
+<h2>Example</h2>
+<p>Here's a simple example using Daily as the transport layer:</p>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import {
+  PipecatClientProvider,
+  PipecatClientAudio,
+  usePipecatClient,
+  usePipecatConversation,
+} from "@pipecat-ai/client-react";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+
+// Create the client instance
+const client = new PipecatClient({
+  transport: new DailyTransport(),
+  enableMic: true,
+});
+
+// Root component wraps the app with the provider
+function App() {
+  return (
+    &lt;PipecatClientProvider client={client}&gt;
+      &lt;VoiceBot /&gt;
+      &lt;PipecatClientAudio /&gt;
+    &lt;/PipecatClientProvider&gt;
+  );
+}
+
+// Component using the client and conversation hooks
+function VoiceBot() {
+  const client = usePipecatClient();
+  const { messages } = usePipecatConversation();
+
+  const handleClick = async () =&gt; {
+    await client.startBotAndConnect({
+      endpoint: `${process.env.PIPECAT_API_URL || "/api"}/connect`,
+    });
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={handleClick}&gt;Start Conversation&lt;/button&gt;
+      &lt;ul&gt;
+        {messages.map((msg, i) =&gt; (
+          &lt;li key={`${msg.createdAt}-${i}`}&gt;
+            &lt;strong&gt;{msg.role}:&lt;/strong&gt;{" "}
+            {msg.parts?.map((part, j) =&gt; (
+              &lt;span key={j}&gt;
+                {typeof part.text === "string"
+                  ? part.text
+                  : `${part.text.spoken}${part.text.unspoken}`}
+              &lt;/span&gt;
+            ))}
+          &lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+<h2>Explore the SDK</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Components" icon="puzzle-piece" href="/api-reference/client/react/components"&gt;     Ready-to-use components for audio, video, and visualization   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Hooks" icon="code" href="/api-reference/client/react/hooks"&gt;     React hooks for accessing client functionality   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<p>The Pipecat React SDK builds on top of the <a href="/api-reference/client/js/overview">JavaScript SDK</a> to provide an idiomatic React interface while maintaining compatibility with the RTVI standard.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/react/overview">https://docs.pipecat.ai/api-reference/client/react/overview</a></p>
+</div></main></div></body></html>

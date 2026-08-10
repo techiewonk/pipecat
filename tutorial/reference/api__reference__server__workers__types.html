@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Types · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Types</h1>
+<blockquote>Shared types for Pipecat workers and job coordination: JobStatus, job context enums, and data classes.</blockquote>
+<h2>JobStatus</h2>
+<pre><code>from pipecat.pipeline.job_context import JobStatus</code></pre>
+<p>Status of a completed job. Inherits from <code>str</code> so values compare naturally with plain strings.</p>
+<div class="tablewrap"><table><thead><tr><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>JobStatus.COMPLETED</code></td><td>The job finished successfully</td></tr><tr><td><code>JobStatus.CANCELLED</code></td><td>The job was cancelled by the requester</td></tr><tr><td><code>JobStatus.FAILED</code></td><td>The job failed due to a logical or business error</td></tr><tr><td><code>JobStatus.ERROR</code></td><td>The job encountered an unexpected runtime error</td></tr></tbody></table></div>
+<h2>WorkerActivationArgs</h2>
+<pre><code>from pipecat.pipeline.base_worker import WorkerActivationArgs</code></pre>
+<p>Base activation arguments for any agent.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>metadata</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Optional structured data passed during activation</td></tr></tbody></table></div>
+<h3>Methods</h3>
+<pre><code># Create from a dict (ignores unknown keys)
+args = WorkerActivationArgs.from_dict({"metadata": {...}})
+
+# Convert to a dict (excludes None values)
+data = args.to_dict()</code></pre>
+<h2>LLMWorkerActivationArgs</h2>
+<pre><code>from pipecat.workers.llm import LLMWorkerActivationArgs</code></pre>
+<p>Activation arguments for <a href="/api-reference/server/workers/llm-worker"><code>LLMWorker</code></a>. Extends <a href="#workeractivationargs"><code>WorkerActivationArgs</code></a>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>metadata</code></td><td>`dict \</td><td>None`</td><td><code>None</code></td><td>Optional structured data passed during activation</td></tr><tr><td><code>messages</code></td><td>`list \</td><td>None`</td><td><code>None</code></td><td>LLM context messages to inject on activation</td></tr><tr><td><code>run_llm</code></td><td>`bool \</td><td>None`</td><td><code>None</code></td><td>Whether to run the LLM after appending messages. Defaults to <code>True</code> when <code>messages</code> is set</td></tr></tbody></table></div>
+<h2>JobContext</h2>
+<pre><code>from pipecat.pipeline.job_context import JobContext</code></pre>
+<p>Async context manager and iterator for a single-agent job. Sends a job request on enter, waits for the response on exit. Supports <code>async for</code> to receive intermediate events.</p>
+<p>On normal completion, the result is available via <code>response</code>. On worker error or timeout, raises <a href="/api-reference/server/workers/exceptions#joberror"><code>JobError</code></a>.</p>
+<h3>Properties</h3>
+<div class="tablewrap"><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td>The job identifier</td></tr><tr><td><code>response</code></td><td><code>dict</code></td><td>The worker's response payload</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>async with self.job("worker", payload=data) as j:
+    async for event in j:
+        print(f"[{event.type}]: {event.data}")
+
+print(j.response)</code></pre>
+<h2>JobGroupContext</h2>
+<pre><code>from pipecat.pipeline.job_context import JobGroupContext</code></pre>
+<p>Async context manager and iterator for structured job group execution. Sends job requests on enter, waits for all responses on exit. Supports <code>async for</code> to receive intermediate events.</p>
+<p>On normal completion, results are available via <code>responses</code>. On worker error (with <code>cancel_on_error=True</code>) or timeout, raises <a href="/api-reference/server/workers/exceptions#jobgrouperror"><code>JobGroupError</code></a>.</p>
+<h3>Properties</h3>
+<div class="tablewrap"><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td>The shared job identifier for this group</td></tr><tr><td><code>responses</code></td><td><code>dict[str, dict]</code></td><td>Collected responses keyed by worker name</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>async with self.job_group("w1", "w2", payload=data) as jg:
+    async for event in jg:
+        print(f"{event.worker_name} [{event.type}]: {event.data}")
+
+for name, result in jg.responses.items():
+    print(name, result)</code></pre>
+<h2>JobEvent</h2>
+<pre><code>from pipecat.pipeline.job_context import JobEvent</code></pre>
+<p>An event received from a worker during a single-agent job. Yielded by <code>async for</code> over a <a href="#jobcontext"><code>JobContext</code></a>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>type</code></td><td><code>str</code></td><td>The event type (see constants below)</td></tr><tr><td><code>data</code></td><td>`dict \</td><td>None`</td><td>Optional event payload</td></tr></tbody></table></div>
+<h3>Event Type Constants</h3>
+<div class="tablewrap"><table><thead><tr><th>Constant</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>JobEvent.UPDATE</code></td><td><code>"update"</code></td><td>Progress update from a worker</td></tr><tr><td><code>JobEvent.STREAM_START</code></td><td><code>"stream_start"</code></td><td>Worker started streaming</td></tr><tr><td><code>JobEvent.STREAM_DATA</code></td><td><code>"stream_data"</code></td><td>Streaming data chunk</td></tr><tr><td><code>JobEvent.STREAM_END</code></td><td><code>"stream_end"</code></td><td>Worker finished streaming</td></tr></tbody></table></div>
+<h2>JobGroupResponse</h2>
+<pre><code>from pipecat.pipeline.job_context import JobGroupResponse</code></pre>
+<p>Collected results from a completed job group. Passed to <code>on_job_completed</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td>The shared job identifier</td></tr><tr><td><code>responses</code></td><td><code>dict[str, dict]</code></td><td>Collected responses keyed by worker name</td></tr></tbody></table></div>
+<h2>JobGroup</h2>
+<pre><code>from pipecat.pipeline.job_context import JobGroup</code></pre>
+<p>Tracks a group of agents launched together by a job request. Exposed via <a href="/api-reference/server/workers/base-worker#job_groups"><code>BaseWorker.job_groups</code></a> and returned by <code>create_job_group_and_request_job</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>job_id</code></td><td><code>str</code></td><td></td><td>Shared identifier for all agents in this group</td></tr><tr><td><code>worker_names</code></td><td><code>set[str]</code></td><td></td><td>Names of the agents in the group</td></tr><tr><td><code>responses</code></td><td><code>dict[str, dict]</code></td><td><code>{}</code></td><td>Collected responses keyed by worker name</td></tr><tr><td><code>timeout_task</code></td><td>`asyncio.Task \</td><td>None`</td><td><code>None</code></td><td>Optional task that cancels the group on timeout</td></tr><tr><td><code>cancel_on_error</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to cancel the group if a worker errors</td></tr></tbody></table></div>
+<h3>Properties</h3>
+<div class="tablewrap"><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>is_done</code></td><td><code>bool</code></td><td>Whether the group has completed or failed</td></tr></tbody></table></div>
+<h3>Methods</h3>
+<pre><code># Wait for all agents in the group to respond (raises JobGroupError on failure)
+await group.wait()</code></pre>
+<h2>JobGroupEvent</h2>
+<pre><code>from pipecat.pipeline.job_context import JobGroupEvent</code></pre>
+<p>An event received from a worker during job group execution. Yielded by <code>async for</code> over a <a href="#jobgroupcontext"><code>JobGroupContext</code></a>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>type</code></td><td><code>str</code></td><td>The event type (see constants below)</td></tr><tr><td><code>worker_name</code></td><td><code>str</code></td><td>The name of the worker that sent the event</td></tr><tr><td><code>data</code></td><td>`dict \</td><td>None`</td><td>Optional event payload</td></tr></tbody></table></div>
+<h3>Event Type Constants</h3>
+<div class="tablewrap"><table><thead><tr><th>Constant</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><code>JobGroupEvent.UPDATE</code></td><td><code>"update"</code></td><td>Progress update from a worker</td></tr><tr><td><code>JobGroupEvent.STREAM_START</code></td><td><code>"stream_start"</code></td><td>Worker started streaming</td></tr><tr><td><code>JobGroupEvent.STREAM_DATA</code></td><td><code>"stream_data"</code></td><td>Streaming data chunk</td></tr><tr><td><code>JobGroupEvent.STREAM_END</code></td><td><code>"stream_end"</code></td><td>Worker finished streaming</td></tr></tbody></table></div>
+<h2>WorkerReadyData</h2>
+<pre><code>from pipecat.registry.types import WorkerReadyData</code></pre>
+<p>Information about a registered agent. Passed to <code>on_worker_ready</code> and <code>@worker_ready</code> handlers.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td>The name of the agent</td></tr><tr><td><code>runner</code></td><td><code>str</code></td><td>The name of the runner managing this agent</td></tr></tbody></table></div>
+<h2>WorkerErrorData</h2>
+<pre><code>from pipecat.registry.types import WorkerErrorData</code></pre>
+<p>Information about an agent error. Passed to <code>on_worker_failed</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td>The name of the agent that errored</td></tr><tr><td><code>error</code></td><td><code>str</code></td><td>Description of the error</td></tr></tbody></table></div>
+<h2>WorkerRegistryEntry</h2>
+<pre><code>from pipecat.registry.types import WorkerRegistryEntry</code></pre>
+<p>Information about an agent in a registry snapshot.</p>
+<div class="tablewrap"><table><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td><code>str</code></td><td></td><td>The agent's name</td></tr><tr><td><code>parent</code></td><td>`str \</td><td>None`</td><td><code>None</code></td><td>Name of the parent agent, or <code>None</code> for root agents</td></tr><tr><td><code>active</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether the agent is currently active</td></tr><tr><td><code>bridged</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether the agent is bridged</td></tr><tr><td><code>started_at</code></td><td>`float \</td><td>None`</td><td><code>None</code></td><td>Unix timestamp when the agent became ready</td></tr></tbody></table></div>
+<h2>WorkerRegistry</h2>
+<pre><code>from pipecat.registry import WorkerRegistry</code></pre>
+<p>Tracks all known agents across local and remote runners. Owned by the <a href="/api-reference/server/workers/runner"><code>WorkerRunner</code></a> and shared with its agents.</p>
+<h3>Properties</h3>
+<div class="tablewrap"><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>runner_name</code></td><td><code>str</code></td><td>The name of the runner that owns this registry</td></tr><tr><td><code>local_workers</code></td><td><code>list[str]</code></td><td>Names of agents registered under this runner</td></tr><tr><td><code>remote_workers</code></td><td><code>list[str]</code></td><td>Names of agents registered under remote runners</td></tr></tbody></table></div>
+<h3>Methods</h3>
+<h4>get</h4>
+<pre><code>def get(self, worker_name: str) -&gt; WorkerReadyData | None</code></pre>
+<p>Look up a registered agent by name.</p>
+<h4>watch</h4>
+<pre><code>async def watch(self, worker_name: str, handler: WatchHandler) -&gt; None</code></pre>
+<p>Watch for a specific agent's registration. If the agent is already registered, the handler fires immediately.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>worker_name</code></td><td><code>str</code></td><td>The agent name to watch for</td></tr><tr><td><code>handler</code></td><td><code>Callable[[WorkerReadyData], Coroutine]</code></td><td>Async callable invoked with the agent's data</td></tr></tbody></table></div>
+<h4>register</h4>
+<pre><code>async def register(self, worker_data: WorkerReadyData) -&gt; bool</code></pre>
+<p>Register an agent. Returns <code>True</code> if the agent was newly registered, <code>False</code> if already known.</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/workers/types">https://docs.pipecat.ai/api-reference/server/workers/types</a></p>
+</div></main></div></body></html>

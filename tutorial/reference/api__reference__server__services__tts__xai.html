@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>xAI Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>xAI Text-to-Speech</h1>
+<blockquote>TTS in 20 languages with XAITTSService (WebSocket streaming) and XAIHttpTTSService on xAI's speech synthesis APIs.</blockquote>
+<h2>Overview</h2>
+<p>xAI provides two text-to-speech services:</p>
+<ul><li><strong>XAIHttpTTSService</strong>: Batch synthesis via HTTP API. Sends complete text and receives the full audio response.</li><li><strong>XAITTSService</strong>: Streaming synthesis via WebSocket. Streams text incrementally and receives audio chunks as they're synthesized, reducing latency. Supports word-level timestamps for accurate timing of synthesized speech.</li></ul>
+<p>Both support multiple languages and audio encoding formats.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="xAI TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.xai.tts.html"&gt;     Complete API reference for all parameters and methods   &lt;/Card&gt;</p>
+<p>  &lt;Card title="WebSocket Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-xai.py"&gt;     Streaming WebSocket example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="HTTP Example" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-xai-http.py"&gt;     Batch HTTP example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="xAI Documentation" icon="book" href="https://docs.x.ai/developers/rest-api-reference/inference/voice"&gt;     Official xAI voice API documentation   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<pre><code>uv add "pipecat-ai[xai]"</code></pre>
+<h2>Prerequisites</h2>
+<ol><li><strong>xAI Account</strong>: Sign up at <a href="https://x.ai/">xAI</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard (also works with Grok API keys)</li></ol>
+<p>Set the following environment variable:</p>
+<pre><code>export GROK_API_KEY=your_api_key</code></pre>
+<h2>Configuration</h2>
+<h3>XAIHttpTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   xAI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.x.ai/v1/tts"&gt;   xAI TTS endpoint URL. Override for custom or proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm"&gt;   Output audio encoding format. Supported formats: <code>"pcm"</code>, <code>"mp3"</code>, <code>"wav"</code>,   <code>"mulaw"</code>, <code>"alaw"</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" default="None"&gt;   Optional shared aiohttp session for HTTP requests. If <code>None</code>, the service   creates and manages its own session. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="XAIHttpTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>XAIHttpTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>"eve"</code></td><td>Voice identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Language code. *(Inherited from base settings.)*</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>None</code></td><td>Speech speed multiplier from 0.7 to 1.5 (1.0 is normal).</td></tr><tr><td><code>optimize_streaming_latency</code></td><td><code>int</code></td><td><code>None</code></td><td>Latency optimization level (0, 1, or 2).</td></tr><tr><td><code>text_normalization</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether to normalize text before synthesis.</td></tr></tbody></table></div>
+<h3>XAITTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   xAI API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="wss://api.x.ai/v1/tts"&gt;   xAI TTS WebSocket endpoint URL. Override for custom or proxied deployments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="codec" type="str" default="pcm"&gt;   Output audio codec. Supported codecs: <code>"pcm"</code>, <code>"wav"</code>, <code>"mulaw"</code>, <code>"alaw"</code>.   Defaults to <code>"pcm"</code> so emitted <code>TTSAudioRawFrame</code> objects need no decoding   downstream. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="XAITTSService.Settings" default="None"&gt;   Runtime-configurable settings. Includes all settings from <code>XAIHttpTTSService</code>   plus <code>with_timestamps</code> for word-level timing. Changing voice, language, or   tunable parameters at runtime reconnects the WebSocket with new query   parameters. &lt;/ParamField&gt;</p>
+<h3>WebSocket Settings</h3>
+<p>Runtime-configurable settings for <code>XAITTSService</code> using <code>XAITTSService.Settings(...)</code>. Includes all HTTP service settings plus:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>with_timestamps</code></td><td><code>bool</code></td><td><code>True</code></td><td>Whether to request character timings. When enabled, the service converts them into per-word <code>TTSTextFrame</code> objects.</td></tr></tbody></table></div>
+<h2>Supported Languages</h2>
+<p>xAI TTS supports 20 languages. Use the <code>Language</code> enum from <code>pipecat.transcriptions.language</code>:</p>
+<ul><li>Arabic (Egyptian, Saudi, UAE): <code>Language.AR</code>, <code>Language.AR_EG</code>, <code>Language.AR_SA</code>, <code>Language.AR_AE</code></li><li>Bengali: <code>Language.BN</code></li><li>Chinese: <code>Language.ZH</code></li><li>English: <code>Language.EN</code></li><li>French: <code>Language.FR</code></li><li>German: <code>Language.DE</code></li><li>Hindi: <code>Language.HI</code></li><li>Indonesian: <code>Language.ID</code></li><li>Italian: <code>Language.IT</code></li><li>Japanese: <code>Language.JA</code></li><li>Korean: <code>Language.KO</code></li><li>Portuguese (Brazil, Portugal): <code>Language.PT</code>, <code>Language.PT_BR</code>, <code>Language.PT_PT</code></li><li>Russian: <code>Language.RU</code></li><li>Spanish (Spain, Mexico): <code>Language.ES</code>, <code>Language.ES_ES</code>, <code>Language.ES_MX</code></li><li>Turkish: <code>Language.TR</code></li><li>Vietnamese: <code>Language.VI</code></li></ul>
+<h2>Usage</h2>
+<h3>WebSocket Streaming (XAITTSService)</h3>
+<h4>Basic Setup</h4>
+<pre><code>import os
+from pipecat.services.xai.tts import XAITTSService
+
+tts = XAITTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    settings=XAITTSService.Settings(
+        voice="eve",
+    ),
+)</code></pre>
+<h4>With Custom Language</h4>
+<pre><code>from pipecat.transcriptions.language import Language
+
+tts = XAITTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    settings=XAITTSService.Settings(
+        voice="eve",
+        language=Language.ES,
+    ),
+)</code></pre>
+<h4>With Custom Sample Rate and Codec</h4>
+<pre><code>tts = XAITTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    sample_rate=24000,
+    codec="wav",
+    settings=XAITTSService.Settings(
+        voice="eve",
+    ),
+)</code></pre>
+<h4>With Tunable Parameters</h4>
+<pre><code>tts = XAITTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    settings=XAITTSService.Settings(
+        voice="eve",
+        speed=1.2,  # Faster speech
+        optimize_streaming_latency=2,  # Maximum latency optimization
+        text_normalization=True,  # Enable text normalization
+        with_timestamps=True,  # Enable word timestamps (default)
+    ),
+)</code></pre>
+<h3>HTTP Batch (XAIHttpTTSService)</h3>
+<h4>Basic Setup</h4>
+<pre><code>import os
+from pipecat.services.xai.tts import XAIHttpTTSService
+
+tts = XAIHttpTTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    settings=XAIHttpTTSService.Settings(
+        voice="eve",
+    ),
+)</code></pre>
+<h4>With Custom Encoding</h4>
+<pre><code>tts = XAIHttpTTSService(
+    api_key=os.getenv("GROK_API_KEY"),
+    encoding="mp3",
+    settings=XAIHttpTTSService.Settings(
+        voice="eve",
+    ),
+)</code></pre>
+<h4>With Shared HTTP Session</h4>
+<pre><code>import aiohttp
+
+async with aiohttp.ClientSession() as session:
+    tts = XAIHttpTTSService(
+        api_key=os.getenv("GROK_API_KEY"),
+        aiohttp_session=session,
+        settings=XAIHttpTTSService.Settings(
+            voice="eve",
+        ),
+    )</code></pre>
+<h3>Updating Settings at Runtime</h3>
+<p>Voice settings can be changed mid-conversation using <code>TTSUpdateSettingsFrame</code>. This works for both services:</p>
+<pre><code>from pipecat.frames.frames import TTSUpdateSettingsFrame
+from pipecat.services.xai.tts import XAITTSSettings
+from pipecat.transcriptions.language import Language
+
+await worker.queue_frame(
+    TTSUpdateSettingsFrame(
+        delta=XAITTSSettings(
+            language=Language.FR,
+        )
+    )
+)</code></pre>
+<p>Note: For <code>XAITTSService</code>, changing voice or language settings reconnects the WebSocket with updated query parameters.</p>
+<h2>Notes</h2>
+<ul><li><strong>Service choice</strong>:</li><li>Use <code>XAITTSService</code> (WebSocket) for lower latency streaming synthesis where audio begins playing before the full utterance finishes.</li><li>Use <code>XAIHttpTTSService</code> (HTTP) for simpler batch synthesis or when WebSocket connections are not available.</li><li><strong>Default audio format</strong>: Both services default to raw PCM output, which matches Pipecat's downstream expectations without extra decoding.</li><li><strong>Encoding/codec options</strong>: When using non-PCM formats (<code>mp3</code>, <code>wav</code>, <code>mulaw</code>, <code>alaw</code>), ensure your audio pipeline can handle the selected format.</li><li><strong>Session management</strong>:</li><li><code>XAIHttpTTSService</code>: If you don't provide an <code>aiohttp_session</code>, the service creates and manages its own session lifecycle automatically.</li><li><code>XAITTSService</code>: WebSocket connection is managed automatically; settings changes that affect URL parameters (voice, language, or tunable settings) trigger a reconnection.</li><li><strong>Interruption handling</strong>: <code>XAITTSService</code> handles barge-in by sending a <code>text.clear</code> message over the existing WebSocket connection, avoiding the overhead of reconnecting on every interruption.</li><li><strong>Word timestamps</strong>: When <code>with_timestamps</code> is enabled (the default), xAI's per-character timings are converted into per-word <code>TTSTextFrame</code> objects with accurate <code>pts</code> values. Note that xAI delivers timestamps in batches that are decoupled from the audio stream (a batch can cover several seconds of speech), so word frames are emitted in bursts. Consumers should schedule off <code>pts</code> rather than arrival time.</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/xai">https://docs.pipecat.ai/api-reference/server/services/tts/xai</a></p>
+</div></main></div></body></html>

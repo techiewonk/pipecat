@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElevenLabs Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>ElevenLabs Speech-to-Text</h1>
+<blockquote>Speech recognition with ElevenLabsRealtimeSTTService (live WebSocket streaming) and ElevenLabsSTTService for file-based STT.</blockquote>
+<h2>Overview</h2>
+<p>ElevenLabs provides two STT service implementations:</p>
+<ul><li><strong><code>ElevenLabsSTTService</code></strong> (HTTP) -- File-based transcription using ElevenLabs' Speech-to-Text API with segmented audio processing. Uploads audio files and receives transcription results directly.</li><li><strong><code>ElevenLabsRealtimeSTTService</code></strong> (WebSocket) -- Real-time streaming transcription with ultra-low latency, supporting both partial (interim) and committed (final) transcripts with manual or VAD-based commit strategies.</li></ul>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="ElevenLabs STT API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.elevenlabs.stt.html"&gt;     Pipecat's API methods for ElevenLabs STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-elevenlabs-http.py"&gt;     Complete example with ElevenLabs STT and TTS   &lt;/Card&gt;</p>
+<p>  &lt;Card title="ElevenLabs Documentation" icon="book" href="https://elevenlabs.io/docs/api-reference/speech-to-text/get"&gt;     Official ElevenLabs STT API documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="ElevenLabs Platform" icon="microphone" href="https://elevenlabs.io/"&gt;     Access API keys and speech-to-text models   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use ElevenLabs STT services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[elevenlabs]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>ElevenLabs Account Setup</h3>
+<p>Before using ElevenLabs STT services, you need:</p>
+<ol><li><strong>ElevenLabs Account</strong>: Sign up at <a href="https://elevenlabs.io/">ElevenLabs Platform</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Model Access</strong>: Ensure access to the Scribe v2 transcription model (default: <code>scribe_v2</code>)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>ELEVENLABS_API_KEY</code>: Your ElevenLabs API key for authentication</li></ul>
+<h2>ElevenLabsSTTService</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   ElevenLabs API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" required&gt;   An aiohttp session for HTTP requests. You must create and manage this   yourself. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.elevenlabs.io"&gt;   Base URL for the ElevenLabs API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="scribe_v2" deprecated&gt;   Model ID for transcription. *Deprecated in v0.0.105. Use   <code>settings=ElevenLabsSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="ElevenLabsSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="ElevenLabsSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for the STT service. *Deprecated in v0.0.105. Use   <code>settings=ElevenLabsSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="ELEVENLABS_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>ElevenLabsSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model ID for transcription. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>Language.EN</code></td><td>Target language for transcription. *(Inherited from base STT settings.)*</td></tr><tr><td><code>tag_audio_events</code></td><td><code>bool</code></td><td><code>True</code></td><td>Include audio events like (laughter), (coughing) in transcription.</td></tr><tr><td><code>keyterms</code></td><td><code>list[str]</code></td><td><code>None</code></td><td>List of key terms or phrases to bias transcription towards.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>import aiohttp
+from pipecat.services.elevenlabs.stt import ElevenLabsSTTService
+
+async with aiohttp.ClientSession() as session:
+    stt = ElevenLabsSTTService(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+        aiohttp_session=session,
+    )</code></pre>
+<h4>With Language and Audio Events</h4>
+<pre><code>import aiohttp
+from pipecat.services.elevenlabs.stt import ElevenLabsSTTService
+from pipecat.transcriptions.language import Language
+
+async with aiohttp.ClientSession() as session:
+    stt = ElevenLabsSTTService(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+        aiohttp_session=session,
+        settings=ElevenLabsSTTService.Settings(
+            language=Language.ES,
+            tag_audio_events=False,
+        ),
+    )</code></pre>
+<h3>Notes</h3>
+<ul><li>The HTTP service uploads complete audio segments and is best for VAD-segmented transcription.</li><li>Does not have connection events since it uses per-request HTTP calls.</li><li><strong>Multilingual support</strong>: ElevenLabs Scribe supports 99+ languages. The default is <code>Language.EN</code> (English). Set <code>language=None</code> in settings to enable automatic language detection, which will transcribe whatever language the user speaks.</li></ul>
+<h2>ElevenLabsRealtimeSTTService</h2>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   ElevenLabs API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="base_url" type="str" default="api.elevenlabs.io"&gt;   Base URL for the ElevenLabs WebSocket API. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="scribe_v2_realtime" deprecated&gt;   Model ID for real-time transcription. *Deprecated in v0.0.105. Use   <code>settings=ElevenLabsRealtimeSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="ElevenLabsRealtimeSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the Realtime STT service. See   <a href="#settings-2">Settings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="commit_strategy" type="CommitStrategy" default="CommitStrategy.MANUAL"&gt;   How to segment speech. <code>CommitStrategy.MANUAL</code> uses Pipecat's VAD to control   when transcript segments are committed. <code>CommitStrategy.VAD</code> uses ElevenLabs'   built-in VAD for segment boundaries. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="include_timestamps" type="bool" default="False"&gt;   Whether to include word-level timestamps in transcripts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enable_logging" type="bool" default="False"&gt;   Whether to enable logging on ElevenLabs' side. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="include_language_detection" type="bool" default="False"&gt;   Whether to include language detection in transcripts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="ElevenLabsRealtimeSTTService.InputParams" default="None" deprecated&gt;   Configuration parameters for the STT service. *Deprecated in v0.0.105. Use   <code>settings=ElevenLabsRealtimeSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="ELEVENLABS_REALTIME_TTFS_P99"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>ElevenLabsRealtimeSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>Model ID for transcription. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>keyterms</code></td><td><code>list[str]</code></td><td><code>None</code></td><td>List of key terms or phrases to bias transcription towards.</td></tr><tr><td><code>vad_silence_threshold_secs</code></td><td><code>float</code></td><td><code>None</code></td><td>Seconds of silence before VAD commits (0.3-3.0). Only used with VAD commit strategy.</td></tr><tr><td><code>vad_threshold</code></td><td><code>float</code></td><td><code>None</code></td><td>VAD sensitivity (0.1-0.9, lower is more sensitive). Only used with VAD commit strategy.</td></tr><tr><td><code>min_speech_duration_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Minimum speech duration for VAD (50-2000ms). Only used with VAD commit strategy.</td></tr><tr><td><code>min_silence_duration_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Minimum silence duration for VAD (50-2000ms). Only used with VAD commit strategy.</td></tr><tr><td><code>filter_background_audio</code></td><td><code>bool</code></td><td><code>None</code></td><td>Whether ElevenLabs filters out background audio before transcription.</td></tr></tbody></table></div>
+<h3>Usage</h3>
+<pre><code>from pipecat.services.elevenlabs.stt import ElevenLabsRealtimeSTTService
+
+stt = ElevenLabsRealtimeSTTService(
+    api_key=os.getenv("ELEVENLABS_API_KEY"),
+)</code></pre>
+<h4>With Timestamps and Custom Commit Strategy</h4>
+<pre><code>from pipecat.services.elevenlabs.stt import ElevenLabsRealtimeSTTService, CommitStrategy
+
+stt = ElevenLabsRealtimeSTTService(
+    api_key=os.getenv("ELEVENLABS_API_KEY"),
+    language_code="eng",
+    commit_strategy=CommitStrategy.VAD,
+    include_timestamps=True,
+    settings=ElevenLabsRealtimeSTTService.Settings(
+        vad_silence_threshold_secs=1.0,
+    ),
+)</code></pre>
+<h3>Notes</h3>
+<ul><li><strong>Commit strategies</strong>: Defaults to <code>manual</code> commit strategy, where Pipecat's VAD controls when transcription segments are committed. Set <code>commit_strategy=CommitStrategy.VAD</code> to let ElevenLabs handle segment boundaries. When using <code>MANUAL</code> commit strategy, transcription frames are marked as finalized (<code>TranscriptionFrame.finalized=True</code>).</li><li><strong>Keepalive</strong>: Sends silent audio chunks as keepalive to prevent idle disconnections (keepalive interval: 5s, timeout: 10s).</li><li><strong>Auto-reconnect</strong>: Automatically reconnects if the WebSocket connection is closed when new audio arrives.</li><li><strong>Multilingual support</strong>: ElevenLabs Scribe supports 99+ languages. The Realtime service defaults to automatic language detection (<code>language=None</code>). To restrict transcription to a specific language, set <code>language</code> in settings.</li></ul>
+<h3>Event Handlers</h3>
+<p>Supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to ElevenLabs Realtime STT WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from ElevenLabs Realtime STT WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to ElevenLabs Realtime STT")</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/elevenlabs">https://docs.pipecat.ai/api-reference/server/services/stt/elevenlabs</a></p>
+</div></main></div></body></html>

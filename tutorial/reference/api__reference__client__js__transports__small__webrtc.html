@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Small WebRTC Transport</h1>
+<blockquote>SmallWebRTCTransport for the JavaScript SDK: peer-to-peer WebRTC to a Pipecat bot with no third-party WebRTC provider.</blockquote>
+<p><code>SmallWebRTCTransport</code> enables peer-to-peer WebRTC connections between clients and your Pipecat application. It implements bidirectional audio and video streaming using WebRTC for real-time communication.</p>
+<p>This transport is intended for lightweight implementations, particularly for local development and testing. It expects your Pipecat server to include the corresponding <a href="/api-reference/server/services/transport/small-webrtc"><code>SmallWebRTCTransport</code> server-side</a> implementation.</p>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>import { PipecatClient } from "@pipecat-ai/client-js";
+import { SmallWebRTCTransport } from "@pipecat-ai/small-webrtc-transport";
+
+const pcClient = new PipecatClient({
+  transport: new SmallWebRTCTransport({
+    // Optional configuration for the transport
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  }),
+  enableCam: false, // Default camera off
+  enableMic: true, // Default microphone on
+  callbacks: {
+    // Event handlers
+  },
+});
+
+await pcClient.connect({
+  webrtcUrl: "/api/offer", // Your WebRTC signaling server endpoint
+});</code></pre>
+<h2>API Reference</h2>
+<h3>Constructor Options</h3>
+<pre><code>interface SmallWebRTCTransportConstructorOptions {
+  iceServers?: RTCIceServer[];
+  waitForICEGathering?: boolean;
+  webrtcUrl?: string;
+  audioCodec?: string;
+  videoCodec?: string;
+  mediaManager?: MediaManager;
+}</code></pre>
+<h4>Properties</h4>
+<p>&lt;ParamField name="iceServers" type="RTCIceServer[]"&gt;   Array of ICE server configurations for connection establishment. Default is <code>[{ urls: "stun:stun.l.google.com:19302" }]</code>.</p>
+<pre><code>  // Set custom ICE servers
+  transport.iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField name="waitForICEGathering" type="boolean" default="false"&gt;   If <code>true</code>, the transport will wait for ICE gathering to complete before being   considered <code>'connected'</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField name="webrtcUrl" type="string"&gt;   URL of the WebRTC signaling server's offer endpoint. This endpoint may also be provided as part of <code>connect()</code>.</p>
+<p>  Note: This field used to be called <code>connectionUrl</code> in versions prior to   <code>1.2.0</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField name="audioCodec" type="string"&gt;   Preferred audio codec to use. If not specified, your browser default will be   used. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField name="videoCodec" type="string"&gt;   Preferred video codec to use. If not specified, your browser default will be   used. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField name="mediaManager" type="MediaManager" default="DailyMediaManager"&gt;   The media manager to use for handling local audio and video streams. This   should not be overridden unless you have a specific reason to use a different   media manager. The default is <code>DailyMediaManager</code>, which is suitable for most   use cases. Note that the <code>DailyMediaManager</code> does not use any of Daily's   services, it simply takes advantage of vast media support provided by the   Daily library. &lt;/ParamField&gt;</p>
+<h3>TransportConnectionParams</h3>
+<pre><code>export type SmallWebRTCTransportConnectionOptions = {
+  webrtcUrl?: string;
+};</code></pre>
+<p>On <code>connect()</code>, the <code>SmallWebRTCTransport</code> optionally takes a set of connection parameters. This can be provided directly to the <code>PipecatClient</code>'s <code>connect()</code> method or via a starting endpoint passed to the <code>PipecatClient</code>'s <code>startBotAndConnect()</code> method. If using an endpoint, your endpoint should return a JSON object matching the <code>SmallWebRTCTransportConnectionOptions</code> type, which currently expects a single <code>webrtcUrl</code> property.</p>
+<p>&lt;CodeGroup&gt;   ``<code>typescript client theme={null}   pcClient.startBotAndConnect({     endpoint: '/api/start', // Your server endpoint to start the bot and return the webrtcUrl   });   // OR...   pcClient.connect({     webrtcUrl: '/api/offer', // Your WebRTC offer/answer endpoint   });   </code>``</p>
+<pre><code>  # See
+  # https://github.com/pipecat-ai/pipecat-examples/blob/main/p2p-webrtc/video-transform/server/server.py
+  # for a complete example of how to implement the server-side endpoint.
+  @app.post("/api/offer")
+  async def offer(request: dict, background_tasks: BackgroundTasks):
+      pipecat_connection = SmallWebRTCConnection(ice_servers)
+      await pipecat_connection.initialize(sdp=request["sdp"], type=request["type"])
+
+      @pipecat_connection.event_handler("closed")
+      async def handle_disconnected(webrtc_connection: SmallWebRTCConnection):
+          logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
+          pcs_map.pop(webrtc_connection.pc_id, None)
+
+      background_tasks.add_task(run_bot, pipecat_connection)
+
+      answer = pipecat_connection.get_answer()
+
+      return answer</code></pre>
+<p>&lt;/CodeGroup&gt;</p>
+<h3>Methods</h3>
+<p>For most operations, you will not interact with the transport directly. Most methods have an equivalent in the <code>PipecatClient</code> and should be called from the <code>PipecatClient</code>. However, there are a few transport-specific methods that you may need to call directly. When doing so, be sure to access your transport via the <code>transport</code> property of the <code>PipecatClient</code> instance.</p>
+<p>&lt;ResponseField name="setAudioCodec" type="method"&gt;   Sets the preferred audio codec.</p>
+<pre><code>  transport.setAudioCodec("opus");</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<p>&lt;ResponseField name="setVideoCodec" type="method"&gt;   Sets the preferred video codec.</p>
+<pre><code>  transport.setVideoCodec("VP8");</code></pre>
+<p>&lt;/ResponseField&gt;</p>
+<h2>Events</h2>
+<p>The transport implements the various <a href="/api-reference/client/js/callbacks"><code>PipecatClient</code> event handlers</a>.</p>
+<h2>Connection Process</h2>
+<p>The connection process follows these steps:</p>
+<ol><li>The transport negotiates a WebRTC connection with the corresponding pipecat transport, complete with transceivers for the media and a data channel for messaging.</li><li>The transport sends a message to the pipecat transport to let it know it's ready.</li><li>The Pipecat transport sends a message letting the client know it is ready.</li></ol>
+<h2>Reconnection Handling</h2>
+<p>The transport includes automatic reconnection logic:</p>
+<ul><li>Up to 3 reconnection attempts after connection failures</li><li>Detection of ICE connection state changes</li><li>Graceful recovery from temporary disconnections</li><li>Graceful disconnect when reconnection attempts fail</li></ul>
+<h2>More Information</h2>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card horizontal title="Video Transform Demo" icon="video" href="https://github.com/pipecat-ai/pipecat-examples/tree/main/p2p-webrtc/video-transform"&gt;     Real-time video transformation example   &lt;/Card&gt;</p>
+<p>  &lt;Card horizontal title="Package" icon="browser" href="https://www.npmjs.com/package/@pipecat-ai/small-webrtc-transport"&gt;     <code>@pipecat-ai/small-webrtc-transport</code>   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/client/js/transports/small-webrtc">https://docs.pipecat.ai/api-reference/client/js/transports/small-webrtc</a></p>
+</div></main></div></body></html>

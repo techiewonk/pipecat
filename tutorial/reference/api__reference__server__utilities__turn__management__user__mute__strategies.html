@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Mute Strategies · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>User Mute Strategies</h1>
+<blockquote>Control when Pipecat suppresses user input: mute strategies during bot speech and other pipeline operations.</blockquote>
+<h2>Overview</h2>
+<p>User mute strategies control whether incoming user input should be suppressed based on the current system state. They determine when user audio and transcriptions should be muted to prevent interruptions during critical bot operations like initial responses or function calls.</p>
+<p>By default, user input is never muted. You can configure mute strategies to automatically suppress user input in specific scenarios, such as while the bot is speaking or during function execution. Custom strategies can also be implemented for specific use cases.</p>
+<h2>Configuration</h2>
+<p>User mute strategies are configured via <code>LLMUserAggregatorParams</code> when creating an <code>LLMContextAggregatorPair</code>:</p>
+<pre><code>from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.turns.user_mute import (
+    MuteUntilFirstBotCompleteUserMuteStrategy,
+    FunctionCallUserMuteStrategy,
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[
+            MuteUntilFirstBotCompleteUserMuteStrategy(),
+            FunctionCallUserMuteStrategy(),
+        ],
+    ),
+)</code></pre>
+<h2>Available Strategies</h2>
+<h3>AlwaysUserMuteStrategy</h3>
+<p>Mutes user input whenever the bot is speaking. This prevents any interruptions during bot speech.</p>
+<pre><code>from pipecat.turns.user_mute import AlwaysUserMuteStrategy
+
+strategy = AlwaysUserMuteStrategy()</code></pre>
+<p><strong>Behavior:</strong></p>
+<ul><li>Mutes when <code>BotStartedSpeakingFrame</code> is received</li><li>Unmutes when <code>BotStoppedSpeakingFrame</code> is received</li></ul>
+<h3>FirstSpeechUserMuteStrategy</h3>
+<p>Mutes user input only during the bot's first speech. After the initial response completes, user input is allowed even while the bot is speaking.</p>
+<pre><code>from pipecat.turns.user_mute import FirstSpeechUserMuteStrategy
+
+strategy = FirstSpeechUserMuteStrategy()</code></pre>
+<p><strong>Behavior:</strong></p>
+<ul><li>Allows user input before bot speaks</li><li>Mutes during the first bot speech only</li><li>Unmutes permanently after first speech completes</li></ul>
+<p>&lt;Note&gt;   Use this strategy when you want to ensure the bot's greeting or initial   response isn't interrupted, but allow normal interruptions afterward. &lt;/Note&gt;</p>
+<h3>MuteUntilFirstBotCompleteUserMuteStrategy</h3>
+<p>Mutes user input from the start of the interaction until the bot completes its first speech. This ensures the bot maintains full control at the beginning of a conversation.</p>
+<pre><code>from pipecat.turns.user_mute import MuteUntilFirstBotCompleteUserMuteStrategy
+
+strategy = MuteUntilFirstBotCompleteUserMuteStrategy()</code></pre>
+<p><strong>Behavior:</strong></p>
+<ul><li>Mutes immediately when the pipeline starts (before bot speaks)</li><li>Remains muted until first <code>BotStoppedSpeakingFrame</code> is received</li><li>Unmutes permanently after first speech completes</li></ul>
+<p>&lt;Note&gt;   Unlike <code>FirstSpeechUserMuteStrategy</code>, this strategy mutes user input even   before the bot starts speaking. Use this when you don't want to process any   user input until the bot has delivered its initial message. &lt;/Note&gt;</p>
+<h3>FunctionCallUserMuteStrategy</h3>
+<p>Mutes user input while function calls are executing. This prevents user interruptions during potentially long-running tool operations.</p>
+<pre><code>from pipecat.turns.user_mute import FunctionCallUserMuteStrategy
+
+strategy = FunctionCallUserMuteStrategy()</code></pre>
+<p><strong>Behavior:</strong></p>
+<ul><li>Mutes when <code>FunctionCallsStartedFrame</code> is received</li><li>Tracks multiple concurrent function calls</li><li>Unmutes when all function calls complete (via <code>FunctionCallResultFrame</code> or <code>FunctionCallCancelFrame</code>)</li></ul>
+<p>&lt;Tip&gt;   This strategy is particularly useful when function calls trigger external API   requests or database operations that may take several seconds to complete and   you don't want to the user to interrupt the output. &lt;/Tip&gt;</p>
+<h2>Combining Multiple Strategies</h2>
+<p>Multiple strategies can be combined in a list. The strategies are combined with OR logic—if <strong>any</strong> strategy indicates the user should be muted, user input is suppressed.</p>
+<pre><code>user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[
+            MuteUntilFirstBotCompleteUserMuteStrategy(),  # Mute until first response
+            FunctionCallUserMuteStrategy(),               # Mute during function calls
+        ],
+    ),
+)</code></pre>
+<p>In this example, user input is muted:</p>
+<ul><li>From pipeline start until the bot completes its first speech</li><li>Whenever function calls are executing (even after first speech)</li></ul>
+<h2>Usage Examples</h2>
+<h3>Prevent Interruptions During Greeting</h3>
+<p>Ensure the bot's greeting plays completely before accepting user input:</p>
+<pre><code>from pipecat.turns.user_mute import MuteUntilFirstBotCompleteUserMuteStrategy
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[
+            MuteUntilFirstBotCompleteUserMuteStrategy(),
+        ],
+    ),
+)</code></pre>
+<h3>Mute During Function Calls Only</h3>
+<p>Allow normal interruptions but prevent them during tool execution:</p>
+<pre><code>from pipecat.turns.user_mute import FunctionCallUserMuteStrategy
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[
+            FunctionCallUserMuteStrategy(),
+        ],
+    ),
+)</code></pre>
+<h3>Never Allow Interruptions</h3>
+<p>Always mute user input while the bot is speaking:</p>
+<pre><code>from pipecat.turns.user_mute import AlwaysUserMuteStrategy
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        user_mute_strategies=[
+            AlwaysUserMuteStrategy(),
+        ],
+    ),
+)</code></pre>
+<h2>Building Custom Strategies</h2>
+<p>For custom mute strategies, see the <a href="/pipecat/fundamentals/user-input-muting#building-custom-strategies">User Input Muting guide</a>, which covers the <code>BaseUserMuteStrategy</code> contract, frame visibility, and worked examples.</p>
+<h2>Event Handlers</h2>
+<p>You can register event handlers to be notified when user muting starts or stops. This is useful for observability or providing feedback to users.</p>
+<h3>Available Events</h3>
+<h4>on\_user\_mute\_started</h4>
+<p>Called when user input becomes muted due to any active mute strategy.</p>
+<pre><code>@user_aggregator.event_handler("on_user_mute_started")
+async def on_user_mute_started(aggregator):
+    logger.info("User mute started")</code></pre>
+<h4>on\_user\_mute\_stopped</h4>
+<p>Called when user input is unmuted (no active mute strategies).</p>
+<pre><code>@user_aggregator.event_handler("on_user_mute_stopped")
+async def on_user_mute_stopped(aggregator):
+    logger.info("User mute stopped")</code></pre>
+<p>&lt;Note&gt;   These events fire whenever the mute state changes, regardless of which   strategy triggered the change. Use them to provide consistent feedback across   all mute scenarios. &lt;/Note&gt;</p>
+<h2>Related</h2>
+<ul><li><a href="/api-reference/server/utilities/turn-management/user-turn-strategies">User Turn Strategies</a> - Configure turn detection behavior</li><li><a href="/pipecat/fundamentals/user-input-muting">User Input Muting Guide</a> - Guide for controlling user input</li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-mute-strategies">https://docs.pipecat.ai/api-reference/server/utilities/turn-management/user-mute-strategies</a></p>
+</div></main></div></body></html>

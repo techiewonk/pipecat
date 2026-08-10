@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2 · Setup & first run — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 2 · Part I — Principles</div>
+      <h1>Setup & first run</h1>
+      <div class="meta"><span class="pill">⏱ 25 min</span><span class="pill grey">Level: beginner</span></div>
+      <p class="lead">Get a bot talking in five minutes, then understand exactly what happened. This is also <strong>Atlas step 0</strong> — the first move of the capstone project.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="install">Install</h2>
+      <p>Pipecat uses <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a>. From the repo root:</p>
+      <div class="box start">
+        <p class="title">▶️ One-time setup</p>
+        <pre><code class="language-bash">uv sync --all-extras          # install Pipecat + every provider "extra"
+cp env.example .env           # then edit .env and add your API keys</code></pre>
+      </div>
+      <p>An <strong>extra</strong> is an optional dependency group named after a provider — e.g. <code>pipecat-ai[deepgram,cartesia,openai,silero]</code>. <code>--all-extras</code> just installs them all so nothing is missing while you learn.</p>
+
+      <h2 id="run">Run your first bot</h2>
+      <div class="box start">
+        <p class="title">▶️ Say one thing</p>
+        <pre><code class="language-bash">uv run python getting-started/01-say-one-thing.py
+# open http://localhost:7860/client/ and click Connect — the bot says "Hello there!"</code></pre>
+      </div>
+      <p>You only need a <strong>Cartesia</strong> key for this one (it's TTS-only — no microphone, no LLM). That single run exercises the whole runtime: a transport, a pipeline, a worker, and the runner.</p>
+
+      <h2 id="whathappened">What just happened</h2>
+      <p>The simplest possible app is a TTS service wired to the transport's output. On connect, it queues a <code>TTSSpeakFrame</code> (the words) then an <code>EndFrame</code> (stop). Watch that single frame travel:</p>
+      <div class="pcflow" data-dur="6"
+           data-stages="on_client_connected|TTSSpeakFrame(text)|TTS service|TTSAudioRawFrame|transport.output|🔊 speaker"
+           data-caption="A client connects — the event fires|You queue a <b>TTSSpeakFrame</b> with the words|The TTS service turns text into audio|It emits <b>TTSAudioRawFrame</b>s|The transport writes them out|You hear 'Hello there!'">
+      </div>
+
+      <h2 id="anatomy">The anatomy of every example</h2>
+      <p>Open <code>getting-started/01-say-one-thing.py</code>. Every Pipecat program has this shape — memorize it:</p>
+      <pre><code class="language-python">transport_params = {                       # how the user connects (picked at launch)
+    "webrtc": lambda: TransportParams(audio_out_enabled=True),
+    "daily":  lambda: DailyParams(audio_out_enabled=True),
+}
+
+async def run_bot(transport, runner_args):
+    tts = CartesiaTTSService(api_key=os.environ["CARTESIA_API_KEY"],
+        settings=CartesiaTTSService.Settings(voice="71a7ad14-...-01c121"))
+    worker = PipelineWorker(Pipeline([tts, transport.output()]))   # a 2-stage pipeline
+
+    @transport.event_handler("on_client_connected")
+    async def on_client_connected(transport, client):
+        await worker.queue_frames([TTSSpeakFrame("Hello there!"), EndFrame()])
+
+    runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+    await runner.add_workers(worker)
+    await runner.run()
+
+async def bot(runner_args):                # entry point (also used by Pipecat Cloud)
+    transport = await create_transport(runner_args, transport_params)
+    await run_bot(transport, runner_args)
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+    main()</code></pre>
+      <div class="box py">
+        <p class="title">🐍 Python note — <code>os.environ[...]</code> and <code>.env</code></p>
+        <p><code>load_dotenv()</code> reads your <code>.env</code> file into the environment; <code>os.environ["CARTESIA_API_KEY"]</code> pulls a key back out. Secrets never live in code.</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>runner/run.py</code> — the dev server that serves the web client and dispatches to your <code>bot()</code>. <code>runner/utils.py</code> — <code>create_transport()</code> picks the transport from <code>runner_args</code>. <code>runner/types.py</code> — <code>RunnerArguments</code>. We open these fully in <a href="l30-runner-telephony.html">Lesson 30</a>.</p>
+      </div>
+
+      <h2 id="transports">Try another transport</h2>
+      <p>Because the transport is chosen at launch, the same bot runs over WebRTC, Daily, or a phone with a flag:</p>
+      <pre><code class="language-bash">uv run python getting-started/01-say-one-thing.py -t daily     # needs DAILY_API_KEY
+uv run python getting-started/06-voice-agent.py                # a full two-way voice agent</code></pre>
+
+      <div class="box concept">
+        <p class="title">🧩 Atlas step 0</p>
+        <p>Copy <code>01-say-one-thing.py</code> to <code>atlas.py</code> and change the greeting to introduce your assistant by name. That's the seed we grow for the rest of the course.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Change the Cartesia <code>voice</code> id. (2) Queue two <code>TTSSpeakFrame</code>s before the <code>EndFrame</code> and confirm they play in order. (3) Run <code>06-voice-agent.py</code> and have a real conversation.</p>
+      </div>
+      <div class="box errors">
+        <p class="title">⚠️ Common errors</p>
+        <p><code>KeyError: 'CARTESIA_API_KEY'</code> → not in <code>.env</code> (or you skipped <code>cp env.example .env</code>). Silent browser → allow audio and confirm <code>http://localhost:7860/client/</code>. <code>Address already in use</code> → another example is running; stop it or add <code>--port 7861</code>.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why does <code>01-say-one-thing.py</code> not need an LLM or a microphone key?</summary><p>It only speaks a fixed line — a TTS service plus the transport output. No user input, no generation.</p></details>
+      <details><summary>2. What picks the transport at launch?</summary><p><code>create_transport(runner_args, transport_params)</code> — it reads the <code>runner_args</code> type set by the <code>-t</code> flag / dev runner.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l03-frame-model.html">Lesson 3 — The frame model →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

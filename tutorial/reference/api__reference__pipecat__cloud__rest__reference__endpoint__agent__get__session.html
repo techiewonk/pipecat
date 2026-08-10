@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Session Details · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Get Session Details</h1>
+<blockquote>GET /agents/{agentName}/sessions/{sessionId} returns details for one agent session, including resource metrics.</blockquote>
+<h2>OpenAPI</h2>
+<pre><code>openapi: 3.0.0
+info:
+  title: Pipecat Cloud
+  version: 1.0.0
+  description: &gt;-
+    REST API for Pipecat Cloud. The public API (`/v1/public`, authenticated with
+    a public API key) starts agent sessions and proxies requests to them. The
+    private API (`/v1`, authenticated with a private API key) manages agents,
+    secrets, builds, regions, and organization settings.
+servers:
+  - url: https://api.pipecat.daily.co/v1
+    description: Private API server
+security: []
+paths:
+  /agents/{agentName}/sessions/{sessionId}:
+    get:
+      summary: Get session details
+      description: &gt;-
+        Retrieves detailed information about a specific session, including
+        resource metrics and meeting IDs.
+      operationId: getSession
+      parameters:
+        - name: agentName
+          in: path
+          required: true
+          description: Name of the agent
+          schema:
+            type: string
+        - name: sessionId
+          in: path
+          required: true
+          description: UUID of the session to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+              example:
+                sessionId: 800d444a-e67e-4686-afb3-b0de509cccb3
+                serviceId: b900ae4a-f710-4ef1-95d8-c5f5b2789da9
+                organizationId: cc71b52d-4271-46c9-87be-cac600fd821a
+                deploymentId: 81f4da55-106d-401f-b069-a1f1992f871a
+                endedAt: '2025-10-22T08:39:26.000Z'
+                botStartSeconds: 2
+                coldStart: true
+                completionStatus: HTTP_COMPLETED
+                createdAt: '2025-10-22T08:39:20.000Z'
+                updatedAt: '2025-10-22T08:39:26.000Z'
+                resourceMetrics:
+                  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  sessionId: 800d444a-e67e-4686-afb3-b0de509cccb3
+                  sampleCount: 12
+                  cpuMillicoresP50: 150
+                  cpuMillicoresP90: 280
+                  cpuMillicoresP95: 320
+                  cpuMillicoresP99: 450
+                  memoryBytesP50: 134217728
+                  memoryBytesP90: 201326592
+                  memoryBytesP95: 234881024
+                  memoryBytesP99: 268435456
+                  timeseries:
+                    - t: 1729583960
+                      c: 150
+                      m: 134217728
+                    - t: 1729583965
+                      c: 280
+                      m: 201326592
+                  eventTs: '2025-10-22T08:39:25.000Z'
+                  createdAt: '2025-10-22T08:39:25.000Z'
+                meetingIds:
+                  - participantId: d4e5f6a7-b8c9-0123-4567-890abcdef012
+                    meetingId: f1e2d3c4-b5a6-9780-1234-567890abcdef
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Agent or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: &gt;-
+                  API endpoint not found / agent deployment not found /
+                  Organization not found
+                code: '404'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: &gt;-
+                  Internal server error. Please check logs for more information
+                  or contact support.
+                code: '500'
+      security:
+        - PrivateKeyAuth: []
+components:
+  schemas:
+    SessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          description: ID of the session
+        serviceId:
+          type: string
+          description: ID of the service for this session
+        organizationId:
+          type: string
+          description: ID of the organization that this session is associated with
+        deploymentId:
+          type: string
+          description: ID of the deployment that this session is associated with
+        endedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session ended
+          nullable: true
+        botStartSeconds:
+          type: integer
+          description: Number of seconds between bot start request and bot start
+          nullable: true
+        coldStart:
+          type: boolean
+          description: &gt;-
+            Whether the bot start was a [cold
+            start](/pipecat-cloud/fundamentals/scaling#cold-starts)
+          nullable: true
+        completionStatus:
+          type: string
+          description: &gt;-
+            The completion status of the session. This can be an http return
+            code or a string like `HTTP_COMPLETED`, `HTTP_ERROR`,
+            `WS_CONNECTION_CLOSED`, among others
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was last updated
+        resourceMetrics:
+          type: object
+          nullable: true
+          description: Resource usage metrics for the session, if available
+          properties:
+            id:
+              type: string
+              description: ID of the metrics record
+            sessionId:
+              type: string
+              description: ID of the session these metrics belong to
+            sampleCount:
+              type: integer
+              description: Number of metric samples collected
+            cpuMillicoresP50:
+              type: integer
+              description: CPU usage at the 50th percentile (in millicores)
+            cpuMillicoresP90:
+              type: integer
+              description: CPU usage at the 90th percentile (in millicores)
+            cpuMillicoresP95:
+              type: integer
+              description: CPU usage at the 95th percentile (in millicores)
+            cpuMillicoresP99:
+              type: integer
+              description: CPU usage at the 99th percentile (in millicores)
+            memoryBytesP50:
+              type: integer
+              description: Memory usage at the 50th percentile (in bytes)
+            memoryBytesP90:
+              type: integer
+              description: Memory usage at the 90th percentile (in bytes)
+            memoryBytesP95:
+              type: integer
+              description: Memory usage at the 95th percentile (in bytes)
+            memoryBytesP99:
+              type: integer
+              description: Memory usage at the 99th percentile (in bytes)
+            timeseries:
+              type: array
+              description: Time-series data of resource usage
+              items:
+                type: object
+                properties:
+                  t:
+                    type: integer
+                    description: Unix timestamp (seconds)
+                  c:
+                    type: integer
+                    description: CPU usage (millicores)
+                  m:
+                    type: integer
+                    description: Memory usage (bytes)
+            eventTs:
+              type: string
+              format: date-time
+              description: Timestamp of the most recent metrics event
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the metrics record was created
+        meetingIds:
+          type: array
+          description: Daily meeting IDs associated with this session
+          items:
+            type: object
+            properties:
+              participantId:
+                type: string
+                description: Daily participant ID
+              meetingId:
+                type: string
+                description: Daily meeting ID
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+        code:
+          type: string
+          description: &gt;-
+            Error code for programmatic handling. Deployment-related codes
+            (PCC-*) are documented at
+            https://docs.pipecat.ai/pipecat-cloud/fundamentals/error-codes
+      required:
+        - error
+        - code
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Unauthorized / token expired
+            code: '401'
+  securitySchemes:
+    PrivateKeyAuth:
+      type: http
+      scheme: bearer
+      description: &gt;-
+        Authentication requires a Pipecat Cloud Private API token.
+
+
+        Generate a Private API key from your Dashboard (Settings &gt; API Keys &gt;
+        Private &gt; Create key) and include it as a Bearer token in the
+        Authorization header.
+</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-session">https://docs.pipecat.ai/api-reference/pipecat-cloud/rest-reference/endpoint/agent-get-session</a></p>
+</div></main></div></body></html>

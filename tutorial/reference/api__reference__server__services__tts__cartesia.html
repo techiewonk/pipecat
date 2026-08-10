@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartesia Text-to-Speech · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Cartesia Text-to-Speech</h1>
+<blockquote>Low-latency TTS with CartesiaTTSService (WebSocket streaming, word timestamps) and CartesiaHttpTTSService for batch synthesis.</blockquote>
+<h2>Overview</h2>
+<p>Cartesia provides high-quality text-to-speech synthesis with two service implementations: <code>CartesiaTTSService</code> (WebSocket-based) for real-time streaming with word timestamps, and <code>CartesiaHttpTTSService</code> (HTTP-based) for simpler batch synthesis. <code>CartesiaTTSService</code> is recommended for interactive applications requiring low latency and interruption handling.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Cartesia TTS API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.services.cartesia.tts.html"&gt;     Pipecat's API methods for Cartesia TTS integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-cartesia.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Cartesia Documentation" icon="book" href="https://docs.cartesia.ai/get-started/overview"&gt;     Official Cartesia API documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Voice Library" icon="microphone" href="https://play.cartesia.ai/"&gt;     Browse and test available voices   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Cartesia services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[cartesia]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Cartesia Account Setup</h3>
+<p>Before using Cartesia TTS services, you need:</p>
+<ol><li><strong>Cartesia Account</strong>: Sign up at <a href="https://play.cartesia.ai/sign-up">Cartesia</a></li><li><strong>API Key</strong>: Generate an API key from your account dashboard</li><li><strong>Voice Selection</strong>: Choose voice IDs from the <a href="https://play.cartesia.ai/">voice library</a></li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>CARTESIA_API_KEY</code>: Your Cartesia API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>CartesiaTTSService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Cartesia API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="voice_id" type="str" required deprecated&gt;   ID of the voice to use for synthesis. *Deprecated in v0.0.105. Use   <code>settings=CartesiaTTSService.Settings(voice=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="sonic-3.5" deprecated&gt;   TTS model to use. *Deprecated in v0.0.105. Use   <code>settings=CartesiaTTSService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cartesia_version" type="str" default="2026-03-01"&gt;   API version string for Cartesia service. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://api.cartesia.ai/tts/websocket"&gt;   WebSocket endpoint URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Output audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured   sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="encoding" type="str" default="pcm_s16le"&gt;   Audio encoding format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="container" type="str" default="raw"&gt;   Audio container format. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_buffer_delay_ms" type="int" default="None"&gt;   Server-side buffering window (in milliseconds) before generation starts. <code>0</code>   disables server buffering (custom buffering); values in (0, 5000] enable   managed buffering. When <code>None</code>, automatically derived from   <code>text_aggregation_mode</code>: <code>0</code> for <code>SENTENCE</code> mode (avoids stacking client and   server buffering), unset for <code>TOKEN</code> mode (uses Cartesia's 3000ms default). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="text_aggregation_mode" type="TextAggregationMode" default="TextAggregationMode.SENTENCE"&gt;   Controls how incoming text is aggregated before synthesis. <code>SENTENCE</code>   (default) buffers text until sentence boundaries, producing more natural   speech. <code>TOKEN</code> streams tokens directly for lower latency. Import from   <code>pipecat.services.tts_service</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aggregate_sentences" type="bool" default="None" deprecated&gt;   *Deprecated in v0.0.104.* Use <code>text_aggregation_mode</code> instead. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="InputParams" default="None" deprecated&gt;   *Deprecated in v0.0.105. Use <code>settings=CartesiaTTSService.Settings(...)</code>   instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="CartesiaTTSService.Settings" default="None"&gt;   Runtime-configurable settings. See <a href="#settings">Settings</a> below. &lt;/ParamField&gt;</p>
+<h3>CartesiaHttpTTSService</h3>
+<p>The HTTP service accepts similar parameters to the WebSocket service, with these differences:</p>
+<p>&lt;ParamField path="base_url" type="str" default="https://api.cartesia.ai"&gt;   HTTP API base URL (instead of <code>url</code> for WebSocket). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="cartesia_version" type="str" default="2026-03-01"&gt;   API version for HTTP service. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="aiohttp_session" type="aiohttp.ClientSession" default="None"&gt;   Optional aiohttp ClientSession for HTTP requests. If not provided, a session   will be created and managed internally. &lt;/ParamField&gt;</p>
+<p>The HTTP service does not accept <code>text_aggregation_mode</code> or <code>aggregate_sentences</code>.</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>CartesiaTTSService.Settings(...)</code>. These can be updated mid-conversation with <code>TTSUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>None</code></td><td>TTS model identifier. Defaults to <code>sonic-3.5</code> when not specified. *(Inherited from base settings.)*</td></tr><tr><td><code>voice</code></td><td><code>str</code></td><td><code>None</code></td><td>Voice identifier. *(Inherited from base settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for synthesis. *(Inherited from base settings.)*</td></tr><tr><td><code>generation_config</code></td><td><code>GenerationConfig</code></td><td><code>NOT_GIVEN</code></td><td>Generation configuration for Cartesia models. See below.</td></tr><tr><td><code>pronunciation_dict_id</code></td><td><code>str</code></td><td><code>NOT_GIVEN</code></td><td>ID of the pronunciation dictionary for custom pronunciations.</td></tr></tbody></table></div>
+<h4>GenerationConfig</h4>
+<p>Configuration for Cartesia generation parameters. Applicable to sonic-3 and sonic-3.5 models:</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>volume</code></td><td><code>float</code></td><td><code>None</code></td><td>Volume multiplier. Valid range: \[0.5, 2.0].</td></tr><tr><td><code>speed</code></td><td><code>float</code></td><td><code>None</code></td><td>Speed multiplier. Valid range: \[0.6, 1.5].</td></tr><tr><td><code>emotion</code></td><td><code>str</code></td><td><code>None</code></td><td>Emotion string to guide tone (e.g., <code>"neutral"</code>, <code>"angry"</code>, <code>"excited"</code>). Over 60 emotions supported.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.cartesia import CartesiaTTSService
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaTTSService.Settings(
+        voice="your-voice-id",
+    ),
+)</code></pre>
+<h3>With Generation Config</h3>
+<pre><code>from pipecat.services.cartesia.tts import GenerationConfig
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaTTSService.Settings(
+        voice="your-voice-id",
+        model="sonic-3",
+        generation_config=GenerationConfig(
+            speed=1.1,
+            emotion="excited",
+        ),
+    ),
+)</code></pre>
+<h3>HTTP Service</h3>
+<pre><code>from pipecat.services.cartesia import CartesiaHttpTTSService
+
+tts = CartesiaHttpTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    settings=CartesiaHttpTTSService.Settings(
+        voice="your-voice-id",
+    ),
+)</code></pre>
+<h2>Customizing Speech</h2>
+<p>&lt;Note&gt;   These helper methods use SSML tags and generation config parameters introduced   for <code>sonic-3</code>. <code>sonic-3.5</code> has significantly improved natural expressiveness,   so most users will get better results by relying on the model and the context   of their input text rather than manually tuning emotion, speed, or volume.   These controls remain available on the API, but effectiveness may vary on   <code>sonic-3.5</code>. &lt;/Note&gt;</p>
+<p><code>CartesiaTTSService</code> provides a set of helper methods for implementing Cartesia-specific customizations, meant to be used as part of text transformers. These include methods for spelling out text, adjusting speech rate, and modifying pitch. See the <a href="/pipecat/learn/text-to-speech#text-transforms">Text Transformers for TTS</a> section in the Text-to-Speech guide for usage examples.</p>
+<h3>SPELL(text: str) -&gt; str:</h3>
+<p>A convenience method to wrap text in <a href="https://docs.cartesia.ai/build-with-cartesia/sonic-3/ssml-tags#spelling-out-numbers-and-letters">Cartesia's spell tag</a> for spelling out text character by character.</p>
+<pre><code># Text transformers for TTS
+# This will insert Cartesia's spell tags around the provided text.
+async def spell_out_text(text: str, type: str) -&gt; str:
+    return CartesiaTTSService.SPELL(text)
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    text_transforms=[
+        ("phone_number", spell_out_text),
+    ],
+)</code></pre>
+<h3>EMOTION\_TAG(emotion: CartesiaEmotion) -&gt; str:</h3>
+<p>A convenience method to create an <a href="https://docs.cartesia.ai/build-with-cartesia/sonic-3/volume-speed-emotion#emotion-controls-beta">emotion tag</a> for expressing emotions in speech.</p>
+<pre><code># Text transformers for TTS
+# This will insert Cartesia's sarcasm tag in front of any sentence that is just "whatever".
+async def maybe_insert_sarcasm(text: str, type: str) -&gt; str:
+    if text.strip(".!").lower() == "whatever":
+        return CartesiaTTSService.EMOTION_TAG(CartesiaEmotion.SARCASM) + text + CartesiaTTSService.EMOTION_TAG(CartesiaEmotion.NEUTRAL)
+    return text
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    text_transforms=[
+        ("sentence", maybe_insert_sarcasm),
+    ],
+)</code></pre>
+<h3>PAUSE\_TAG(seconds: float) -&gt; str:</h3>
+<p>A convenience method to create Cartesia's <a href="https://docs.cartesia.ai/build-with-cartesia/sonic-3/ssml-tags#pauses-and-breaks">SSML tag for inserting pauses</a> in speech.</p>
+<pre><code># Text transformers for TTS
+# This will insert a one second pause after questions.
+async def pause_after_questions(text: str, type: str) -&gt; str:
+    if text.endswith("?"):
+        return f"{text}{CartesiaTTSService.PAUSE_TAG(1.0)}"
+    return text
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    text_transforms=[
+        ("sentence", pause_after_questions), # Only apply to sentence aggregations
+    ],
+)</code></pre>
+<h3>VOLUME\_TAG(volume: float) -&gt; str:</h3>
+<p>A convenience method to create Cartesia's <a href="https://docs.cartesia.ai/build-with-cartesia/sonic-3/ssml-tags#volume">SSML volume tag</a> for dynamically adjusting speech volume in situ.</p>
+<pre><code># Text transformers for TTS
+# This will increase the volume for any full text aggregation that is in all caps.
+async def maybe_say_it_loud(text: str, type: str) -&gt; str:
+    if text.upper() == text:
+        return f"{CartesiaTTSService.VOLUME_TAG(2.0)}{text}{CartesiaTTSService.VOLUME_TAG(1.0)}"
+    return text
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    text_transforms=[
+        ("*", maybe_say_it_loud), # Apply to all text
+    ],
+)</code></pre>
+<h3>SPEED\_TAG(speed: float) -&gt; str:</h3>
+<p>A convenience method to create Cartesia's <a href="https://docs.cartesia.ai/build-with-cartesia/sonic-3/ssml-tags#speed">SSML speed tag</a> for dynamically adjusting the speech rate in situ.</p>
+<pre><code># Text transformers for TTS
+# This will make the word slow always be spoken more slowly.
+async def slow_down_slow_words(text: str, type: str) -&gt; str:
+    return text.replace(
+        "slow",
+        f"{CartesiaTTSService.SPEED_TAG(0.6)}slow{CartesiaTTSService.SPEED_TAG(1.0)}"
+    )
+
+tts = CartesiaTTSService(
+    api_key=os.getenv("CARTESIA_API_KEY"),
+    text_transforms=[
+        ("*", slow_down_slow_words), # Apply to all text
+    ],
+)</code></pre>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Notes</h2>
+<ul><li><strong>WebSocket vs HTTP</strong>: The WebSocket service supports word-level timestamps, audio context management, and interruption handling, making it better for interactive conversations. The HTTP service is simpler but lacks these features.</li><li><strong>Text aggregation</strong>: Sentence aggregation is enabled by default (<code>text_aggregation_mode=TextAggregationMode.SENTENCE</code>). Buffering until sentence boundaries produces more natural speech. Set <code>text_aggregation_mode=TextAggregationMode.TOKEN</code> to stream tokens directly for lower latency. Cartesia handles token streaming well.</li><li><strong>Connection timeout</strong>: Cartesia WebSocket connections time out after 5 minutes of inactivity (no keepalive mechanism is available). The service automatically reconnects when needed.</li></ul>
+<h2>Event Handlers</h2>
+<p>Cartesia TTS supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Cartesia WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Cartesia WebSocket</td></tr><tr><td><code>on_connection_error</code></td><td>WebSocket connection error occurred</td></tr></tbody></table></div>
+<pre><code>@tts.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Cartesia")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/tts/cartesia">https://docs.pipecat.ai/api-reference/server/services/tts/cartesia</a></p>
+</div></main></div></body></html>

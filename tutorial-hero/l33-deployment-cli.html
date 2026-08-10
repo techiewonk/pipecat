@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L33 · Deployment & the CLI — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 33 · Part VI — Production & quality</div>
+      <h1>Deployment & the CLI</h1>
+      <div class="meta"><span class="pill">⏱ 30 min</span><span class="pill grey">Level: intermediate</span></div>
+      <p class="lead">The same bot you ran locally deploys unchanged — because the <code>bot(runner_args)</code> contract is what production calls. Ship to Pipecat Cloud or self-host.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="contract">The deployment contract</h2>
+      <div class="pcflow" data-dur="7"
+           data-stages="your bot.py|bot(runner_args)|Pipecat Cloud / self-host|scales sessions|users connect"
+           data-caption="Your file exposes an async bot(runner_args) entry point|the platform imports and calls it per session|Pipecat Cloud (managed) or your own server runs it|scaling sessions across workers|users connect over WebRTC/telephony — same code as local">
+      </div>
+      <p>Because the dev runner and the cloud both call <code>bot(runner_args)</code> and use <code>create_transport</code>, "works on my machine" really does mean "works in production." You choose the transport and infra; the pipeline code doesn't change.</p>
+
+      <h2 id="cli">The CLI</h2>
+      <pre><code class="language-bash">pipecat --help                 # scaffold, run, and deploy from the terminal
+# scaffold a new project (writes AGENTS.md + CLAUDE.md), run locally, then deploy
+uv run pipecat cloud deploy    # deploy to Pipecat Cloud (managed infra)</code></pre>
+      <div class="box concept">
+        <p class="title">🧠 Cloud vs. self-host</p>
+        <p><strong>Pipecat Cloud</strong> is managed infrastructure run by the Pipecat team — you push and it scales. <strong>Self-host</strong> runs the same server on your own machines (containers, your WebRTC/SIP infra). Both call the identical <code>bot()</code> entry point.</p>
+      </div>
+
+      <div class="box source">
+        <p class="title">🔬 Source anchors</p>
+        <p><code>cli/</code> — the <code>pipecat</code> command (scaffold/run/deploy). <code>runner/run.py</code> — the <code>bot()</code> discovery + server. Deployment docs: <a href="https://docs.pipecat.ai/pipecat/deployment/overview" target="_blank" rel="noopener">deployment overview</a>, Pipecat Cloud.</p>
+      </div>
+
+      <div class="box modify">
+        <p class="title">🔨 Exercise</p>
+        <p>(1) Run <code>pipecat --help</code> and read the subcommands. (2) Confirm your <code>bot()</code> matches the entry contract. (3) (Optional) scaffold a fresh project and deploy a hello-bot.</p>
+      </div>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. Why does a bot deploy without code changes?</summary><p>Local runner and cloud both call the same <code>bot(runner_args)</code> entry point and select the transport via <code>create_transport</code>.</p></details>
+      <details><summary>2. Cloud vs. self-host — same or different code?</summary><p>Same code; only the infrastructure differs.</p></details>
+
+      <p class="lead" style="margin-top:26px">Next: <a href="l34-evals-testing.html">Lesson 34 — Evals & testing →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

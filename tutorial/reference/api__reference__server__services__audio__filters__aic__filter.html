@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIC Audio Filter · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>AIC Audio Filter</h1>
+<blockquote>AICFilter enhances user speech with the ai-coustics SDK, reducing background noise in real-time Pipecat audio.</blockquote>
+<h2>Overview</h2>
+<p><code>AICFilter</code> is an audio processor that enhances user speech by reducing background noise and improving speech clarity. It inherits from <code>BaseAudioFilter</code> and processes audio frames in real-time using ai-coustics' speech enhancement technology.</p>
+<p>To use AIC, you need a license key. Get started at <a href="https://docs.ai-coustics.com/tutorials/pipecat-quickstart">ai-coustics.com</a>.</p>
+<p>&lt;Note&gt;   This documentation covers <strong>aic-sdk v2.x</strong>. If you're using aic-sdk v1.x,   please see the <a href="#migration-guide-v1-to-v2">Migration Guide</a> section below for   upgrading instructions. &lt;/Note&gt;</p>
+<h2>Installation</h2>
+<p>The AIC filter requires additional dependencies:</p>
+<pre><code>uv add "pipecat-ai[aic]"</code></pre>
+<h2>Constructor Parameters</h2>
+<p>&lt;ParamField path="license_key" type="str" required&gt;   ai-coustics license key for authentication. Get your key at   <a href="https://developers.ai-coustics.io">developers.ai-coustics.io</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_id" type="str | None" default="None"&gt;   Model identifier to download from CDN. Required if <code>model_path</code> is not provided.   See <a href="https://artifacts.ai-coustics.io/">artifacts.ai-coustics.io</a> for available models.   See the <a href="https://docs.ai-coustics.com/guides/models">documentation</a> for more detailed information about the models.</p>
+<p>  Examples: <code>"quail-vf-2.0-l-16khz"</code>, <code>"quail-vf-l-16khz"</code>, <code>"quail-s-16khz"</code>, <code>"quail-l-8khz"</code> &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_path" type="str | None" default="None"&gt;   Path to a local <code>.aicmodel</code> file. If provided, <code>model_id</code> is ignored and no   download occurs. Useful for offline deployments or custom models. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model_download_dir" type="Path | None" default="None"&gt;   Directory for downloading and caching models. Defaults to a cache directory in   the user's home folder. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="enhancement_level" type="float | None" default="None"&gt;   Overall enhancement strength from <code>0.0</code> (no enhancement) to <code>1.0</code> (maximum   enhancement). If <code>None</code>, the model's default behavior is used. This parameter   allows you to control the intensity of the speech enhancement applied by the   model. &lt;/ParamField&gt;</p>
+<h2>Methods</h2>
+<h3>create\_vad\_analyzer</h3>
+<p>&lt;Warning&gt;   <strong>Deprecated in 1.4.0</strong>: This method will be removed in Pipecat 1.6.0. Use   <a href="/api-reference/server/services/vad/aic-quail-vad-analyzer"><code>AICQuailVADAnalyzer</code></a>   instead, which provides a standalone Quail VAD 2.0 model that works   independently of the enhancement filter. &lt;/Warning&gt;</p>
+<p>Creates an <code>AICVADAnalyzer</code> that uses the AIC model's built-in voice activity detection.</p>
+<pre><code>def create_vad_analyzer(
+    *,
+    speech_hold_duration: float | None = None,
+    minimum_speech_duration: float | None = None,
+    sensitivity: float | None = None,
+) -&gt; AICVADAnalyzer</code></pre>
+<h4>VAD Parameters</h4>
+<p>&lt;ParamField path="speech_hold_duration" type="float | None" default="None"&gt;   Controls for how long the VAD continues to detect speech after the audio   signal no longer contains speech (in seconds). Range: <code>0.0</code> to <code>100x model       window length</code>, Default (in SDK): <code>0.05s</code> &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="minimum_speech_duration" type="float | None" default="None"&gt;   Controls for how long speech needs to be present in the audio signal before   the VAD considers it speech (in seconds). Range: <code>0.0</code> to <code>1.0</code>, Default (in   SDK): <code>0.0s</code> &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sensitivity" type="float | None" default="None"&gt;   Controls the sensitivity (energy threshold) of the VAD. This value is used by   the VAD as the threshold a speech audio signal's energy has to exceed in order   to be considered speech. Formula: <code>Energy threshold = 10 ** (-sensitivity)</code>   Range: <code>1.0</code> to <code>15.0</code>, Default (in SDK): <code>6.0</code> &lt;/ParamField&gt;</p>
+<h3>get\_vad\_context</h3>
+<p>Returns the VAD context once the processor is initialized. Can be used to dynamically adjust VAD parameters at runtime.</p>
+<pre><code>vad_ctx = aic_filter.get_vad_context()
+vad_ctx.set_parameter(VadParameter.Sensitivity, 8.0)</code></pre>
+<h2>Input Frames</h2>
+<p>&lt;ParamField path="FilterEnableFrame" type="Frame"&gt;   Specific control frame to toggle filtering on/off</p>
+<pre><code>  from pipecat.frames.frames import FilterEnableFrame
+
+  # Disable speech enhancement
+  await worker.queue_frame(FilterEnableFrame(False))
+
+  # Re-enable speech enhancement
+  await worker.queue_frame(FilterEnableFrame(True))</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h2>Usage Examples</h2>
+<h3>Basic Usage with Quail VAD 2.0</h3>
+<p>The recommended approach is to use <code>AICFilter</code> for enhancement and <code>AICQuailVADAnalyzer</code> for voice activity detection:</p>
+<pre><code>from pipecat.audio.filters.aic_filter import AICFilter
+from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.transports.services.daily import DailyTransport, DailyParams
+
+# Create the AIC filter for enhancement
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-vf-2.0-l-16khz",
+)
+
+# Create standalone Quail VAD 2.0 analyzer
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+)
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        audio_in_filter=aic_filter,
+    ),
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=aic_vad,
+    ),
+)</code></pre>
+<h3>Using a Local Model</h3>
+<p>For offline deployments or when you want to manage model files yourself:</p>
+<pre><code>from pipecat.audio.filters.aic_filter import AICFilter
+
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_path="/path/to/your/model.aicmodel",
+)</code></pre>
+<h3>Custom Cache Directory</h3>
+<p>Specify a custom directory for model downloads:</p>
+<pre><code>from pipecat.audio.filters.aic_filter import AICFilter
+
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-s-16khz",
+    model_download_dir="/opt/aic-models",
+)</code></pre>
+<h3>With Enhancement Level Control</h3>
+<p>Control the enhancement strength applied by the model:</p>
+<pre><code>from pipecat.audio.filters.aic_filter import AICFilter
+
+# Set enhancement level to 70% strength
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-vf-l-16khz",
+    enhancement_level=0.7,
+)
+
+# Use default model behavior (no enhancement_level specified)
+aic_filter_default = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-vf-l-16khz",
+)</code></pre>
+<h3>With Other Transports</h3>
+<p>The AIC filter works with any Pipecat transport:</p>
+<pre><code>from pipecat.audio.filters.aic_filter import AICFilter
+from pipecat.audio.vad.aic_quail_vad import AICQuailVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.transports.websocket import FastAPIWebsocketTransport, FastAPIWebsocketParams
+
+aic_filter = AICFilter(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+    model_id="quail-vf-2.0-l-16khz",
+)
+
+aic_vad = AICQuailVADAnalyzer(
+    license_key=os.environ["AIC_SDK_LICENSE"],
+)
+
+transport = FastAPIWebsocketTransport(
+    params=FastAPIWebsocketParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        audio_in_filter=aic_filter,
+    ),
+)
+
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(
+        vad_analyzer=aic_vad,
+    ),
+)</code></pre>
+<p>&lt;Info&gt;   See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-aicoustics.py">AIC filter   example</a>   for a complete working example. &lt;/Info&gt;</p>
+<h2>Models</h2>
+<p>For detailed information about the available models, take a look at the <a href="https://docs.ai-coustics.com/guides/models">Models documentation</a>.</p>
+<h2>Audio Flow</h2>
+<pre><code>graph TD
+    A[AudioRawFrame] --&gt; B[AICFilter]
+    B --&gt; C[AICVADAnalyzer]
+    C --&gt; D[STT]</code></pre>
+<p>The AIC filter enhances audio before it reaches the VAD and STT stages, improving transcription accuracy in noisy environments.</p>
+<h2>Migration Guide (v1 to v2)</h2>
+<p>&lt;Note&gt;   For the complete aic-sdk migration guide including all API changes, see the   official <a href="https://docs.ai-coustics.com/guides/migrations/python-1-3-to-2-0#quick-migration-checklist">Python 1.3 to 2.0 Migration   Guide</a>. &lt;/Note&gt;</p>
+<h3>Migration Steps</h3>
+<ol><li>Update Pipecat to the latest version (aic-sdk v2.3.0+ is included automatically).</li><li><strong>Update environment variable</strong>: Change <code>AIC_LICENSE_KEY</code> to <code>AIC_SDK_LICENSE</code> in your <code>.env</code> file.</li><li>Remove deprecated constructor parameters (<code>model_type</code>, <code>voice_gain</code>, <code>noise_gate_enable</code>).</li><li>Add <code>model_id</code> parameter with an appropriate model (e.g., <code>"quail-vf-2.0-l-16khz"</code>).</li><li><strong>For VAD</strong>: Replace <code>aic_filter.create_vad_analyzer()</code> with <code>AICQuailVADAnalyzer</code> for improved accuracy and independence from the enhancement filter.</li><li>Update any runtime VAD adjustments to use the new VAD context API.</li></ol>
+<h3>Breaking Changes</h3>
+<div class="tablewrap"><table><thead><tr><th>v1 Parameter</th><th>v2 Replacement</th></tr></thead><tbody><tr><td><code>model_type</code></td><td><code>model_id</code> (string-based model selection)</td></tr><tr><td><code>enhancement_level</code></td><td>Now optional (0.0-1.0 range, applies at initialization and when toggling filter on/off)</td></tr><tr><td><code>voice_gain</code></td><td>Removed</td></tr><tr><td><code>noise_gate_enable</code></td><td>Removed</td></tr></tbody></table></div>
+<h2>Notes</h2>
+<ul><li>Requires ai-coustics license key (get one at <a href="https://developers.ai-coustics.io">developers.ai-coustics.io</a>)</li><li><strong>Environment variable</strong>: Use <code>AIC_SDK_LICENSE</code> (not <code>AIC_LICENSE_KEY</code>) for authentication</li><li>Voice Focus 2.0 models are supported with aic-sdk 2.1.0+ (included in pipecat-ai\[aic])</li><li>Models are automatically downloaded and cached on first use</li><li>Supports real-time audio processing with low latency</li><li>Handles PCM\_16 audio format (int16 samples)</li><li>Thread-safe for pipeline processing</li><li>Can be dynamically enabled/disabled via <code>FilterEnableFrame</code></li><li><strong>For VAD</strong>: Use <a href="/api-reference/server/services/vad/aic-quail-vad-analyzer"><code>AICQuailVADAnalyzer</code></a> instead of the deprecated <code>create_vad_analyzer()</code> method</li><li>For available models, visit <a href="https://artifacts.ai-coustics.io/">artifacts.ai-coustics.io</a></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/audio-filters/aic-filter">https://docs.pipecat.ai/api-reference/server/services/audio-filters/aic-filter</a></p>
+</div></main></div></body></html>

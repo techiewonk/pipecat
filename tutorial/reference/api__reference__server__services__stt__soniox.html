@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soniox Speech-to-Text · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Soniox Speech-to-Text</h1>
+<blockquote>SonioxSTTService streams real-time STT over Soniox's WebSocket API: 60+ languages, custom context, and mixed-language audio.</blockquote>
+<h2>Overview</h2>
+<p><code>SonioxSTTService</code> provides real-time speech-to-text transcription using Soniox's WebSocket API with support for over 60 languages, custom context, multiple languages in the same conversation, and advanced features for accurate multilingual transcription.</p>
+<p>By default, Soniox uses the <code>stt-rt-v5</code> model with <code>vad_force_turn_endpoint=True</code>, which disables Soniox's native turn detection and relies on Pipecat's local VAD to finalize transcripts. This configuration significantly reduces the time to final segment (\~250ms median). Pipecat enables smart-turn detection by default using <code>LocalSmartTurnAnalyzerV3</code>. To use Soniox's native turn detection instead, set <code>vad_force_turn_endpoint=False</code>.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="Soniox STT API Reference" icon="code" href="https://pipecat-docs.readthedocs.io/en/latest/api/pipecat.services.soniox.stt.html"&gt;     Pipecat's API methods for Soniox STT integration   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-soniox.py"&gt;     Complete example with interruption handling   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Built-in Turn Detection Example" icon="bolt" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/voice/voice-soniox-turn-detection.py"&gt;     Example using Soniox's built-in endpoint detection   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Soniox Documentation" icon="book" href="https://soniox.com/docs/speech-to-text/get-started"&gt;     Official Soniox documentation and features   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Soniox Console" icon="microphone" href="https://console.soniox.com/"&gt;     Access multilingual models and API keys   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use Soniox services, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[soniox]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Soniox Account Setup</h3>
+<p>Before using Soniox STT services, you need:</p>
+<ol><li><strong>Soniox Account</strong>: Sign up at <a href="https://console.soniox.com/">Soniox Console</a></li><li><strong>API Key</strong>: Generate an API key from your console dashboard</li><li><strong>Language Selection</strong>: Choose from 60+ supported languages and models</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>SONIOX_API_KEY</code>: Your Soniox API key for authentication</li></ul>
+<h2>Configuration</h2>
+<h3>SonioxSTTService</h3>
+<p>&lt;ParamField path="api_key" type="str" required&gt;   Soniox API key for authentication. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="url" type="str" default="wss://stt-rt.soniox.com/transcribe-websocket"&gt;   Soniox WebSocket API URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. When <code>None</code>, uses the pipeline's configured sample   rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="None" deprecated&gt;   Soniox model to use for transcription. *Deprecated in v0.0.105. Use   <code>settings=SonioxSTTService.Settings(model=...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_format" type="str" default="pcm_s16le"&gt;   Audio format for transcription. Init-only -- not part of runtime-updatable   settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="num_channels" type="int" default="1"&gt;   Number of audio channels. Init-only -- not part of runtime-updatable settings. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="SonioxInputParams" default="None" deprecated&gt;   Additional configuration parameters. *Deprecated in v0.0.105. Use   <code>settings=SonioxSTTService.Settings(...)</code> instead.* &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="settings" type="SonioxSTTService.Settings" default="None"&gt;   Runtime-configurable settings for the STT service. See <a href="#settings">Settings</a>   below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="ttfs_p99_latency" type="float" default="0.35"&gt;   P99 latency from speech end to final transcript in seconds. Override for your   deployment. See <a href="https://github.com/pipecat-ai/stt-benchmark">stt-benchmark</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="vad_force_turn_endpoint" type="bool" default="True"&gt;   Controls turn detection mode. When <code>True</code> (Pipecat mode, default): Soniox   endpoint detection is disabled and a <code>VADUserStoppedSpeakingFrame</code> sends a   finalize message to Soniox. When <code>False</code> (Soniox turn detection mode): Soniox   endpoint detection is enabled and controls turn endings. Emits   <code>UserStartedSpeakingFrame</code> on the local VAD signal when a VAD analyzer is   configured (most responsive) or on the first transcript token otherwise, and   <code>UserStoppedSpeakingFrame</code> when the endpoint is detected. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="should_interrupt" type="bool" default="True"&gt;   Whether to interrupt the bot when the user starts speaking in Soniox turn   detection mode (<code>vad_force_turn_endpoint=False</code>). Only applies when using   Soniox's built-in endpoint detection. &lt;/ParamField&gt;</p>
+<h3>Settings</h3>
+<p>Runtime-configurable settings passed via the <code>settings</code> constructor argument using <code>SonioxSTTService.Settings(...)</code>. These can be updated mid-conversation with <code>STTUpdateSettingsFrame</code>. See <a href="/pipecat/fundamentals/service-settings">Service Settings</a> for details.</p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td><code>str</code></td><td><code>"stt-rt-v5"</code></td><td>Model to use for transcription. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language</code></td><td>`Language \</td><td>str`</td><td><code>None</code></td><td>Language for speech recognition. *(Inherited from base STT settings.)*</td></tr><tr><td><code>language_hints</code></td><td><code>list[Language]</code></td><td><code>None</code></td><td>Language hints for transcription. Helps the model prioritize expected languages.</td></tr><tr><td><code>language_hints_strict</code></td><td><code>bool</code></td><td><code>None</code></td><td>If true, strictly enforce language hints (only transcribe in provided languages).</td></tr><tr><td><code>context</code></td><td>`SonioxContextObject \</td><td>str`</td><td><code>None</code></td><td>Customization for transcription. String for models with context\_version 1, <code>SonioxContextObject</code> for context\_version 2 (stt-rt-v3-preview and higher).</td></tr><tr><td><code>enable_speaker_diarization</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable speaker diarization. Tokens are annotated with speaker IDs.</td></tr><tr><td><code>enable_language_identification</code></td><td><code>bool</code></td><td><code>False</code></td><td>Enable language identification. Tokens are annotated with language IDs, and the detected language is included in the final <code>TranscriptionFrame</code>.</td></tr><tr><td><code>max_endpoint_delay_ms</code></td><td><code>int</code></td><td><code>None</code></td><td>Maximum delay in milliseconds before endpoint detection finalizes the turn. Valid range: 500-3000. Only effective when <code>vad_force_turn_endpoint=False</code>.</td></tr><tr><td><code>endpoint_sensitivity</code></td><td><code>float</code></td><td><code>None</code></td><td>Endpoint detection sensitivity (-1.0 to 1.0); higher values finalize turns sooner, lower values delay finalization. Introduced in the v5 model. Only effective when <code>vad_force_turn_endpoint=False</code>.</td></tr><tr><td><code>endpoint_latency_adjustment_level</code></td><td><code>int</code></td><td><code>None</code></td><td>Reduces endpoint latency vs. the default (0-3); higher values finalize turns sooner but may reduce accuracy. Only effective when <code>vad_force_turn_endpoint=False</code>.</td></tr><tr><td><code>client_reference_id</code></td><td><code>str</code></td><td><code>None</code></td><td>Client reference ID for transcription tracking.</td></tr></tbody></table></div>
+<h2>Usage</h2>
+<h3>Basic Setup</h3>
+<pre><code>from pipecat.services.soniox.stt import SonioxSTTService
+
+stt = SonioxSTTService(
+    api_key=os.getenv("SONIOX_API_KEY"),
+)</code></pre>
+<h3>With Language Hints and Context</h3>
+<pre><code>from pipecat.services.soniox.stt import SonioxSTTService
+from pipecat.transcriptions.language import Language
+
+stt = SonioxSTTService(
+    api_key=os.getenv("SONIOX_API_KEY"),
+    settings=SonioxSTTService.Settings(
+        model="stt-rt-v5",
+        language_hints=[Language.EN, Language.ES],
+        language_hints_strict=True,
+        enable_language_identification=True,
+    ),
+)</code></pre>
+<h3>With Context Object (v3+ models)</h3>
+<pre><code>from pipecat.services.soniox.stt import (
+    SonioxSTTService,
+    SonioxContextObject,
+    SonioxContextGeneralItem,
+)
+
+stt = SonioxSTTService(
+    api_key=os.getenv("SONIOX_API_KEY"),
+    settings=SonioxSTTService.Settings(
+        model="stt-rt-v5",
+        context=SonioxContextObject(
+            general=[
+                SonioxContextGeneralItem(key="domain", value="medical"),
+            ],
+            terms=["Pipecat", "transcription"],
+        ),
+    ),
+)</code></pre>
+<h3>With Soniox Built-in Turn Detection</h3>
+<p>Soniox's built-in endpoint detection provides natural turn taking. For the most responsive barge-in, configure a local VAD analyzer so the turn opens on the local VAD signal instead of waiting for the first transcript token:</p>
+<pre><code>from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair,
+    LLMUserAggregatorParams,
+)
+from pipecat.services.soniox.stt import SonioxSTTService
+from pipecat.transcriptions.language import Language
+
+stt = SonioxSTTService(
+    api_key=os.getenv("SONIOX_API_KEY"),
+    vad_force_turn_endpoint=False,  # Use Soniox's built-in endpoint detection
+    settings=SonioxSTTService.Settings(
+        language_hints=[Language.EN],
+        # Optional: Tune endpoint detection timing
+        # endpoint_sensitivity=0.3,
+        # endpoint_latency_adjustment_level=2,
+    ),
+)
+
+# Configure user aggregator with VAD for responsive turn opening
+user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    context,
+    user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
+)</code></pre>
+<h2>Notes</h2>
+<ul><li><strong>Turn detection modes</strong>:</li><li><strong>Pipecat mode</strong> (<code>vad_force_turn_endpoint=True</code>, default): Soniox endpoint detection is disabled and a <code>VADUserStoppedSpeakingFrame</code> sends a finalize message to Soniox to get the final transcript immediately. This significantly reduces latency. The service emits no turn frames; the user aggregator runs local VAD/smart-turn analysis.</li><li><strong>Soniox mode</strong> (<code>vad_force_turn_endpoint=False</code>): Soniox endpoint detection is enabled and controls turn endings. The service emits <code>UserStartedSpeakingFrame</code> and <code>UserStoppedSpeakingFrame</code> based on Soniox's detection. The turn opens on the local VAD signal when a VAD analyzer is configured (most responsive) or on the first transcript token otherwise. The <code>should_interrupt</code> parameter (default <code>True</code>) controls whether the bot is interrupted when the user starts speaking.</li><li><strong>Endpoint detection settings</strong>: The <code>max_endpoint_delay_ms</code>, <code>endpoint_sensitivity</code>, and <code>endpoint_latency_adjustment_level</code> settings control Soniox's native endpoint detection and only take effect when <code>vad_force_turn_endpoint=False</code>. When <code>vad_force_turn_endpoint=True</code> (the default), Pipecat's local VAD handles turn detection and these settings are ignored.</li><li><strong>Keepalive</strong>: The service automatically sends protocol-level keepalive messages to maintain the WebSocket connection.</li><li><strong>Context versions</strong>: Use a string for <code>context</code> with older models (context\_version 1) and <code>SonioxContextObject</code> for newer models (stt-rt-v3-preview and higher, context\_version 2). See the <a href="https://soniox.com/docs/stt/concepts/context">Soniox context documentation</a> for details.</li></ul>
+<p>&lt;Tip&gt;   The <code>InputParams</code> / <code>params=</code> pattern is deprecated as of v0.0.105. Use   <code>Settings</code> / <code>settings=</code> instead. See the <a href="/pipecat/fundamentals/service-settings">Service Settings   guide</a> for migration details. &lt;/Tip&gt;</p>
+<h2>Event Handlers</h2>
+<p>Soniox STT supports the standard <a href="/api-reference/server/events/service-events">service connection events</a>:</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_connected</code></td><td>Connected to Soniox WebSocket</td></tr><tr><td><code>on_disconnected</code></td><td>Disconnected from Soniox WebSocket</td></tr></tbody></table></div>
+<pre><code>@stt.event_handler("on_connected")
+async def on_connected(service):
+    print("Connected to Soniox")</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/stt/soniox">https://docs.pipecat.ai/api-reference/server/services/stt/soniox</a></p>
+</div></main></div></body></html>

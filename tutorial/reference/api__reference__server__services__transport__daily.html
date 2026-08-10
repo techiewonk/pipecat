@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily WebRTC Transport · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>Daily WebRTC Transport</h1>
+<blockquote>DailyTransport connects Pipecat pipelines to Daily's hosted WebRTC infrastructure for real-time audio and video sessions.</blockquote>
+<h2>Overview</h2>
+<p><code>DailyTransport</code> provides real-time audio and video communication using Daily's hosted WebRTC platform. It handles bidirectional media streams, participant management, transcription, recording, and telephony features without requiring your own WebRTC infrastructure. Daily manages all the complexity of WebRTC connections, NAT traversal, and global media routing.</p>
+<p>&lt;CardGroup cols={2}&gt;   &lt;Card title="DailyTransport API Reference" icon="code" href="https://reference-server.pipecat.ai/en/latest/api/pipecat.transports.daily.transport.html"&gt;     Transport methods and configuration options   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Example Implementation" icon="play" href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transports/transports-daily.py"&gt;     Complete Daily transport voice agent example   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Daily API Documentation" icon="book" href="https://docs.daily.co/reference/rest-api"&gt;     Official Daily REST API and platform documentation   &lt;/Card&gt;</p>
+<p>  &lt;Card title="Daily Dashboard" icon="external-link" href="https://dashboard.daily.co/u/signup?pipecat=true"&gt;     Sign up for Daily API access and room management   &lt;/Card&gt; &lt;/CardGroup&gt;</p>
+<h2>Installation</h2>
+<p>To use <code>DailyTransport</code>, install the required dependencies:</p>
+<pre><code>uv add "pipecat-ai[daily]"</code></pre>
+<h2>Prerequisites</h2>
+<h3>Daily Account Setup</h3>
+<p>Before using DailyTransport, you need:</p>
+<ol><li><strong>Daily Account</strong>: Sign up at <a href="https://dashboard.daily.co/u/signup?pipecat=true">Daily Dashboard</a></li><li><strong>API Key</strong>: Generate a Daily API key from your dashboard</li><li><strong>Room Creation</strong>: Daily rooms must be created before connecting (see Usage section)</li></ol>
+<h3>Required Environment Variables</h3>
+<ul><li><code>DAILY_API_KEY</code>: Your Daily API key for room creation and management</li></ul>
+<h2>Key Features</h2>
+<ul><li><strong>Hosted WebRTC</strong>: No infrastructure setup required - Daily handles all WebRTC complexity</li><li><strong>Multi-participant Support</strong>: Handle multiple participants with individual audio/video tracks</li><li><strong>Multi-track Audio/Video</strong>: Publish multiple custom audio and video tracks simultaneously with per-track configuration, including built-in support for Daily's <code>screenAudio</code> and <code>screenVideo</code> destinations</li><li><strong>Built-in Transcription</strong>: Real-time speech-to-text with Deepgram integration</li><li><strong>Telephony Integration</strong>: \<a href="/pipecat/telephony/twilio-daily-sip">Dial-in/dial-out support for phone numbers via [SIP</a>/<a href="/pipecat/telephony/daily-pstn">PSTN</a></li><li><strong>Recording &amp; Streaming</strong>: Built-in call recording and live streaming capabilities</li><li><strong>Global Infrastructure</strong>: Daily's edge network ensures low latency worldwide</li><li><strong>Advanced Controls</strong>: Participant management, permissions, and media routing</li></ul>
+<h2>Configuration</h2>
+<h3>DailyTransport</h3>
+<p>&lt;ParamField path="room_url" type="str" required&gt;   URL of the Daily room to connect to. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="token" type="str" default="None"&gt;   Authentication token for the room. Required for private rooms or when specific   permissions are needed. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="bot_name" type="str" required&gt;   Display name for the bot in the call. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="params" type="DailyParams" default="DailyParams()"&gt;   Transport configuration parameters. See <a href="#dailyparams">DailyParams</a> below and   <a href="/api-reference/server/services/transport/transport-params">TransportParams</a>   for inherited base parameters. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="input_name" type="str" default="None"&gt;   Optional name for the input transport processor. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="output_name" type="str" default="None"&gt;   Optional name for the output transport processor. &lt;/ParamField&gt;</p>
+<h3>DailyParams</h3>
+<p>Inherits all parameters from <a href="/api-reference/server/services/transport/transport-params">TransportParams</a> (audio, video, VAD settings) with these additional fields:</p>
+<p>&lt;ParamField path="api_url" type="str" default="https://api.daily.co/v1"&gt;   Daily API base URL. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="api_key" type="str" default=""&gt;   Daily API authentication key. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="audio_in_user_tracks" type="bool" default="True"&gt;   Receive users' audio in separate tracks rather than a mixed stream. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="dialin_settings" type="DailyDialinSettings" default="None"&gt;   Settings for dial-in functionality. See   <a href="#dailydialinsettings">DailyDialinSettings</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="camera_out_enabled" type="bool" default="True"&gt;   Whether to enable the main camera output track. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="camera_out_send_settings" type="Dict[str, Any]" default="None"&gt;   Camera output track publishing settings. This dict is passed verbatim to the   Daily client's camera publishing settings, allowing full control over   encoding, codec, bitrate, and framerate. See <a href="https://reference-python.daily.co/types.html#videopublishingsettings">Daily   VideoPublishingSettings</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="custom_audio_track_params" type="Mapping[str, DailyCustomAudioTrackParams]" default="None"&gt;   Per-destination configuration for custom audio tracks. See   <a href="#dailycustomaudiotrackparams">DailyCustomAudioTrackParams</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="custom_video_track_params" type="Mapping[str, DailyCustomVideoTrackParams]" default="None"&gt;   Per-destination configuration for custom video tracks. See   <a href="#dailycustomvideotrackparams">DailyCustomVideoTrackParams</a> below. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="microphone_out_enabled" type="bool" default="True"&gt;   Whether to enable the main microphone track. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transcription_enabled" type="bool" default="False"&gt;   Whether to enable Daily's built-in speech transcription (powered by Deepgram). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="transcription_settings" type="DailyTranscriptionSettings" default="DailyTranscriptionSettings()"&gt;   Configuration for the transcription service. See   <a href="#dailytranscriptionsettings">DailyTranscriptionSettings</a> below. &lt;/ParamField&gt;</p>
+<h3>DailyDialinSettings</h3>
+<p>Settings for Daily's dial-in (SIP) functionality.</p>
+<p>&lt;ParamField path="call_id" type="str" default=""&gt;   Call ID (UUID) representing the session ID in the SIP network. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="call_domain" type="str" default=""&gt;   Call domain (UUID) representing your Daily domain on the SIP network. &lt;/ParamField&gt;</p>
+<h3>DailyTranscriptionSettings</h3>
+<p>Configuration for Daily's built-in transcription service (Deepgram).</p>
+<p>&lt;ParamField path="language" type="str" default="en"&gt;   ISO language code for transcription. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="model" type="str" default="nova-2-general"&gt;   Deepgram transcription model to use. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="profanity_filter" type="bool" default="True"&gt;   Whether to filter profanity from transcripts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="redact" type="bool" default="False"&gt;   Whether to redact sensitive information. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="endpointing" type="bool" default="True"&gt;   Whether to use endpointing to determine speech segments. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="punctuate" type="bool" default="True"&gt;   Whether to add punctuation to transcripts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="includeRawResponse" type="bool" default="True"&gt;   Whether to include raw response data from Deepgram. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="extra" type="Mapping[str, Any]" default="{&amp;#x22;interim_results&amp;#x22;: True}"&gt;   Additional parameters passed to the Deepgram transcription service. &lt;/ParamField&gt;</p>
+<h3>DailyCustomAudioTrackParams</h3>
+<p>Configuration for a custom audio track. If <code>send_settings</code> is not provided, the track will use the default audio publishing settings (bitrate, channel config, etc.).</p>
+<p>&lt;ParamField path="sample_rate" type="int" default="None"&gt;   Audio sample rate in Hz. Defaults to transport's output sample rate. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="channels" type="int" default="1"&gt;   Number of audio channels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="send_settings" type="Dict[str, Any]" default="None"&gt;   Optional Daily sendSettings dict for this track. See <a href="https://reference-python.daily.co/types.html#audiopublishingsettings">Daily   AudioPublishingSettings</a>. &lt;/ParamField&gt;</p>
+<h3>DailyCustomVideoTrackParams</h3>
+<p>Configuration for a custom video track. If <code>send_settings</code> is not provided, the track will use the default video publishing settings (framerate, bitrate, codec, etc.).</p>
+<p>&lt;ParamField path="width" type="int" default="1024"&gt;   Video width in pixels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="height" type="int" default="768"&gt;   Video height in pixels. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="color_format" type="str" default="RGB"&gt;   Video color format (e.g., "RGB", "RGBA", "BGRA"). &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="send_settings" type="Dict[str, Any]" default="None"&gt;   Optional Daily sendSettings dict for this track. See <a href="https://reference-python.daily.co/types.html#videopublishingsettings">Daily   VideoPublishingSettings</a>. &lt;/ParamField&gt;</p>
+<h2>Usage</h2>
+<p>DailyTransport connects your Pipecat bot to Daily rooms where it can communicate with participants through audio, video, and data channels. Rooms must be created using the Daily API before your bot can join.</p>
+<p>The transport integrates with Pipecat's pipeline to process participant audio through your STT, LLM, and TTS services, then send responses back to participants.</p>
+<p>See the <a href="https://github.com/pipecat-ai/pipecat/blob/main/examples/transports/transports-daily.py">complete example</a> for a full implementation including:</p>
+<ul><li>Daily room creation and token management</li><li>Transport configuration with transcription and VAD</li><li>Pipeline integration with participant event handling</li><li>Advanced features like recording and dial-out</li></ul>
+<h2>Notes</h2>
+<h3>Using built-in transcription</h3>
+<p>Daily can transcribe the call for you (powered by Deepgram) instead of you adding a dedicated STT service to the pipeline. Set <code>transcription_enabled=True</code> on <code>DailyParams</code>:</p>
+<pre><code>from pipecat.transports.daily.transport import (
+    DailyTransport,
+    DailyParams,
+    DailyTranscriptionSettings,
+)
+
+transport = DailyTransport(
+    room_url,
+    token,
+    "Voice Bot",
+    DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        transcription_enabled=True,
+        transcription_settings=DailyTranscriptionSettings(
+            language="en",
+            model="nova-3-general",
+        ),
+    ),
+)</code></pre>
+<p>With this enabled, Daily runs transcription server-side and the transport pushes <code>TranscriptionFrame</code>s into the pipeline. <strong>You do not add a separate STT service</strong> (no <code>DeepgramSTTService</code>, etc.) — the transport fills that role. Your bot receives the same transcriptions in-call participants see, and you can also handle them directly via the <a href="#on_transcription_message"><code>on_transcription_message</code></a> event.</p>
+<p>When to use this versus a dedicated STT service:</p>
+<ul><li><strong>Built-in (<code>transcription_enabled=True</code>)</strong>: one less service to wire up. Billed by Daily per participant-minute, separate from your own Deepgram key. Less control over provider and tuning.</li><li><strong>Dedicated STT service in the pipeline</strong>: full control over provider, model, and settings, billed on your own provider account. This is what most Pipecat examples use. See <a href="/pipecat/learn/speech-to-text">Speech to Text</a>.</li></ul>
+<p>&lt;Warning&gt;   Only enable one STT service. Enabling <code>transcription_enabled</code> <strong>and</strong> adding   an STT processor will transcribe the same audio twice and bill you twice. &lt;/Warning&gt;</p>
+<h3>Screen Audio Destination</h3>
+<p>DailyTransport includes built-in support for Daily's <code>screenAudio</code> destination. When <code>"screenAudio"</code> is included in the <code>audio_out_destinations</code> parameter, a dedicated screen audio track is automatically created at join time:</p>
+<pre><code>params = DailyParams(
+    audio_out_enabled=True,
+    audio_out_destinations=["screenAudio"]
+)
+
+# Route frames to the screen audio track
+frame = OutputAudioRawFrame(...)
+frame.transport_destination = "screenAudio"</code></pre>
+<p>Optionally configure the <code>screenAudio</code> track with custom parameters:</p>
+<pre><code>params = DailyParams(
+    audio_out_enabled=True,
+    audio_out_destinations=["screenAudio"],
+    custom_audio_track_params={
+        "screenAudio": DailyCustomAudioTrackParams(
+            sample_rate=48000,
+            channels=2,
+            send_settings={"maxBitrate": 128000}
+        )
+    }
+)</code></pre>
+<p>&lt;Note&gt;   Requires <code>daily-python&gt;=0.29.0</code>. &lt;/Note&gt;</p>
+<h3>Screen Video Destination</h3>
+<p>DailyTransport includes built-in support for Daily's <code>screenVideo</code> destination. When <code>"screenVideo"</code> is included in the <code>video_out_destinations</code> parameter, a dedicated screen video track is automatically created at join time:</p>
+<pre><code>params = DailyParams(
+    video_out_enabled=True,
+    video_out_is_live=True,
+    video_out_width=1280,
+    video_out_height=720,
+    video_out_destinations=["screenVideo"]
+)
+
+# Route frames to the screen video track
+frame = OutputImageRawFrame(...)
+frame.transport_destination = "screenVideo"</code></pre>
+<h3>Camera Publishing Settings</h3>
+<p>The <code>camera_out_send_settings</code> parameter provides full control over the camera track's publishing configuration:</p>
+<pre><code>params = DailyParams(
+    camera_out_send_settings={
+        "maxQuality": "high",
+        "encodings": {
+            "high": {"maxBitrate": 2_000_000, "maxFramerate": 30}
+        },
+    },
+)</code></pre>
+<p>&lt;Warning&gt;   The <code>TransportParams.video_out_bitrate</code> parameter is deprecated for Daily. Use   <code>DailyParams.camera_out_send_settings</code> instead to configure camera publishing   encodings (bitrate, framerate, codec, etc.). &lt;/Warning&gt;</p>
+<h2>Event Handlers</h2>
+<p>DailyTransport provides event handlers for room lifecycle, participant management, messaging, telephony, and recording. Register handlers using the <code>@event_handler</code> decorator on the transport instance.</p>
+<h3>Events Summary</h3>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_joined</code></td><td>Bot joined the room</td></tr><tr><td><code>on_connected</code></td><td>Bot connected to the room</td></tr><tr><td><code>on_left</code></td><td>Bot left the room</td></tr><tr><td><code>on_before_leave</code></td><td>About to leave the room (sync)</td></tr><tr><td><code>on_error</code></td><td>Transport error occurred</td></tr><tr><td><code>on_call_state_updated</code></td><td>Call state changed</td></tr><tr><td><code>on_first_participant_joined</code></td><td>First participant joined the room</td></tr><tr><td><code>on_participant_joined</code></td><td>A participant joined</td></tr><tr><td><code>on_participant_left</code></td><td>A participant left</td></tr><tr><td><code>on_participant_updated</code></td><td>A participant's state updated</td></tr><tr><td><code>on_client_connected</code></td><td>A participant connected</td></tr><tr><td><code>on_client_disconnected</code></td><td>A participant disconnected</td></tr><tr><td><code>on_active_speaker_changed</code></td><td>Active speaker changed</td></tr><tr><td><code>on_app_message</code></td><td>App message received</td></tr><tr><td><code>on_transcription_message</code></td><td>Transcription message received</td></tr><tr><td><code>on_recording_started</code></td><td>Recording started</td></tr><tr><td><code>on_recording_stopped</code></td><td>Recording stopped</td></tr><tr><td><code>on_recording_error</code></td><td>Recording error occurred</td></tr><tr><td><code>on_dialin_connected</code></td><td>Dial-in call connected</td></tr><tr><td><code>on_dialin_ready</code></td><td>Dial-in SIP endpoint ready</td></tr><tr><td><code>on_dialin_stopped</code></td><td>Dial-in call stopped</td></tr><tr><td><code>on_dialin_error</code></td><td>Dial-in error</td></tr><tr><td><code>on_dialin_warning</code></td><td>Dial-in warning</td></tr><tr><td><code>on_dialout_answered</code></td><td>Dial-out call answered</td></tr><tr><td><code>on_dialout_connected</code></td><td>Dial-out call connected</td></tr><tr><td><code>on_dialout_stopped</code></td><td>Dial-out call stopped</td></tr><tr><td><code>on_dialout_error</code></td><td>Dial-out error</td></tr><tr><td><code>on_dialout_warning</code></td><td>Dial-out warning</td></tr><tr><td><code>on_dtmf_event</code></td><td>DTMF keypad tone received</td></tr></tbody></table></div>
+<h3>Room Lifecycle</h3>
+<h4>on\_joined</h4>
+<p>Fired when the bot successfully joins the Daily room.</p>
+<pre><code>@transport.event_handler("on_joined")
+async def on_joined(transport, data):
+    print(f"Bot joined the room: {data}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>dict</code></td><td>Join event data from Daily</td></tr></tbody></table></div>
+<h4>on\_connected</h4>
+<p>Fired when the bot connects to the Daily room. This is an alias for <code>on_joined</code> that provides a consistent event name across all transport types.</p>
+<pre><code>@transport.event_handler("on_connected")
+async def on_connected(transport, data):
+    print(f"Bot connected to the room: {data}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>dict</code></td><td>Join event data from Daily</td></tr></tbody></table></div>
+<h4>on\_left</h4>
+<p>Fired when the bot leaves the Daily room.</p>
+<pre><code>@transport.event_handler("on_left")
+async def on_left(transport):
+    print("Bot left the room")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<h4>on\_before\_leave</h4>
+<p>Fired synchronously just before the bot leaves the room. Use this for cleanup that must happen before disconnection, such as stopping transcription.</p>
+<pre><code>@transport.event_handler("on_before_leave")
+async def on_before_leave(transport):
+    print("About to leave the room...")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   This is a <strong>synchronous</strong> event — the bot will not leave the room until all   handlers complete. Keep handlers fast. &lt;/Note&gt;</p>
+<h4>on\_error</h4>
+<p>Fired when a transport-level error occurs.</p>
+<pre><code>@transport.event_handler("on_error")
+async def on_error(transport, error):
+    print(f"Transport error: {error}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>error</code></td><td><code>str</code></td><td>Error message</td></tr></tbody></table></div>
+<h4>on\_call\_state\_updated</h4>
+<p>Fired when the call state changes (e.g., joining, joined, leaving, left).</p>
+<pre><code>@transport.event_handler("on_call_state_updated")
+async def on_call_state_updated(transport, state):
+    print(f"Call state: {state}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>state</code></td><td><code>str</code></td><td>The new call state</td></tr></tbody></table></div>
+<h3>Participants</h3>
+<h4>on\_first\_participant\_joined</h4>
+<p>Fired when the first participant (other than the bot) joins the room. This is commonly used to start the conversation.</p>
+<pre><code>@transport.event_handler("on_first_participant_joined")
+async def on_first_participant_joined(transport, participant):
+    await worker.queue_frame(TTSSpeakFrame("Hello! How can I help you today?"))</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Participant data from Daily</td></tr></tbody></table></div>
+<h4>on\_participant\_joined</h4>
+<p>Fired when any participant joins the room.</p>
+<pre><code>@transport.event_handler("on_participant_joined")
+async def on_participant_joined(transport, participant):
+    print(f"Participant joined: {participant['id']}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Participant data from Daily</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   When a participant joins, both <code>on_participant_joined</code> and   <code>on_client_connected</code> fire. Use <code>on_first_participant_joined</code> if you only need   to react to the first participant. &lt;/Note&gt;</p>
+<h4>on\_participant\_left</h4>
+<p>Fired when a participant leaves the room.</p>
+<pre><code>@transport.event_handler("on_participant_left")
+async def on_participant_left(transport, participant, reason):
+    print(f"Participant {participant['id']} left: {reason}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Participant data from Daily</td></tr><tr><td><code>reason</code></td><td><code>str</code></td><td>Reason the participant left</td></tr></tbody></table></div>
+<h4>on\_participant\_updated</h4>
+<p>Fired when a participant's state changes (e.g., audio/video tracks enabled/disabled).</p>
+<pre><code>@transport.event_handler("on_participant_updated")
+async def on_participant_updated(transport, participant):
+    print(f"Participant updated: {participant['id']}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Updated participant data from Daily</td></tr></tbody></table></div>
+<h4>on\_client\_connected / on\_client\_disconnected</h4>
+<p>Transport-agnostic aliases that fire alongside <code>on_participant_joined</code> and <code>on_participant_left</code> respectively, for compatibility with other transports. Same parameters as their counterparts.</p>
+<pre><code>@transport.event_handler("on_client_connected")
+async def on_client_connected(transport, participant):
+    print(f"Client connected: {participant['id']}")</code></pre>
+<h4>on\_active\_speaker\_changed</h4>
+<p>Fired when the active speaker in the room changes.</p>
+<pre><code>@transport.event_handler("on_active_speaker_changed")
+async def on_active_speaker_changed(transport, participant):
+    print(f"Active speaker: {participant['id']}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>participant</code></td><td><code>dict</code></td><td>Active speaker participant data</td></tr></tbody></table></div>
+<h3>Messaging</h3>
+<h4>on\_app\_message</h4>
+<p>Fired when an app message is received from a participant.</p>
+<pre><code>@transport.event_handler("on_app_message")
+async def on_app_message(transport, message, sender):
+    print(f"Message from {sender}: {message}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>message</code></td><td><code>Any</code></td><td>The message content</td></tr><tr><td><code>sender</code></td><td><code>str</code></td><td>The sender's participant ID</td></tr></tbody></table></div>
+<h4>on\_transcription\_message</h4>
+<p>Fired when a transcription message is received from Daily's built-in transcription service.</p>
+<pre><code>@transport.event_handler("on_transcription_message")
+async def on_transcription_message(transport, message):
+    print(f"Transcription: {message['text']}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>message</code></td><td><code>dict</code></td><td>Transcription message with <code>text</code>, <code>participantId</code>, <code>timestamp</code>, and <code>rawResponse</code> fields</td></tr></tbody></table></div>
+<h3>Recording</h3>
+<p>Daily supports two ways to record a call: start and stop it imperatively from the transport, or configure a meeting token to start cloud recording automatically when the bot joins.</p>
+<h4>start\_recording / stop\_recording</h4>
+<p>Start and stop Daily's cloud recording during a session.</p>
+<pre><code>async def start_recording(
+    streaming_settings=None, stream_id=None, force_new=None
+) -&gt; tuple[str, CallClientError | None]
+
+async def stop_recording(stream_id=None) -&gt; CallClientError | None</code></pre>
+<p>Typically triggered from an event handler once the session is underway:</p>
+<pre><code>@transport.event_handler("on_first_participant_joined")
+async def on_first_participant_joined(transport, participant):
+    stream_id, error = await transport.start_recording()
+    if error:
+        logger.error(f"Failed to start recording: {error}")
+
+# Later, to stop recording:
+await transport.stop_recording()</code></pre>
+<p>&lt;Note&gt;   Cloud recording must be enabled on the room or token via <code>enable_recording</code>.   See <a href="/api-reference/server/utilities/daily/rest-helper">DailyRESTHelper</a>. &lt;/Note&gt;</p>
+<h4>Start recording automatically on join</h4>
+<p>Instead of calling <code>start_recording()</code>, configure a meeting token to begin cloud recording as soon as the bot joins, using <code>DailyRESTHelper</code>:</p>
+<pre><code>from pipecat.transports.daily.utils import (
+    DailyMeetingTokenParams,
+    DailyMeetingTokenProperties,
+)
+
+token = await helper.get_token(
+    room_url="https://your-domain.daily.co/my-room",
+    params=DailyMeetingTokenParams(
+        properties=DailyMeetingTokenProperties(
+            enable_recording="cloud",
+            start_cloud_recording=True,
+        )
+    ),
+)</code></pre>
+<h4>on\_recording\_started / on\_recording\_stopped / on\_recording\_error</h4>
+<p>Events for monitoring Daily's built-in recording feature.</p>
+<pre><code>@transport.event_handler("on_recording_started")
+async def on_recording_started(transport, status):
+    print(f"Recording started: {status}")
+
+@transport.event_handler("on_recording_error")
+async def on_recording_error(transport, stream_id, message):
+    print(f"Recording error for {stream_id}: {message}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Parameters</th></tr></thead><tbody><tr><td><code>on_recording_started</code></td><td><code>transport</code>, <code>status</code> (str)</td></tr><tr><td><code>on_recording_stopped</code></td><td><code>transport</code>, <code>stream_id</code> (str)</td></tr><tr><td><code>on_recording_error</code></td><td><code>transport</code>, <code>stream_id</code> (str), <code>message</code> (str)</td></tr></tbody></table></div>
+<h3>Telephony: Dial-in</h3>
+<p>Events for monitoring incoming phone calls. See the <a href="/pipecat/telephony/overview">telephony guides</a> for setup details.</p>
+<h4>on\_dialin\_ready</h4>
+<p>Fired when the dial-in SIP endpoint is ready to receive calls. If <code>dialin_settings</code> are configured, Pipecat automatically calls the Daily <code>pinlessCallUpdate</code> API.</p>
+<pre><code>@transport.event_handler("on_dialin_ready")
+async def on_dialin_ready(transport, sip_endpoint):
+    print(f"Dial-in ready at: {sip_endpoint}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>sip_endpoint</code></td><td><code>str</code></td><td>The SIP endpoint URI</td></tr></tbody></table></div>
+<h4>on\_dialin\_connected / on\_dialin\_stopped / on\_dialin\_error / on\_dialin\_warning</h4>
+<p>Lifecycle events for dial-in calls. All receive <code>(transport, data)</code> where <code>data</code> is a <code>dict</code> with event details.</p>
+<pre><code>@transport.event_handler("on_dialin_connected")
+async def on_dialin_connected(transport, data):
+    print(f"Dial-in connected: {data}")
+
+@transport.event_handler("on_dialin_error")
+async def on_dialin_error(transport, data):
+    print(f"Dial-in error: {data}")</code></pre>
+<h3>Telephony: Dial-out</h3>
+<p>Events for monitoring outgoing phone calls. All receive <code>(transport, data)</code> where <code>data</code> is a <code>dict</code> with event details.</p>
+<div class="tablewrap"><table><thead><tr><th>Event</th><th>Description</th></tr></thead><tbody><tr><td><code>on_dialout_answered</code></td><td>Dial-out call was answered</td></tr><tr><td><code>on_dialout_connected</code></td><td>Dial-out call connected</td></tr><tr><td><code>on_dialout_stopped</code></td><td>Dial-out call stopped</td></tr><tr><td><code>on_dialout_error</code></td><td>Dial-out error occurred</td></tr><tr><td><code>on_dialout_warning</code></td><td>Dial-out warning</td></tr></tbody></table></div>
+<pre><code>@transport.event_handler("on_dialout_answered")
+async def on_dialout_answered(transport, data):
+    print(f"Dial-out answered: {data}")
+
+@transport.event_handler("on_dialout_error")
+async def on_dialout_error(transport, data):
+    print(f"Dial-out error: {data}")</code></pre>
+<h3>Telephony: DTMF</h3>
+<h4>on\_dtmf\_event</h4>
+<p>Fired when a DTMF (dual-tone multi-frequency) keypad tone is received from a phone caller. The transport automatically pushes an <code>InputDTMFFrame</code> into the pipeline, enabling your bot to react to keypad presses.</p>
+<pre><code>@transport.event_handler("on_dtmf_event")
+async def on_dtmf_event(transport, data):
+    tone = data["tone"]
+    print(f"Received DTMF tone: {tone}")</code></pre>
+<p><strong>Parameters:</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>transport</code></td><td><code>DailyTransport</code></td><td>The transport instance</td></tr><tr><td><code>data</code></td><td><code>dict</code></td><td>DTMF event data from Daily containing <code>tone</code> (string)</td></tr></tbody></table></div>
+<p>&lt;Note&gt;   DTMF tones are automatically converted to <code>InputDTMFFrame</code> and pushed into the   pipeline. You can handle these frames in your processors to implement IVR   menus or other telephony interactions. &lt;/Note&gt;</p>
+<h2>Additional Resources</h2>
+<ul><li><a href="/api-reference/server/events/overview">Events Overview</a> - Overview of all events in Pipecat</li><li><a href="/api-reference/server/utilities/daily/rest-helper">Daily REST Helper Utility</a></li><li><a href="/api-reference/server/utilities/runner/transport-utils">Pipecat Development Runner's Transport Utilities</a></li><li><a href="/api-reference/client/js/transports/daily">Client SDK Integration</a></li></ul>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/server/services/transport/daily">https://docs.pipecat.ai/api-reference/server/services/transport/daily</a></p>
+</div></main></div></body></html>

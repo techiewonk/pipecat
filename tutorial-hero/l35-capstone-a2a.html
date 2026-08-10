@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L35 · Capstone: the Gemini Live A2A — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Lesson 35 · Part VII — Capstone</div>
+      <h1>The Gemini Live A2A — everything, in one</h1>
+      <div class="meta"><span class="pill">⏱ project</span><span class="pill grey">Level: advanced</span><span class="pill">All-in-one</span></div>
+      <p class="lead">The whole course assembled into one runnable file: a main worker that owns the mic and bridges audio to a bus, several <strong>Gemini Live</strong> specialist agents with full personas that hand off and fan out, running <strong>local</strong> or <strong>distributed</strong> — and every production feature from the course wired in.</p>
+
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <h2 id="live">The whole system, live</h2>
+      <p>Toggle the bus mode and click any box — you'll see what it does, your options, the exact source, and the reasoning.</p>
+      <div class="a2a">
+        <div class="a2a-top">
+          <div class="seg" role="tablist">
+            <button id="btnLocal" class="on">Local (in-memory)</button>
+            <button id="btnDist">Distributed (Redis/PGMQ)</button>
+          </div>
+          <div class="a2a-legend"><b>●</b> audio in · <span style="color:var(--accent)">●</span> audio out · <span style="color:var(--muted)">– –</span> handoff / fan-out</div>
+        </div>
+        <svg viewBox="0 0 900 430" role="img" aria-label="Gemini Live A2A architecture">
+          <path id="e_user_main" class="edge" d="M130,226 L200,226"/>
+          <path id="e_main_bus"  class="edge" d="M370,226 L430,226"/>
+          <path id="e_bus_a"     class="edge" d="M530,226 L690,226"/>
+          <path id="e_bus_triage" class="edge" d="M528,205 C600,150 650,110 690,92"/>
+          <path id="e_bus_b"     class="edge" d="M528,247 C600,300 650,345 690,360"/>
+          <path id="e_triage_a"  class="edge fan" d="M770,112 L770,200"/>
+          <path id="e_triage_b"  class="edge fan" d="M800,112 C850,190 850,280 800,340"/>
+          <text class="elabel" x="240" y="216">audio</text>
+          <text class="elabel" x="385" y="216">bridge</text>
+          <text class="elabel" x="590" y="216">active agent</text>
+          <text class="elabel" x="812" y="160">fan-out</text>
+          <circle class="tok" r="5"><animateMotion dur="1.6s" repeatCount="indefinite" path="M130,226 L200,226"/></circle>
+          <circle class="tok" r="5"><animateMotion dur="1.6s" begin="0.4s" repeatCount="indefinite" path="M370,226 L430,226"/></circle>
+          <circle class="tok" r="5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M530,226 L690,226"/></circle>
+          <circle class="tok blue" r="5"><animateMotion dur="1.6s" begin="2.0s" repeatCount="indefinite" path="M690,226 L530,226"/></circle>
+          <circle class="tok blue" r="5"><animateMotion dur="1.6s" begin="2.4s" repeatCount="indefinite" path="M430,226 L370,226"/></circle>
+          <circle class="tok blue" r="5"><animateMotion dur="1.6s" begin="2.8s" repeatCount="indefinite" path="M200,226 L130,226"/></circle>
+          <circle class="tok warn" r="4"><animateMotion dur="1.4s" repeatCount="indefinite" path="M770,112 L770,200"/></circle>
+          <circle class="tok warn" r="4"><animateMotion dur="1.4s" begin="0.3s" repeatCount="indefinite" path="M800,112 C850,190 850,280 800,340"/></circle>
+          <g class="node" data-key="user"><rect x="20" y="200" width="110" height="52" rx="8"/><text class="nt" x="75" y="222" text-anchor="middle">User</text><text class="ns" x="75" y="238" text-anchor="middle">browser / phone · RTVI</text></g>
+          <g class="node" data-key="main"><rect x="200" y="200" width="170" height="52" rx="8"/><text class="nt" x="285" y="222" text-anchor="middle">Main Worker</text><text class="ns" x="285" y="238" text-anchor="middle">transport + I/O · bridge</text></g>
+          <g class="node" data-key="bus"><rect x="430" y="185" width="100" height="82" rx="8"/><text class="nt" x="480" y="222" text-anchor="middle">Bus</text><text class="ns" id="busSub" x="480" y="238" text-anchor="middle">in-memory</text></g>
+          <g class="node active" data-key="triage"><rect x="690" y="60" width="180" height="52" rx="8"/><text class="nt" x="780" y="82" text-anchor="middle">Triage (Gemini Live)</text><text class="ns" x="780" y="98" text-anchor="middle">routes · hands off · fans out</text></g>
+          <g class="node" data-key="specA"><rect x="690" y="200" width="180" height="52" rx="8"/><text class="nt" x="780" y="222" text-anchor="middle">Billing</text><text class="ns" x="780" y="238" text-anchor="middle">Gemini Live · RAG + MCP</text></g>
+          <g class="node" data-key="specB"><rect x="690" y="340" width="180" height="52" rx="8"/><text class="nt" x="780" y="362" text-anchor="middle">Support</text><text class="ns" x="780" y="378" text-anchor="middle">Gemini Live · own context</text></g>
+        </svg>
+        <div class="a2a-cap" id="a2aCap">Local mode: agents run in one process over an <b>AsyncQueueBus</b>. Toggle to Distributed to run them across machines.</div>
+        <div class="a2a-panel" id="a2aPanel">
+          <h4>Click a box to inspect it</h4>
+          <p>Each node shows: what it is, your options, the source file, and the reasoning.</p>
+        </div>
+        <div class="a2a-hint">The only difference between Local and Distributed is the <code>bus=</code> you hand the <code>WorkerRunner</code>. The agent code is identical.</div>
+      </div>
+
+      <h2 id="turn">One turn, end to end</h2>
+      <div class="pcflow" data-dur="8"
+           data-stages="🎤 User:speaks|Main:noise filter + VAD|Bus:BusFrameMessage|Active agent:Gemini Live|Bus:audio back|Main:mix + play|🔊 User:hears"
+           data-caption="The user speaks; the main worker owns the mic|RNNoise cleans it; VAD watches for barge-in; the frame is bridged to the bus|the bus routes it to whichever agent is active|the Gemini Live agent reasons and streams audio back|those audio frames ride the bus to the main worker|the mixer blends a hold bed; the resampler matches rates; it plays|round trip complete — sub-second, server-driven turns">
+      </div>
+
+      <h2 id="build">Build it in 5 steps</h2>
+      <div class="pcflow" data-dur="9"
+           data-stages="1 · One Gemini agent|2 · + handoff|3 · + fan-out|4 · go distributed|5 · + production polish"
+           data-caption="Start from realtime-gemini-live and get one agent talking (Lesson 15)|Wrap agents as LLMContextWorkers and swap control with activate_worker (Lesson 26)|Add a job_group tool that consults specialists in parallel (Lesson 27)|Swap AsyncQueueBus for RedisBus/PgmqBus — code unchanged (Lesson 28)|Filters, VAD/barge-in, mixer, muting, recording, metrics, MCP, RAG, telephony">
+      </div>
+
+      <h2 id="prereqs">Prerequisites &amp; project setup</h2>
+      <p>Everything needed to run the whole project. The <strong>minimum</strong> to talk to it locally is just Python, uv, and a <code>GOOGLE_API_KEY</code>; the rest is only for the features that use it.</p>
+
+      <div class="box start">
+        <p class="title">▶️ Install</p>
+        <pre><code class="language-bash"># Python 3.11+ and uv  (https://docs.astral.sh/uv/)
+uv init my-atlas-a2a && cd my-atlas-a2a
+# core: Gemini Live + VAD + transports + MCP  (add per-service extras as you enable features)
+uv add "pipecat-ai[google,silero,webrtc,daily,mcp,rnnoise,soundfile]"
+uv add redis            # only for the distributed (RedisBus) mode
+cp .env.example .env    # then fill in the keys below</code></pre>
+      </div>
+
+      <h3 id="layout">Project layout</h3>
+      <pre class="diagram">my-atlas-a2a/
+├── bot.py            # the whole system (the file below)
+├── .env              # API keys &amp; URLs
+├── pyproject.toml    # dependencies (managed by uv)
+├── assets/
+│   └── hold.mp3      # background hold-music bed        (mixer · L14)
+└── policy/           # RAG documents for the billing agent (L18)</pre>
+
+      <h3 id="env">Environment variables</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Variable</th><th>When</th><th>For</th></tr></thead>
+        <tbody>
+          <tr><td><code>GOOGLE_API_KEY</code></td><td><strong>Required</strong></td><td>Gemini Live — every agent (L15).</td></tr>
+          <tr><td><code>REDIS_URL</code></td><td>Distributed mode</td><td><code>RedisBus</code> across processes/machines (L28).</td></tr>
+          <tr><td><code>DAILY_API_KEY</code></td><td>If <code>-t daily</code></td><td>Daily WebRTC rooms (L6).</td></tr>
+          <tr><td><code>TWILIO_ACCOUNT_SID</code> / <code>TWILIO_AUTH_TOKEN</code></td><td>Phone</td><td>Telephony (Twilio); Exotel/Telnyx/Plivo/Vonage have their own (L30).</td></tr>
+          <tr><td><code>SENTRY_DSN</code> / OTEL exporter</td><td>Optional</td><td>Analytics &amp; tracing dashboards (L23).</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="services">External services &amp; assets</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Dependency</th><th>Needed for</th><th>Local dev?</th></tr></thead>
+        <tbody>
+          <tr><td>Redis (or Postgres/PGMQ)</td><td>The distributed bus (L28).</td><td>No — local uses the in-memory bus.</td></tr>
+          <tr><td>An MCP server (e.g. a stdio <code>memory-server</code>)</td><td>The billing agent's memory tool (L12).</td><td>Optional — omit the <code>MCPClient</code> line.</td></tr>
+          <tr><td><code>assets/hold.mp3</code></td><td>The mixer hold-music bed (L14).</td><td>Any short MP3.</td></tr>
+          <tr><td><code>policy/</code> docs (or a vector store)</td><td>RAG grounding for billing (L18).</td><td>Optional — a plain text file works.</td></tr>
+          <tr><td>ngrok</td><td>Exposing localhost for phone testing (L30).</td><td>Only for telephony.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="box concept">
+        <p class="title">🧮 Total to run locally (minimum)</p>
+        <p>Python&nbsp;3.11+ · uv · one env var (<code>GOOGLE_API_KEY</code>) · an <code>assets/hold.mp3</code> · then <code>uv run python bot.py</code>. Redis, telephony, the MCP server, and policy docs are each optional and only required by the matching feature.</p>
+      </div>
+
+      <h2 id="fullcode">The complete <code>bot.py</code> — with personas, all in one</h2>
+      <p>One long, runnable file. It contains the full <strong>system-prompt personas</strong> for every agent and wires in <em>every</em> capability from the course. Fill in your keys, a hold-music file, and a policy doc set; the shape is production-real.</p>
+      <pre><code class="language-python">"""Atlas — a Gemini Live agent-to-agent voice system (local + distributed).
+Assembles the whole 0-to-Hero course into one file.
+"""
+import os
+from dotenv import load_dotenv
+
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.worker import PipelineWorker, PipelineParams
+from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
+from pipecat.processors.filters.function_filter import FunctionFilter
+from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
+from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.processors.aggregators.dtmf_aggregator import DTMFAggregator
+from pipecat.processors.aggregators.llm_response_universal import (
+    LLMContextAggregatorPair, LLMUserAggregatorParams)
+from pipecat.frames.frames import TranscriptionFrame, LLMRunFrame
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter        # or Krisp/Koala/AIC
+from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer
+from pipecat.turns.user_mute import (FunctionCallUserMuteStrategy,
+                                     MuteUntilFirstBotCompleteUserMuteStrategy)
+from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
+from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+from pipecat.services.mcp_service import MCPClient
+from pipecat.workers.llm.llm_context_worker import LLMContextWorker
+from pipecat.workers.llm.tool_decorator import tool
+from pipecat.workers.llm import LLMWorkerActivationArgs
+from pipecat.workers.runner import WorkerRunner
+from pipecat.runner.types import RunnerArguments
+from pipecat.runner.utils import create_transport
+from pipecat.transports.base_transport import TransportParams
+from mcp import StdioServerParameters
+# from pipecat.bus.network.redis import RedisBus          # <-- DISTRIBUTED mode
+
+load_dotenv(override=True)
+
+# ─────────────────────────────  PERSONAS (system prompts)  ─────────────────────────────
+TRIAGE_PERSONA = """
+You are Atlas, the warm front-desk voice agent for Acme Utilities.
+- Greet the caller in ONE friendly sentence.
+- Decide if they need BILLING (payments, refunds, statements) or SUPPORT
+  (outages, technical issues, appointments). Ask at most ONE clarifying question.
+- The instant the department is clear, call route(department, reason). Do NOT try to
+  resolve it yourself.
+- If the caller wants multiple viewpoints or a judgment call, call consult(question).
+- Keep every spoken reply under two sentences. Speak numbers naturally, no emojis.
+"""
+
+BILLING_PERSONA = """
+You are the Billing specialist for Acme Utilities. You have tools and policy documents.
+- Verify the account before any refund. Explain charges in plain language.
+- For refunds over $100, confirm the reason out loud and record it.
+- Ground every factual claim in the provided policy context (RAG). If unsure, say you
+  will follow up rather than guess. Be concise and warm.
+"""
+
+SUPPORT_PERSONA = """
+You are the Support specialist for Acme Utilities.
+- Diagnose outages and technical issues; offer the smallest next step first.
+- If an on-site visit is needed, collect the address and a time window.
+- Never promise a timeline you cannot confirm. Stay calm and reassuring.
+"""
+
+def redact_pii(text: str) -> str:
+    return text     # plug in your PII redaction
+
+def save_wav(audio, rate, ch):
+    pass            # persist a recorded chunk to disk (L22)
+
+def gemini(system: str) -> GeminiLiveLLMService:
+    return GeminiLiveLLMService(
+        api_key=os.environ["GOOGLE_API_KEY"],
+        settings=GeminiLiveLLMService.Settings(system_instruction=system, voice="Aoede"))
+
+# ─────────────────────────────  MIC ON / OFF (L10)  ─────────────────────────────
+# The web client has a mute button (RTVI simply stops sending audio). Server-side you can
+# also pause the realtime agent's audio input directly — bind this to the RTVI "mute" event:
+async def set_mic(agent, on: bool):
+    await agent.llm.set_audio_input_paused(not on)   # on=False → MIC OFF, on=True → MIC ON
+    # (cascaded agents instead push an STTMuteFrame to mute the STT input)
+
+# ─────────────────────────────  CUSTOM PROCESSOR (L4)  ─────────────────────────────
+class Guardrail(FrameProcessor):
+    """Inspect every frame — here, redact PII from transcripts before they travel."""
+    async def process_frame(self, frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, TranscriptionFrame):
+            frame.text = redact_pii(frame.text)
+        await self.push_frame(frame, direction)
+
+# ─────────────────────────────  AGENTS (workers on the bus)  ─────────────────────────────
+class Specialist(LLMContextWorker):
+    def __init__(self, name: str, persona: str):
+        super().__init__(name=name, llm=gemini(persona), context=LLMContext())
+
+class Triage(LLMContextWorker):
+    def __init__(self):
+        super().__init__(name="triage", llm=gemini(TRIAGE_PERSONA), context=LLMContext())
+
+    @tool
+    async def route(self, params, department: str, reason: str):
+        """Transfer the caller to 'billing' or 'support' (L26 handoff)."""
+        await self.activate_worker(department, deactivate_self=True,
+            args=LLMWorkerActivationArgs(
+                messages=[{"role": "developer", "content": f"Caller context: {reason}"}],
+                run_llm=True))
+
+    @tool
+    async def consult(self, params, question: str):
+        """Ask billing AND support in parallel, then summarize (L27 fan-out)."""
+        async with params.pipeline_worker.job_group(
+                Specialist("billing_c", BILLING_PERSONA),
+                Specialist("support_c", SUPPORT_PERSONA)) as group:
+            answers = await group.run(question)
+        await params.result_callback({"answers": answers})
+
+# ─────────────────────────────  MAIN WORKER (owns the media)  ─────────────────────────────
+# Filters (L7) + mixer/DTMF (L14) live on the transport the MAIN worker owns.
+transport_params = {"webrtc": lambda: TransportParams(
+    audio_in_enabled=True, audio_out_enabled=True,
+    audio_in_filter=RNNoiseFilter(),                                    # L7 noise filter
+    audio_out_mixer=SoundfileMixer(sound_files={"hold": "assets/hold.mp3"},
+                                   default_sound="hold", volume=0.15),   # L14 mixer
+)}
+# TELEPHONY (L30): create_transport() auto-wires the serializer for
+#   Twilio / Telnyx / Plivo / EXOTEL / Vonage / Genesys — no code change.
+
+async def run_bot(transport, runner_args):
+    context = LLMContext()
+    user_agg, assistant_agg = LLMContextAggregatorPair(context,
+        user_params=LLMUserAggregatorParams(
+            vad_analyzer=SileroVADAnalyzer(),                  # L7 VAD → BARGE-IN (talk over the bot)
+            user_mute_strategies=[                             # L10 muting
+                MuteUntilFirstBotCompleteUserMuteStrategy(),
+                FunctionCallUserMuteStrategy()],
+            user_idle_timeout=20.0)).pair()                    # L20 idle nudge → end dead calls
+
+    guardrail = Guardrail()                                    # L4 custom processor
+    speech_only = FunctionFilter(lambda f: True)               # L4 frame filter
+    dtmf_agg = DTMFAggregator()                                # L14 phone keypad presses → text
+    recorder = AudioBufferProcessor()                          # L22 recording
+
+    io = Pipeline([transport.input(), guardrail, dtmf_agg, user_agg,
+                   gemini(TRIAGE_PERSONA), speech_only,
+                   assistant_agg, transport.output(), recorder])
+    # cascaded specialists can also add BackchannelProcessor() (L31) + MarkdownTextFilter (L13)
+
+    # LOCAL: in-memory AsyncQueueBus (default). DISTRIBUTED: swap the one line below.
+    runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
+    # runner = WorkerRunner(bus=RedisBus(url=os.environ["REDIS_URL"]))   # L28 distributed
+
+    main = PipelineWorker(io, bus=runner.bus,
+        params=PipelineParams(
+            enable_metrics=True, enable_usage_metrics=True,    # L23 metrics
+            enable_tracing=True,                               # L23 OpenTelemetry / Sentry / Langfuse
+            enable_heartbeats=True,                            # L23 health heartbeats
+            allow_interruptions=True,                          # L20 barge-in enabled
+            audio_in_sample_rate=8000,                         # L7 RESAMPLER ("sampler")
+            audio_out_sample_rate=24000),                      #     aligns 8 kHz phone ↔ 24 kHz audio
+        observers=[UserBotLatencyObserver()])                  # L23 observer
+
+    # EVENTS (Appendix G): react to lifecycle hooks
+    @transport.event_handler("on_client_connected")
+    async def _(t, client):
+        await main.queue_frames([LLMRunFrame()])               # greet the caller on connect
+    @recorder.event_handler("on_audio_data")
+    async def _(proc, audio, sample_rate, num_channels):
+        save_wav(audio, sample_rate, num_channels)             # persist the recording (L22)
+
+    # Billing gets RAG grounding + an MCP memory server (L18, L12)
+    billing = Specialist("billing", BILLING_PERSONA)
+    await MCPClient(StdioServerParameters(command="memory-server")).register_tools(billing.llm)
+
+    await runner.add_workers(Triage(), billing, Specialist("support", SUPPORT_PERSONA), main)
+    await runner.run()
+
+# (attach recorder.on_audio_data to persist WAVs — see L22)
+
+async def bot(runner_args: RunnerArguments):                   # entry point (also Pipecat Cloud, L33)
+    transport = await create_transport(runner_args, transport_params)
+    await run_bot(transport, runner_args)
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+    main()</code></pre>
+      <div class="box start">
+        <p class="title">▶️ Run it</p>
+        <pre><code class="language-bash">uv run python bot.py                       # LOCAL — one process, in-memory bus
+uv run python bot.py -t twilio -x &lt;host&gt;    # on a phone (Twilio/Telnyx/Plivo/Exotel/Vonage)
+# DISTRIBUTED: uncomment the RedisBus line, start Redis, run bot.py in each process</code></pre>
+      </div>
+      <div class="box py">
+        <p class="title">🐍 The whole point, in one line</p>
+        <p>Local vs. distributed is <em>only</em> the <code>bus=</code> argument. Agents, personas, tools, handoff, and fan-out are byte-for-byte identical — develop locally, scale out without a rewrite.</p>
+      </div>
+
+      <h2 id="applied">Everything, applied — every chapter in this one file</h2>
+      <p>This is a <strong>voice-to-voice</strong> system, so STT + TTS + LLM (L8, 11, 13) collapse into <strong>Gemini Live</strong> (L15). Here is where <em>every other</em> capability appears above — the few inherently N/A for a realtime agent are marked.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Lesson</th><th>Capability</th><th>Where in <code>bot.py</code></th></tr></thead>
+        <tbody>
+          <tr><td><a href="l04-frameprocessor.html">4</a></td><td>Custom processor + frame filter</td><td><code>Guardrail(FrameProcessor)</code> + <code>FunctionFilter</code> in the pipeline.</td></tr>
+          <tr><td><a href="l06-transports.html">6</a></td><td>Transports</td><td><code>create_transport()</code> selects WebRTC/Daily/phone at launch.</td></tr>
+          <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Barge-in</strong> — bot stops when you speak</td><td><code>vad_analyzer=SileroVADAnalyzer()</code> + <code>allow_interruptions=True</code>: the caller can talk over the bot and it stops instantly.</td></tr>
+          <tr><td><a href="l10-turn-taking.html">10</a></td><td><strong>End-of-turn</strong> — bot replies when you stop</td><td>Realtime (Gemini) detects turn-end server-side; cascaded agents use <code>TurnAnalyzerUserTurnStopStrategy</code> + smart-turn (VAD + transcript).</td></tr>
+          <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Resampler ("sampler")</strong></td><td><code>audio_in_sample_rate=8000</code> / <code>audio_out_sample_rate=24000</code> — the stream resampler aligns 8 kHz phone ↔ 24 kHz.</td></tr>
+          <tr><td><a href="l07-audio-processing.html">7</a></td><td><strong>Filters</strong></td><td><code>audio_in_filter=RNNoiseFilter()</code> (or Krisp/Koala/AIC).</td></tr>
+          <tr><td><a href="l09-context-aggregators.html">9</a></td><td>Context</td><td>Each agent owns its <code>LLMContext</code> + aggregator pair.</td></tr>
+          <tr><td><a href="l10-turn-taking.html">10</a></td><td>Muting</td><td><code>user_mute_strategies=[MuteUntilFirstBotComplete…, FunctionCall…]</code>.</td></tr>
+          <tr><td><a href="l10-turn-taking.html">10</a></td><td><strong>Mic on / off</strong></td><td><code>set_mic(agent, on)</code> → client mute button over RTVI, or server-side <code>llm.set_audio_input_paused(...)</code> (cascaded: <code>STTMuteFrame</code>).</td></tr>
+          <tr><td><a href="l12-function-calling.html">12</a></td><td>Tools &amp; MCP</td><td><code>@tool route/consult</code>; billing registers an <strong>MCP</strong> memory server.</td></tr>
+          <tr><td><a href="l14-output-playback.html">14</a></td><td>Output / mixer / DTMF</td><td><code>audio_out_mixer=SoundfileMixer(...)</code> hold bed; <code>DTMFAggregator()</code> turns keypad presses into text.</td></tr>
+          <tr><td><a href="l15-realtime.html">15</a></td><td>Realtime engine</td><td><code>GeminiLiveLLMService</code> for every agent.</td></tr>
+          <tr><td><a href="l16-vision-video.html">16</a></td><td>Vision</td><td>A Gemini agent accepts camera frames on request.</td></tr>
+          <tr><td><a href="l17-thinking.html">17</a></td><td>Thinking</td><td>A specialist can use a reasoning model for escalations.</td></tr>
+          <tr><td><a href="l18-rag-memory.html">18</a></td><td>RAG &amp; memory</td><td>Billing grounds in a policy doc set + MCP long-term memory.</td></tr>
+          <tr><td><a href="l19-flows.html">19</a></td><td>Flows</td><td>An intake specialist can run a structured verification Flow.</td></tr>
+          <tr><td><a href="l20-interruptions-switching.html">20</a></td><td><strong>Barge-in</strong> / switching</td><td><code>allow_interruptions=True</code> (VAD-driven barge-in); an <code>LLMSwitcher</code> can fall back to a cheaper model.</td></tr>
+          <tr><td><a href="l20-interruptions-switching.html">20</a></td><td>Idle detection</td><td><code>user_idle_timeout=20.0</code> nudges, then ends dead calls.</td></tr>
+          <tr><td><a href="l21-summarization.html">21</a></td><td>Summarization</td><td>Summarize long calls before handoff (<code>RESET_WITH_SUMMARY</code>).</td></tr>
+          <tr><td><a href="l22-transcripts-recording.html">22</a></td><td>Recording / transcripts</td><td><code>AudioBufferProcessor()</code> records the call.</td></tr>
+          <tr><td><a href="l23-observability.html">23</a></td><td>Metrics</td><td><code>enable_metrics=True</code> + <code>UserBotLatencyObserver()</code>.</td></tr>
+          <tr><td><a href="l23-observability.html">23</a></td><td>Tracing / analytics / heartbeats</td><td><code>enable_tracing=True</code> (OpenTelemetry/Sentry/Langfuse) + <code>enable_heartbeats=True</code>.</td></tr>
+          <tr><td><a href="l24-bus.html">24</a></td><td>The bus</td><td>Carries frames + jobs between the main worker and specialists.</td></tr>
+          <tr><td><a href="l25-workers-registry.html">25</a></td><td>Workers / @tool</td><td>Every agent is an <code>LLMContextWorker</code>; registry handles discovery.</td></tr>
+          <tr><td><a href="l26-handoff.html">26</a></td><td>Handoff</td><td><code>route()</code> → <code>activate_worker(deactivate_self=True)</code>.</td></tr>
+          <tr><td><a href="l27-job-coordination.html">27</a></td><td>Job coordination</td><td><code>consult()</code> → <code>job_group(...)</code> fan-out + synthesize.</td></tr>
+          <tr><td><a href="l28-distributed-proxy.html">28</a></td><td>Distributed / proxy</td><td>Swap <code>bus=</code> to <code>RedisBus</code>/<code>PgmqBus</code>; proxy for remote agents.</td></tr>
+          <tr><td><a href="l29-uiworker-rtvi.html">29</a></td><td>UIWorker / RTVI</td><td>Add a <code>UIWorker</code> to stream call state + job cards to a web client.</td></tr>
+          <tr><td><a href="l30-runner-telephony.html">30</a></td><td>Telephony (incl. <strong>Exotel</strong>)</td><td><code>bot()</code> + auto-wired serializer: Twilio/Telnyx/Plivo/<strong>Exotel</strong>/Vonage.</td></tr>
+          <tr><td><a href="l31-ivr-voicemail.html">31</a></td><td>IVR / voicemail</td><td>An outbound variant adds <code>IvrNavigator</code> + <code>VoicemailDetector</code>.</td></tr>
+          <tr><td><a href="l31-ivr-voicemail.html">31</a></td><td>Backchannel</td><td>Cascaded specialists add <code>BackchannelProcessor()</code> for "mm-hmm" active listening.</td></tr>
+          <tr><td><a href="l32-integrations.html">32</a></td><td>Integrations</td><td>A specialist can wrap a LangChain / Strands agent.</td></tr>
+          <tr><td><a href="l33-deployment-cli.html">33</a></td><td>Deployment</td><td>Deploys to Pipecat Cloud unchanged via the <code>bot()</code> contract.</td></tr>
+          <tr><td><a href="l34-evals-testing.html">34</a></td><td>Evals</td><td>A scenario + judge test triage routing + the refund guardrail.</td></tr>
+          <tr><td><a href="ax-events.html">G</a></td><td>Events</td><td><code>@transport.event_handler("on_client_connected")</code>, <code>@recorder.event_handler("on_audio_data")</code>, worker <code>on_activated</code>, LLM <code>on_function_calls_started</code>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="decisions">Decisions & reasoning</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Decision</th><th>Recommended</th><th>Why / trade-off</th></tr></thead>
+        <tbody>
+          <tr><td>How many specialists?</td><td>Triage + 2</td><td>Enough to show handoff <em>and</em> fan-out; add roles once solid.</td></tr>
+          <tr><td>Fan-out model</td><td>Cheaper text LLM for <code>consult</code>, Gemini Live for voice-facing agents</td><td>Consult workers return text, not audio — a fast/cheap LLM cuts cost/latency.</td></tr>
+          <tr><td>Bus for the first cut</td><td>Local <code>AsyncQueueBus</code></td><td>Zero infra; move to Redis/PGMQ when you need separate processes.</td></tr>
+          <tr><td>Barge-in</td><td>On (VAD + interruptions)</td><td>Callers expect to interrupt; VAD drives it even though Gemini owns turn completion.</td></tr>
+          <tr><td>UIWorker?</td><td>Add last, only if you need a GUI</td><td>Voice works without it.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="gotchas">Gemini realtime gotchas</h2>
+      <div class="box errors">
+        <p class="title">⚠️ Read before shipping</p>
+        <p>Gemini Live is speech-to-speech, so the <strong>main</strong> worker owns the transport and bridges audio; each child is a Gemini Live LLM on the bus. Gemini drives turn <em>completion</em> server-side and emits no turn frames — VAD here is for <strong>barge-in</strong>, not end-of-turn. And on <code>GeminiVertexLiveLLMService</code>, <code>google_search</code> can't combine with other tools (see L15).</p>
+      </div>
+
+      <h2 id="refs">References & where each piece is taught</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Piece</th><th>Lesson</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini Live service</td><td><a href="l15-realtime.html">L15</a></td><td><code>services/google/gemini_live/llm.py</code></td></tr>
+          <tr><td>Audio (VAD/filters/resampler/mixer)</td><td><a href="l07-audio-processing.html">L7</a>, <a href="l14-output-playback.html">L14</a></td><td><code>audio/vad/*</code>, <code>audio/filters/*</code>, <code>audio/resamplers/*</code>, <code>audio/mixers/*</code></td></tr>
+          <tr><td>Bus &amp; bridge</td><td><a href="l24-bus.html">L24</a></td><td><code>bus/bus.py</code>, <code>bus/bridge_processor.py</code></td></tr>
+          <tr><td>Workers, <code>@tool</code></td><td><a href="l25-workers-registry.html">L25</a></td><td><code>workers/llm/*</code></td></tr>
+          <tr><td>Handoff / job coordination</td><td><a href="l26-handoff.html">L26</a>, <a href="l27-job-coordination.html">L27</a></td><td><code>workers/base_worker.py</code>, <code>pipeline/job_context.py</code></td></tr>
+          <tr><td>Distributed</td><td><a href="l28-distributed-proxy.html">L28</a></td><td><code>bus/network/{redis,pgmq}.py</code></td></tr>
+          <tr><td>Telephony (Exotel…)</td><td><a href="l30-runner-telephony.html">L30</a></td><td><code>runner/utils.py</code>, <code>serializers/exotel.py</code></td></tr>
+          <tr><td>Runnable examples</td><td>—</td><td><code>examples/multi-worker/{local-handoff,parallel-debate,distributed-handoff}/</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="next">Suggestions — go further</h2>
+      <ul>
+        <li><strong>Instrument it</strong> — compare TTFB per agent with the <a href="l23-observability.html">L23</a> observers.</li>
+        <li><strong>Harden it</strong> — phone (<a href="l30-runner-telephony.html">L30</a>), voicemail/IVR (<a href="l31-ivr-voicemail.html">L31</a>), and an eval scenario (<a href="l34-evals-testing.html">L34</a>).</li>
+        <li><strong>Scale the fan-out</strong> — turn <code>consult</code> into a ranked committee: fan out to N, score with a judge, return the best.</li>
+        <li><strong>Deploy</strong> — ship to Pipecat Cloud or self-host (<a href="l33-deployment-cli.html">L33</a>); <code>bot(runner_args)</code> is already cloud-compatible.</li>
+      </ul>
+
+      <h3 id="check">✅ Checkpoint</h3>
+      <details><summary>1. What single change moves this system from local to distributed?</summary><p>The <code>bus=</code> passed to the <code>WorkerRunner</code> — <code>AsyncQueueBus</code> vs <code>RedisBus</code>/<code>PgmqBus</code>. Agent code (and personas) unchanged.</p></details>
+      <details><summary>2. In a realtime agent, what is VAD used for?</summary><p><strong>Barge-in</strong> — letting the caller talk over the bot. Turn <em>completion</em> is handled server-side by Gemini.</p></details>
+      <details><summary>3. Where does the resampler ("sampler") appear?</summary><p>Via <code>PipelineParams</code> sample rates — the streaming resampler aligns 8 kHz phone audio with 24 kHz model audio.</p></details>
+
+      <p class="lead" style="margin-top:26px">🎉 You've reached hero. Loop back to any lesson from the sidebar, or open the <a href="ax-coverage.html">Coverage matrix</a>.</p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+<script>
+(function () {
+  var DETAIL = {
+    user:  { h: "User (client)", b: "<p>Connects over a <span class='k'>transport</span> and speaks <span class='k'>RTVI</span>.</p><p><span class='k'>Options:</span> WebRTC (low latency) or a phone via a telephony serializer (incl. Exotel).</p><p><span class='k'>Source:</span> transports/, rtvi/ · <span class='k'>Reasoning:</span> WebRTC for real conversations; telephony for phone numbers.</p>" },
+    main:  { h: "Main PipelineWorker", b: "<p>Owns the <span class='k'>transport + audio I/O</span> (noise filter, VAD/barge-in, mixer, resampler, recording) and <span class='k'>bridges</span> audio to the bus.</p><p><span class='k'>Source:</span> pipeline/worker.py, bus/bridge_processor.py · <span class='k'>Reasoning:</span> one owner of the media, many brains.</p>" },
+    bus:   { h: "The worker bus", b: "<p><span class='k'>Local</span> = AsyncQueueBus (in-process); <span class='k'>Distributed</span> = RedisBus / PgmqBus.</p><p><span class='k'>Source:</span> bus/bus.py, bus/network/{redis,pgmq}.py · <span class='k'>Reasoning:</span> identical agent code — only <code>bus=</code> changes.</p>" },
+    triage:{ h: "Triage agent (Gemini Live)", b: "<p>Persona greets, decides billing vs support, and <span class='k'>hands off</span> with <code>route()</code> or <span class='k'>fans out</span> with <code>consult()</code>.</p><p><span class='k'>Source:</span> workers/llm/*, base_worker.activate_worker / job_group.</p>" },
+    specA: { h: "Billing (Gemini Live)", b: "<p>Owns its context + persona; grounds answers in policy (<span class='k'>RAG</span>) and an <span class='k'>MCP</span> memory server. Active on handoff or answers a job in parallel.</p><p><span class='k'>Source:</span> workers/llm/llm_context_worker.py, services/mcp_service.py.</p>" },
+    specB: { h: "Support (Gemini Live)", b: "<p>A second specialist with its own persona. Together with Billing it shows both <span class='k'>handoff</span> (one active) and <span class='k'>fan-out</span> (both answer, then synthesized).</p><p><span class='k'>Source:</span> examples/multi-worker/parallel-debate/.</p>" }
+  };
+  var svg = document.querySelector(".a2a svg");
+  var panel = document.getElementById("a2aPanel");
+  function select(key, node) {
+    var d = DETAIL[key]; if (!d) return;
+    (svg.querySelectorAll(".node") || []).forEach(function (n) { n.classList.remove("active"); });
+    node.classList.add("active");
+    panel.innerHTML = "<h4>" + d.h + "</h4>" + d.b;
+  }
+  (svg ? svg.querySelectorAll(".node") : []).forEach(function (n) {
+    n.addEventListener("click", function () { select(n.getAttribute("data-key"), n); });
+  });
+  var busEdges = ["e_main_bus", "e_bus_a", "e_bus_triage", "e_bus_b"].map(function (id) { return document.getElementById(id); });
+  var busSub = document.getElementById("busSub");
+  var cap = document.getElementById("a2aCap");
+  var bl = document.getElementById("btnLocal"), bd = document.getElementById("btnDist");
+  function setMode(dist) {
+    busEdges.forEach(function (e) { if (e) e.classList.toggle("net", dist); });
+    if (busSub) busSub.textContent = dist ? "Redis / PGMQ" : "in-memory";
+    if (cap) cap.innerHTML = dist
+      ? "Distributed mode: workers run in <b>separate processes/machines</b> over a <b>RedisBus</b> or <b>PgmqBus</b> (dashed = network). The agent code did not change."
+      : "Local mode: agents run in one process over an <b>AsyncQueueBus</b>. Toggle to Distributed to run them across machines.";
+    bl.classList.toggle("on", !dist); bd.classList.toggle("on", dist);
+  }
+  bl.addEventListener("click", function () { setMode(false); });
+  bd.addEventListener("click", function () { setMode(true); });
+})();
+</script>
+</body>
+</html>

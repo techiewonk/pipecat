@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix C · What changed — Pipecat 0-to-Hero</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰ Lessons</button>
+<div class="backdrop"></div>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main>
+    <div class="content">
+      <div class="eyebrow">Appendix C · Reference</div>
+      <h1>What changed from old tutorials</h1>
+      <p class="lead">Pipecat has evolved. If you follow an older guide, these are the traps. Each row: the old way, the current way, and where it's taught.</p>
+      <div id="pagetoc" class="pagetoc"></div>
+
+      <div class="tablewrap"><table>
+        <thead><tr><th>Topic</th><th>Old way</th><th>Current way</th><th>Lesson</th></tr></thead>
+        <tbody>
+          <tr><td>Turn detection / VAD</td><td>Set <code>vad_analyzer</code> / <code>turn_analyzer</code> on <code>TransportParams</code></td><td>Set them on the <strong>aggregator</strong> via <code>LLMUserAggregatorParams</code>; default stop = <code>LocalSmartTurnAnalyzerV3</code></td><td><a href="l10-turn-taking.html">L10</a></td></tr>
+          <tr><td>Muting</td><td>Manual "if bot speaking: drop audio"</td><td>Declarative <code>user_mute_strategies=[…]</code></td><td><a href="l10-turn-taking.html">L10</a></td></tr>
+          <tr><td>Realtime models</td><td>Treated like a normal LLM in a cascade</td><td>A single <code>LLMService</code> consuming <code>InputAudioRawFrame</code>, emitting <code>TTSAudioRawFrame</code>; server-driven turns</td><td><a href="l15-realtime.html">L15</a></td></tr>
+          <tr><td>Runtime settings</td><td>Rebuild the service</td><td>Sparse-delta <code>*UpdateSettingsFrame</code> (the <code>NOT_GIVEN</code> Settings pattern)</td><td><a href="l11-llm-settings.html">L11</a></td></tr>
+          <tr><td>The task object</td><td><code>PipelineTask</code> / <code>PipelineTaskParams</code></td><td><code>PipelineWorker</code> / <code>PipelineParams</code> (old names are deprecated aliases)</td><td><a href="l05-pipeline-workers.html">L5</a></td></tr>
+          <tr><td>Context aggregators</td><td>Provider-specific aggregator classes</td><td>Universal <code>LLMContextAggregatorPair</code> over an <code>LLMContext</code></td><td><a href="l09-context-aggregators.html">L9</a></td></tr>
+          <tr><td>Running the bot</td><td>Run the pipeline directly</td><td><code>WorkerRunner.add_workers(...).run()</code> — multi-agent-ready by default</td><td><a href="l05-pipeline-workers.html">L5</a></td></tr>
+          <tr><td>Word-timestamp TTS bases</td><td><code>WebsocketWordTTSService</code> / <code>AudioContextTTSService</code></td><td>Folded into <code>TTSService</code>/<code>WebsocketTTSService</code> (old names deprecated)</td><td><a href="l13-tts.html">L13</a></td></tr>
+          <tr><td>TTS text preprocessing</td><td><code>text_filters=[…]</code></td><td>Prefer <code>LLMTextProcessor</code> + text transforms / <code>skip_tts</code> (filters deprecated)</td><td><a href="l13-tts.html">L13</a></td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="box concept">
+        <p class="title">🧭 Rule of thumb</p>
+        <p>If a guide configures conversation behavior on the <em>transport</em>, or rebuilds services to change a setting, it predates the current design. Behavior lives on the <strong>aggregator</strong>; changes travel as <strong>frames</strong>; multi-agent is the <strong>default</strong> shape.</p>
+      </div>
+
+      <p class="lead" style="margin-top:26px">See also: <a href="ax-provider-matrix.html">Appendix D — Provider matrix →</a></p>
+    </div>
+    <div id="chapnav" class="chapnav"></div>
+  </main>
+</div>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

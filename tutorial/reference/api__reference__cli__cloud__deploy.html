@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pipecat cloud deploy · Pipecat API (offline)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>main{max-width:820px}blockquote{border-left:3px solid var(--accent);margin:14px 0;padding:6px 14px;background:var(--panel);color:var(--muted)}</style>
+</head><body>
+<div class="layout"><main><div class="content">
+<div class="eyebrow"><a href="../ch13-api-reference.html">← API Reference index</a> · offline copy</div>
+<blockquote>## Documentation Index Fetch the complete documentation index at: https://docs.pipecat.ai/llms.txt Use this file to discover all available pages before exploring further.</blockquote>
+<h1>pipecat cloud deploy</h1>
+<blockquote>pipecat cloud deploy creates or updates a Pipecat Cloud agent deployment, building a deployment manifest from your options.</blockquote>
+<p>The <code>deploy</code> command creates a new agent deployment or updates an existing one. It builds a deployment manifest with the provided parameters and monitors the deployment status until the agent is ready.</p>
+<p>When no image is specified, the CLI will offer to build your agent using <a href="/pipecat-cloud/guides/cloud-builds">Pipecat Cloud Build</a>. This handles building and deploying without requiring you to manage a container registry. A <code>Dockerfile</code> must be present in your build context directory.</p>
+<p>If the agent name already exists, you'll be prompted to confirm the update. Use <code>--force</code> to skip this prompt and also force a new deployment even if the configuration hasn't changed (replacing all running pods).</p>
+<p>This command will wait for the active deployment / revision to enter a ready state before returning. If the deployment fails, the command will exit with an <a href="/pipecat-cloud/fundamentals/error-codes">error</a> with more information.</p>
+<h2>Usage</h2>
+<pre><code>pipecat cloud deploy [ARGS] [OPTIONS]</code></pre>
+<p><strong>Arguments:</strong></p>
+<p>&lt;ParamField path="agent-name" type="string" required&gt;   Unique string identifier for the agent deployment. Must not contain spaces. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="image" type="string"&gt;   URL of the Docker image to deploy. Must be a valid Docker image URL. For   example: <code>docker.io/my-repo/my-image:latest</code>. Not required when using <a href="/pipecat-cloud/guides/cloud-builds">cloud   builds</a> or <code>--build-id</code>. &lt;/ParamField&gt;</p>
+<p><strong>Options:</strong></p>
+<p>&lt;ParamField path="--config-file" type="string"&gt;   Path to an alternate deploy config file. Defaults to <code>pcc-deploy.toml</code> in the   current directory. Can also be set via the <code>PIPECAT_DEPLOY_CONFIG_PATH</code>   environment variable, with the flag taking precedence. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--credentials / -c" type="string"&gt;   Name of the image pull secret to use for accessing private repositories. The   secret must be previously created using the <code>pipecat cloud secrets       image-pull-secret</code> command, and must be in the   <a href="/pipecat-cloud/fundamentals/secrets#provisioning-and-readiness"><code>ready</code></a>   state at deploy time. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--organization / -o" type="string"&gt;   Organization to deploy the agent to. If not provided, uses the current   organization from your configuration. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--secrets / -s" type="string"&gt;   Name of the secret set to use for the deployment. The secret set must exist in   the specified organization and must be in the   <a href="/pipecat-cloud/fundamentals/secrets#provisioning-and-readiness"><code>ready</code></a>   state — deploys that bind a <code>pending</code> or <code>failed</code> set are rejected. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--min-agents / -min" type="number" default="0"&gt;   Minimum number of agent instances to keep warm at all times. Default is 0,   which means the agent will scale down to zero when not in use. Setting this to   1 or higher avoids cold starts. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--max-agents / -max" type="number" default="50"&gt;   Maximum number of allowed agent instances. Must be between 1 and 50. If you   need more agents, please contact us at <a href="mailto:help@daily.co">help@daily.co</a> or via   <a href="https://discord.gg/dailyco">Discord</a>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--krisp-viva-audio-filter" type="string"&gt;   Enable Krisp VIVA noise cancellation with the specified audio filter model.   Valid values are:</p>
+<ul><li><code>tel</code>: Telephony model (up to 16kHz)</li><li><code>pro</code>: WebRTC model (up to 32kHz)</li></ul>
+<p>  In addition to this flag, you also need to enable the <code>KrispVivaFilter()</code> for your transport. See the <a href="/api-reference/server/services/audio-filters/krisp-viva-filter">Krisp VIVA</a> documentation for more information. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--max-session-duration" type="number" default="7200"&gt;   Maximum session duration in seconds. When a session reaches this limit, the   session is stopped: the bot is cancelled, with no opportunity for it to say   goodbye first. Valid range: <code>60</code> to <code>14400</code> (4 hours). Defaults to <code>7200</code> (2 hours) when unset.</p>
+<p>  See <a href="/pipecat-cloud/fundamentals/active-sessions#session-duration-limits">Session duration limits</a>   for more information. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--profile / -p" type="string" default="agent-1x"&gt;   The agent profile to use for resource allocation. Valid values are:   <code>agent-1x</code>, <code>agent-2x</code>, <code>agent-3x</code>.</p>
+<p>  See <a href="/pipecat-cloud/fundamentals/deploy#agent-profiles">Agent Profiles</a> for more information. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--region / -r" type="string"&gt;   Region where the agent will be deployed. If not specified, uses your   organization's default region (typically <code>us-west</code>). Choose a region close to   your users for optimal latency. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--force / -f" type="boolean" default="false"&gt;   Force a new deployment even if the configuration hasn't changed, replacing all   running pods. Useful for picking up updated container images when using   mutable tags like <code>latest</code>, or for refreshing modified secret values. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--yes / -y" type="boolean" default="false"&gt;   Skip all confirmation prompts, including cloud build prompts. Useful for CI/CD   pipelines. When used without an image, automatically triggers a cloud build. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--build-id / -b" type="string"&gt;   Deploy using an existing cloud build ID instead of building a new image.   Cannot be used together with <code>--image</code>. You can find build IDs using <code>pipecat       cloud build list</code>. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--build-dir / -d" type="string"&gt;   Build context directory for cloud builds. Defaults to the current directory. &lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="--dockerfile" type="string"&gt;   Path to Dockerfile for cloud builds. Defaults to <code>Dockerfile</code> in the build   context directory. &lt;/ParamField&gt;</p>
+<h2>Examples</h2>
+<p><strong>Deploy a new agent:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1</code></pre>
+<p><strong>Update an existing agent with a new image:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.2</code></pre>
+<p><strong>Deploy with a specific secret set:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --secrets my-secret-set</code></pre>
+<p><strong>Deploy a private image using image pull credentials:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --credentials dockerhub-creds</code></pre>
+<p><strong>Keep one instance always warm to avoid cold starts:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --min-agents 1</code></pre>
+<p><strong>Limit the maximum number of agent instances:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --max-agents 5</code></pre>
+<p><strong>Deploy to a specific region:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --region eu-central</code></pre>
+<p><strong>Deploy with Krisp VIVA noise cancellation:</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --krisp-viva-audio-filter tel</code></pre>
+<p><strong>Cap session duration (useful as a safety net for short-interaction agents):</strong></p>
+<pre><code>pipecat cloud deploy my-first-agent your-docker-repository/my-first-agent:0.1 --max-session-duration 300</code></pre>
+<p><strong>Deploy using cloud build (interactive):</strong></p>
+<pre><code>pipecat cloud deploy</code></pre>
+<p><strong>Deploy using cloud build in CI/CD (no prompts):</strong></p>
+<pre><code>pipecat cloud deploy --yes</code></pre>
+<p><strong>Deploy using an existing build:</strong></p>
+<pre><code>pipecat cloud deploy --build-id abc12345-6789-0abc-def0-123456789abc</code></pre>
+<p><strong>Deploy using an alternate config file:</strong></p>
+<pre><code>pipecat cloud deploy --config-file pcc-deploy.staging.toml</code></pre>
+<h2>Configuration File (pcc-deploy.toml)</h2>
+<p>The <code>deploy</code> command supports a configuration file for repeatable deployments. Create a <code>pcc-deploy.toml</code> file in your project root to define deployment settings that can be shared across your team and version controlled.</p>
+<h3>File Location</h3>
+<p>Place <code>pcc-deploy.toml</code> in the same directory where you run the <code>pipecat cloud deploy</code> command. The CLI will automatically detect and use this file.</p>
+<p>To use an alternate config file (e.g. for different environments), pass <code>--config-file</code>:</p>
+<pre><code>pipecat cloud deploy --config-file pcc-deploy.staging.toml</code></pre>
+<p>You can also set the <code>PIPECAT_DEPLOY_CONFIG_PATH</code> environment variable, with the <code>--config-file</code> flag taking precedence.</p>
+<h3>Precedence</h3>
+<p>Values are applied with the following order of precedence:</p>
+<ol><li>CLI arguments (highest priority)</li><li><code>pcc-deploy.toml</code> values</li><li>Default values (lowest priority)</li></ol>
+<p>This allows you to define defaults in the config file while still overriding specific values via CLI flags when needed.</p>
+<h3>Configuration Options</h3>
+<h4>Required Fields</h4>
+<p>&lt;ParamField path="agent_name" type="string" required&gt;   Name of the agent to deploy. Must start with a lowercase letter or number, can   include hyphens, and must end with a lowercase letter or number. Maximum 54 characters.</p>
+<pre><code>  agent_name = "my-voice-agent"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="image" type="string"&gt;   Docker image URL with tag. Required when not using cloud builds or <code>build_id</code>.</p>
+<pre><code>  image = "your-dockername/my-agent:0.1"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;Note&gt;   You must specify either <code>image</code> or <code>build_id</code>, or omit both to trigger a cloud   build at deploy time. &lt;/Note&gt;</p>
+<h4>Optional Fields</h4>
+<p>&lt;ParamField path="build_id" type="string"&gt;   An existing cloud build ID to deploy. Cannot be used together with <code>image</code>.</p>
+<pre><code>  build_id = "abc12345-6789-0abc-def0-123456789abc"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="region" type="string"&gt;   Region where the agent will be deployed. If not specified, uses your   organization's default region (typically <code>us-west</code>).</p>
+<pre><code>  region = "us-east"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="secret_set" type="string"&gt;   Name of the secret set to use for environment variables. The secret set must   exist in the same region as the agent and must be in the   <a href="/pipecat-cloud/fundamentals/secrets#provisioning-and-readiness"><code>ready</code></a>   state — deploys that bind a <code>pending</code> or <code>failed</code> set are rejected.</p>
+<pre><code>  secret_set = "my-agent-secrets"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="image_credentials" type="string"&gt;   Name of the image pull secret for private registries. The image pull secret must exist in the same region as the agent and must be in the <a href="/pipecat-cloud/fundamentals/secrets#provisioning-and-readiness"><code>ready</code></a> state.</p>
+<pre><code>  image_credentials = "dockerhub-credentials"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="agent_profile" type="string" default="agent-1x"&gt;   Agent profile for resource allocation. Valid values: <code>agent-1x</code>, <code>agent-2x</code>, <code>agent-3x</code>.</p>
+<pre><code>  agent_profile = "agent-2x"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="max_session_duration" type="number" default="7200"&gt;   Maximum session duration in seconds. When a session reaches this limit, the   session is stopped: the bot is cancelled, with no opportunity for it to say   goodbye first. Valid range: <code>60</code> to <code>14400</code> (4 hours). See   <a href="/pipecat-cloud/fundamentals/active-sessions#session-duration-limits">Session duration limits</a>   for more information.</p>
+<pre><code>  max_session_duration = 300</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h4>Scaling Configuration</h4>
+<p>Define auto-scaling behavior in a <code>[scaling]</code> section:</p>
+<p>&lt;ParamField path="scaling.min_agents" type="number" default="0"&gt;   Minimum number of agent instances to keep warm. Setting to 0 allows scaling to zero but may result in cold starts.</p>
+<pre><code>  [scaling]
+  min_agents = 1</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="scaling.max_agents" type="number" default="50"&gt;   Maximum number of agent instances allowed.</p>
+<pre><code>  [scaling]
+  max_agents = 20</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h4>Krisp VIVA Configuration</h4>
+<p>Configure Krisp VIVA noise cancellation in a <code>[krisp_viva]</code> section:</p>
+<p>&lt;ParamField path="krisp_viva.audio_filter" type="string"&gt;   Krisp VIVA audio filter model. Valid values: <code>tel</code> (telephony, up to 16kHz) or <code>pro</code> (WebRTC, up to 32kHz). Omit or set to <code>null</code> to disable.</p>
+<pre><code>  [krisp_viva]
+  audio_filter = "tel"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h4>Cloud Build Configuration</h4>
+<p>Configure cloud build behavior in a <code>[build]</code> section:</p>
+<p>&lt;ParamField path="build.context_dir" type="string" default="."&gt;   Directory to use as the build context. Defaults to the current directory.</p>
+<pre><code>  [build]
+  context_dir = "."</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="build.dockerfile" type="string" default="Dockerfile"&gt;   Path to the Dockerfile within the build context.</p>
+<pre><code>  [build]
+  dockerfile = "Dockerfile"</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<p>&lt;ParamField path="build.exclude.patterns" type="string[]"&gt;   Additional file patterns to exclude from the build context. Common patterns like <code>.git</code>, <code>.env</code>, <code>__pycache__</code>, and <code>.venv</code> are excluded automatically.</p>
+<pre><code>  [build.exclude]
+  patterns = ["*.md", "tests/", "docs/"]</code></pre>
+<p>&lt;/ParamField&gt;</p>
+<h3>Complete Example</h3>
+<p>&lt;Tabs&gt;   &lt;Tab title="With cloud build"&gt;     ```toml theme={null}     # Basic agent configuration     agent_name = "my-voice-agent"     region = "us-west"</p>
+<p>    # Secrets     secret_set = "my-agent-secrets"</p>
+<p>    # Resource allocation     agent_profile = "agent-1x"</p>
+<p>    # Auto-scaling configuration     [scaling]     min_agents = 1     max_agents = 20</p>
+<p>    # Cloud build configuration (optional, shown with defaults)     [build]     context_dir = "."     dockerfile = "Dockerfile"</p>
+<p>    [build.exclude]     patterns = ["*.md", "tests/"]     ```   &lt;/Tab&gt;</p>
+<p>  &lt;Tab title="With custom image"&gt;     ```toml theme={null}     # Basic agent configuration     agent_name = "my-voice-agent"     image = "your-dockername/my-voice-agent:0.1"     region = "us-west"</p>
+<p>    # Secrets and credentials     secret_set = "my-agent-secrets"     image_credentials = "dockerhub-credentials"</p>
+<p>    # Resource allocation     agent_profile = "agent-1x"</p>
+<p>    # Auto-scaling configuration     [scaling]     min_agents = 1     max_agents = 20</p>
+<p>    # Krisp VIVA noise cancellation     [krisp_viva]     audio_filter = "tel"     ```   &lt;/Tab&gt; &lt;/Tabs&gt;</p>
+<h3>Using the Configuration File</h3>
+<p>Once you have a <code>pcc-deploy.toml</code> file, simply run:</p>
+<pre><code>pipecat cloud deploy</code></pre>
+<p>The CLI will automatically load your configuration. You can still override any value using CLI flags:</p>
+<pre><code># Use config file but override the region
+pipecat cloud deploy --region eu-central
+
+# Use config file but force update without confirmation
+pipecat cloud deploy --force</code></pre>
+<hr style="margin-top:40px"><p class="apicount">Mirrored from <a href="https://docs.pipecat.ai/api-reference/cli/cloud/deploy">https://docs.pipecat.ai/api-reference/cli/cloud/deploy</a></p>
+</div></main></div></body></html>
